@@ -1,10 +1,10 @@
 # Idea Hub — Decision Log
 
-This log records the significant product, technical, architectural and design decisions taken during the Idea Hub discovery phase, together with the agent recommendations behind them, rejected options, scope changes, technical constraints, known limitations and open questions. It is maintained throughout the project and is not written retrospectively. Each entry is dated when it was recorded. Nothing described in this log has been built or tested.
+This log records the significant product, technical, architectural and design decisions taken during the Idea Hub discovery phase, together with the agent recommendations behind them, rejected options, scope changes, technical constraints, known limitations and open questions. It is maintained throughout the project and is not written retrospectively. Each entry is dated when it was recorded. Entries D-001 to D-020 were recorded before any code was written; build and test status is recorded from D-021 onwards.
 
 - Maintained by: Agent 6 (documentation agent, Haiku tier)
-- Last updated: 2026-11-15
-- Project phase: Discovery (no application code written)
+- Last updated: 2026-11-16
+- Project phase: Build phases 1–3 implemented and tested; phases 4–7 not started
 
 ---
 
@@ -48,6 +48,12 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 | D-018 | Documentation location and format | Accepted |
 | D-019 | Project name | Proposed — awaiting founder |
 | D-020 | Agent team and model tiers | Accepted |
+| D-021 | Proceeding without founder answers | Accepted (provisional) |
+| D-022 | Application file | Accepted |
+| D-023 | Phase 1–3 scope delivered | Accepted |
+| D-024 | Implementation decisions by Agent 3 | Accepted |
+| D-025 | Fixes after independent QA | Accepted |
+| D-026 | QA model tier | Accepted |
 
 ---
 
@@ -355,6 +361,96 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 
 **Limitation (D-020):** The environment allows choosing a model tier but not a specific model version. The founder asked for "Claude 4.5 Haiku". The documentation agent (Agent 6) reported its own model as Haiku 5.5 (`claude-haiku-5-5`), so the Haiku-tier agents did not run on Claude 4.5 Haiku. The Sonnet version used was not reported.
 
+### D-021 Proceeding without founder answers
+
+- Decision ID: D-021
+- Date: 2026-11-16
+- Topic: Proceeding without founder answers
+- Context: The founder instructed "start phase 1 - 3" without answering open questions Q1–Q7.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: Proceed on the defaults proposed in the discovery plan: leadership approves hours from a pool; anonymous author hidden from all roles; timelines 3/10/14 working days as config defaults; provisional design tokens; working name "Polaris" shown as "Idea Hub · Polaris".
+- Reasoning: None of the open questions block phases 1–3; all defaults are reversible.
+- Impact on the application: The application shows the working name "Idea Hub · Polaris"; anonymous authors are hidden from all roles; timelines are config defaults.
+- Dependencies: Q1–Q7 remain open.
+- Status: Accepted (provisional)
+
+### D-022 Application file
+
+- Decision ID: D-022
+- Date: 2026-11-16
+- Topic: Application file
+- Context: None recorded.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: Single file `idea-hub.html` at the repository root; 3,136 lines, 353,038 bytes after fixes; zero runtime JavaScript dependencies; the only external reference is an optional Google Fonts link for Geist with a system-font fallback.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-023 Phase 1–3 scope delivered
+
+- Decision ID: D-023
+- Date: 2026-11-16
+- Topic: Phase 1–3 scope delivered
+- Context: None recorded.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: Phase 1: app shell, hash router with role guards, six demo personas, single store with named actions, localStorage persistence under key `ideahub.v1` with in-memory fallback, services layer (`api.*`, `AgentGateway`, `MockEngine`), role-aware Home, handler audit. Phase 2: Explore, Idea detail with five tabs, Submit with simulated Idea Intelligence and Idea Enhancement, Drafts, My ideas, anonymous masking, Withdraw, minimal profile page. Phase 3: Review queue and workspace with simulated Review Intelligence brief, decision rules, owner assignment, review clocks, Pipeline with Innovation Workflow approval cards. Admin offers a working Reset demo data; other admin content is read-only. Ideathons, Recognition, Insights and Agent log are labelled placeholders naming the phase that delivers them.
+- Reasoning: None recorded.
+- Impact on the application: Ideathons, Recognition, Insights and Agent log show placeholders that name the phase that delivers them. Admin content other than Reset demo data is read-only.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-024 Implementation decisions by Agent 3
+
+- Decision ID: D-024
+- Date: 2026-11-16
+- Topic: Implementation decisions by Agent 3
+- Context: None recorded.
+- Problem being addressed: None recorded.
+- Options considered: Re-rendering the Submit form on each keystroke (rejected).
+- Agent recommendations: Made by Agent 3; accepted by the orchestrator.
+- Final decision: Submit form is stateful and kept out of the global render loop so typing keeps focus; suggested scores in the reviewer brief are collapsed by default so reviewers form their own view first; scores are required for accept, park, merge and decline, and request-info needs only a question of at least 20 characters; review clock uses working days and pauses while an idea is in Needs info; workflow proposals are keyed per panel per day (reminders) or per idea (revisit), and dismissing a revisit snoozes it for 7 days; anonymity is enforced at render time and anonymous ideas have no co-authors; live assist runs are not stored, only submit, decision and workflow runs are recorded.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-025 Fixes after independent QA
+
+- Decision ID: D-025
+- Date: 2026-11-16
+- Topic: Fixes after independent QA
+- Context: Agent 5 found no P0 or P1 defects, one P2 and seven P3 defects (D1–D8 in the QA report), plus observations.
+- Problem being addressed: The defects D1–D8 and the observations in the QA report.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: All were fixed by Agent 3 together with six further items raised by the orchestrator (pipeline fits five columns at 1200px and above; simulated latency removed from all non-agent actions and state saved synchronously; code cleanups; mobile search overlay; attachment-label warning on anonymous ideas; participation metric derived over 90 days). Decisions made during fixes: withdrawn ideas and drafts are excluded from the total and the Home page says so; "Awaiting review" means submitted, in review or needs info, matching the Pipeline; the sticky right column in the review workspace was removed; six inactive new-joiner users were added to the seed, giving 36 employees and 81% participation; anonymous submissions are not counted as participation.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-026 QA model tier
+
+- Decision ID: D-026
+- Date: 2026-11-16
+- Topic: QA model tier
+- Context: Discovery-phase QA strategy used Haiku.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: The QA agent for build testing ran on the Sonnet tier rather than Haiku.
+- Reasoning: Testing required writing and interpreting browser automation.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
 ---
 
 ## Rejected recommendations
@@ -414,15 +510,20 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 
 ---
 
-## Known limitations (as of 2026-11-15)
+## Known limitations (as of 2026-11-16)
 
 - Dotkonnekt token values are unread. Only the file inventory of the design system could be read. All visual values are provisional.
 - Kompass external invocation, triggers, approval steps and structured output are undocumented in the pages read.
 - The Kompass documentation read is a staging site. The founder notes that it omits some features.
 - Subagent model versions cannot be selected, only the tier. Agent 6 self-reported Haiku 5.5, not the requested Claude 4.5 Haiku; the Sonnet version is unknown (D-020).
-- The file size (6,000 to 8,000 lines) is an estimate.
-- No application code has been written.
-- Nothing has been tested.
+- The 6,000 to 8,000 line estimate is for the complete MVP; the file is 3,136 lines after phases 1 to 3 (D-022).
+- After confirming Withdraw, focus lands on page content because the button no longer exists.
+- Tag suggestions are keyword heuristics and can be odd.
+- Reviewer-brief scores and lean are rule-based heuristics.
+- Anonymity is a display rule only; browser storage is readable on the device.
+- An author can still type identifying text into an attachment label.
+- Design tokens, wordmark and icons are placeholders.
+- No Kompass connection.
 
 ---
 
@@ -439,6 +540,13 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 | Q7 | Confirm the project name. | Founder | Nothing technical; naming in the app and documents |
 | Q8 | The eleven integration questions for Kompass listed in `04_ai_kompass.md`, section 6. | Kompass team | Any real Kompass integration; does not block the MVP |
 
+## Testing performed (phases 1–3)
+
+- Builder tests (Agent 3), Playwright with Chromium, file loaded via file://, re-run by the orchestrator on 2026-11-16 after fixes: flows 21 pass; misc 5 pass; decisions 8 pass; overflow 52 pass; fixes 93 pass including 336 route visits across six personas at 375 and 1280 px with no page or console errors; routes script: 65 routes for each of six personas with no errors (reported by Agent 3; not re-run by the orchestrator).
+- Independent QA (Agent 5) before fixes: 30 check rows — 25 pass, 3 fail, 1 not tested, 1 observation; dead-control scan of about 1,500 clicks found one dead control; anonymity scan across six other personas found no leaks; offline pass succeeded. The three failures and the dead control were addressed in D-025.
+- The independent QA agent has NOT re-tested the build after the fixes; post-fix verification is by the builder's tests and the orchestrator's re-run and screenshot review (Home dark 1280, Pipeline 1280, and pre-fix Home and Review workspace).
+- Not tested: browsers other than Chromium; screen readers; real touch devices; two tabs open at once; dark theme on pages other than Home after fixes; review-timer thresholds under changed configuration; opening the file on the founder's own machine.
+
 ---
 
 ## Change history
@@ -446,3 +554,4 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 | Date | Change |
 |---|---|
 | 2026-11-15 | Log established at end of discovery phase. |
+| 2026-11-16 | Phases 1–3 built, independently tested, defects fixed; entries D-021 to D-026 added. |
