@@ -4,7 +4,7 @@ This log records the significant product, technical, architectural and design de
 
 - Maintained by: Agent 6 (documentation agent, Haiku tier)
 - Last updated: 2026-11-16
-- Project phase: Build phases 1–3 implemented and tested; phases 4–7 not started
+- Project phase: Build phases 1–6 implemented; phases 5–6 not yet fully tested; phase 7 (hardening, QA, final documentation) not started
 
 ---
 
@@ -54,6 +54,21 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 | D-024 | Implementation decisions by Agent 3 | Accepted |
 | D-025 | Fixes after independent QA | Accepted |
 | D-026 | QA model tier | Accepted |
+| D-027 | Testing deferred at the founder's instruction | Accepted |
+| D-028 | Phase 4 delivered (Delivery and impact) | Accepted |
+| D-029 | Phase 5 delivered (Ideathons, Recognition, Profiles) | Accepted |
+| D-030 | Phase 6 delivered (Dashboard completion, Insights, Administration, Agent hub) | Accepted |
+| D-031 | Application file state | Accepted |
+| D-032 | Feature presentation | Accepted |
+| D-033 | Repository location | Accepted |
+| D-034 | Rename of a demo persona | Accepted |
+| D-035 | Differentiating features | Accepted |
+| D-036 | Problem radar delivered | Accepted |
+| D-037 | Reopen conditions delivered | Accepted |
+| D-038 | Application file state | Accepted |
+| D-039 | Collaboration by request | Accepted |
+| D-040 | Idea progress tracker | Accepted |
+| D-041 | Application file state (collaboration and tracker build) | Accepted |
 
 ---
 
@@ -451,6 +466,247 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 - Dependencies: None recorded.
 - Status: Accepted
 
+### D-027 Testing deferred at the founder's instruction
+
+- Decision ID: D-027
+- Date: 2026-11-16
+- Topic: Testing deferred at the founder's instruction
+- Context: During phases 4–6 the founder instructed that testing be forgone for now, the code changes be made, and the tests be done at the end.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: Phases 5 and 6 were built with a load-and-click smoke check only (no test suites, no screenshot review by the builder, no independent QA). Full testing moves to phase 7.
+- Reasoning: None recorded.
+- Impact on the application: Defects in phases 5–6 may exist undetected.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-028 Phase 4 delivered (Delivery and impact)
+
+- Decision ID: D-028
+- Date: 2026-11-16
+- Topic: Phase 4 delivered (Delivery and impact)
+- Context: Build note: phase 4 was built across interrupted agent runs (one run hit a usage limit, two were stopped by the founder); the final state was verified by the orchestrator.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: Innovation-hours requests against a quarterly pool, with leadership approval or decline with reason; approval moves Accepted to Prototype. Delivery tab with contributors, hours logging (overspend flagged, not blocked), tasks, updates and a stale indicator. Stale-prototype nudge proposals. Mark Implemented requires an outcome summary, at least one impact entry and contribution shares totalling 100 percent. Announcements. Impact verification by a second person (leadership or admin, never the owner or an author).
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-029 Phase 5 delivered (Ideathons, Recognition, Profiles)
+
+- Decision ID: D-029
+- Date: 2026-11-16
+- Topic: Phase 5 delivered (Ideathons, Recognition, Profiles)
+- Context: None recorded.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: Ideathons: list; create; five phases that cannot be skipped; linked entries; agent-proposed shortlist approved by the organiser; pitch day with timer; panel scores and one audience vote per persona; results confirmed by the organiser; simulated hackathon handoff. Recognition: append-only points ledger where every row cites a rule; levels; ten badges; individual, team and impact leaderboards; Idea of the Quarter and Annual Innovation Award confirmed by leadership; reciprocal-vote flags for human review. Profiles and team pages. Decisions by Agent 3: combined ideathon score is 70 percent panel and 30 percent audience, from config; shortlist score weights 40 upvotes, 35 template completeness, 25 discussion breadth; impact bonus is a confidence base (low 25, medium 40, high 60) times a size band (1, 1.5, 2), clamped to 25–150 and split by contribution share; reciprocal-vote threshold is 2 votes each way; points are never reversed; anonymous-idea points are held in escrow and excluded from all public totals, claimable by "Reveal and claim", which is blocked when the idea has anonymous co-authors; an ideathon counts as past only once marked complete.
+- Reasoning: None recorded.
+- Impact on the application: Scope simplifications: the "declined then resubmitted" bonus is not implemented because there is no resubmission flow; the community-signal bonus at Accepted was dropped; the Comeback badge was redefined as accepted after being parked or sent back for more information; pitch timers and shortlist checkbox selections are not persisted.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-030 Phase 6 delivered (Dashboard completion, Insights, Administration, Agent hub)
+
+- Decision ID: D-030
+- Date: 2026-11-16
+- Topic: Phase 6 delivered (Dashboard completion, Insights, Administration, Agent hub)
+- Context: None recorded.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: Insights with period filter and hand-built charts, each with a data table; leadership summary dialog with copy. Admin with ten tabs (categories, review panels, scoring criteria, timelines, recognition, innovation time, ideathons, platform metrics, data with reset, export and import, audit log). Agent hub with activity traces, agent registry, five flows, Kompass integration map with a permanent "Not connected to Kompass" notice and 11 open questions that an admin can mark answered, and pending approvals. Global search covers ideathons and teams. All placeholder pages removed. Decisions by Agent 3: weighted review score treats effort in reverse; recognition setting changes apply to future ledger rows only; only people with the Reviewer role can be added to a panel; the "needs-info auto-park days" setting only flags an idea as stuck, there is no automatic parking; import validates, asks for confirmation and rolls back if the self-check fails; timeline changes re-date only ideas currently under review.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-031 Application file state
+
+- Decision ID: D-031
+- Date: 2026-11-16
+- Topic: Application file state
+- Context: None recorded.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: `idea-hub.html` is 5,597 lines and 710,503 bytes after phase 6; schema version 4; build string 0.6.0-phase6; still one file with zero runtime JavaScript dependencies. Stored data from older versions resets to the seed with a visible notice.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-032 Feature presentation
+
+- Decision ID: D-032
+- Date: 2026-11-16
+- Topic: Feature presentation
+- Context: The founder requested a PowerPoint explaining the features, why they exist and how they will be used.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: `Idea_Hub_Features.pptx`, 18 slides after two feature slides were added, built by the orchestrator with screenshots captured from the current build.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+### D-033 Repository location
+
+- Decision ID: D-033
+- Date: 2026-11-16
+- Topic: Repository location
+- Context: The founder moved to another computer; the session could not reach it.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: Files were delivered in the chat for the founder to save into the repository manually. The repository copies of `idea-hub.html` and the documents may therefore be out of date until saved.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+---
+
+### D-034 Rename of a demo persona
+
+- Decision ID: D-034
+- Date: 2026-11-16
+- Topic: Rename of a demo persona
+- Context: The founder asked to rename the demo employee "Priya Nair" to "Ted Lasso".
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: The display name was changed in the app and the presentation. The internal id `u_priya` is unchanged.
+- Reasoning: None recorded.
+- Impact on the application: The demo employee displays as "Ted Lasso". The internal id `u_priya` is unchanged.
+- Dependencies: None recorded.
+- Status: Accepted
+
+---
+
+### D-035 Differentiating features
+
+- Decision ID: D-035
+- Date: 2026-11-16
+- Topic: Differentiating features
+- Context: The founder asked what could make the product stand out, then asked the orchestrator to pick the options likely to get the best response from the leadership team.
+- Problem being addressed: None recorded.
+- Options considered: (1) problem radar; (2) decisions that reopen themselves; (3) one assistant running on Kompass for real; (4) conviction points instead of upvotes; (5) accepted idea to draft prototype brief.
+- Agent recommendations: None recorded.
+- Final decision: Build (1) and (2) now. (3) remains blocked on the undocumented Kompass invocation method. (4) and (5) are not built.
+- Reasoning: Both chosen features reinforce the visible-decision promise, are demonstrable in the single file with no backend, and reuse the existing similarity matching and the "what would change our mind" field. Whether these are unique in the market was not researched.
+- Impact on the application: Features (1) and (2) were built; see D-036 and D-037. Features (3), (4) and (5) are not in the application.
+- Dependencies: Option (3) depends on the Kompass invocation method, which is undocumented. Features (1) and (2) reuse the existing similarity matching and the "what would change our mind" field.
+- Status: Accepted
+
+---
+
+### D-036 Problem radar delivered
+
+- Decision ID: D-036
+- Date: 2026-11-16
+- Topic: Problem radar delivered
+- Context: Delivery of option (1) from D-035.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: Ideas are grouped by similarity of their problem statements and tags (average-link clustering, threshold 0.34, tuned on the seed; singletons excluded). The seed yields 9 recurring problems after 13 seed ideas were added. Routes `#/problems` and `#/problems/:id`. States: Solved, In progress, Unsolved (recurring). Leadership and admin can rename a problem, assign a sponsor, acknowledge it, and launch an ideathon prefilled from the problem. Everyone can mark "I have this problem too" (earns no points) and submit an idea for the problem. The problem radar is shown on idea detail, in the reviewer brief, on leadership Home, in Insights and in search. Anonymous authors are counted but never named.
+- Reasoning: None recorded.
+- Impact on the application: The problem radar is available at the routes above and appears on the surfaces listed in the final decision. Known limits recorded by Agent 3: labels are automatic and unpolished; the threshold is sensitive to new ideas; a problem's id is tied to its earliest idea.
+- Dependencies: Reuses the existing similarity matching (see D-035).
+- Status: Accepted
+
+---
+
+### D-037 Reopen conditions delivered
+
+- Decision ID: D-037
+- Date: 2026-11-16
+- Topic: Reopen conditions delivered
+- Context: Delivery of option (2) from D-035.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: On Park (at least one condition is required; the revisit date counts) and on Decline (conditions optional), reviewers set reopen conditions of six types: date, raised again, dependency, capacity, demand, manual. An any/all rule applies. Conditions are evaluated from live state. Idea pages show "What would bring this back" with progress. When conditions are met, the Innovation Workflow assistant proposes reopening. A reviewer on that panel or an admin approves the reopen, which returns the idea to Under review with a fresh clock, history and notifications. Dismissing a proposal requires a reason and snoozes it for 14 days. This replaces the earlier parked-revisit proposal.
+- Reasoning: None recorded.
+- Impact on the application: Reopen conditions are set on Park and Decline and shown on idea pages. The Innovation Workflow assistant proposes reopening when conditions are met. Limits recorded by Agent 3: conditions can only be set when recording a decision; the earlier return-to-review action remains in the file as unused code.
+- Dependencies: Uses the existing "what would change our mind" field (see D-035).
+- Status: Accepted
+
+---
+
+### D-038 Application file state
+
+- Decision ID: D-038
+- Date: 2026-11-16
+- Topic: Application file state
+- Context: None recorded.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: `idea-hub.html` is 6,249 lines and 806,510 bytes; schema version 5; build 0.7.0-radar-reopen.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+---
+
+### D-039 Collaboration by request
+
+- Decision ID: D-039
+- Date: 2026-11-16
+- Topic: Collaboration by request
+- Context: The founder asked that a person who wants to collaborate should send a request which the owner of the idea accepts before they work together.
+- Problem being addressed: Previously "I want to help build this" recorded an offer immediately, offers could only be answered once an idea was in Prototype, and co-author requests had no accept or decline control.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: One unified collaboration-request entity with two types (co-author, help build), a required message, optional role and hours. Requests go to the author and co-authors until a delivery owner is assigned, then to the owner. Team lead and admin can also answer. Decline requires a note. One re-request is allowed after a decline. Members can leave, and deciders can remove a member with a reason. Only accepted members can edit the tracker, post check-ins or edit delivery. Anonymous ideas accept help-build requests only and never name the author. Parked ideas are closed to new requests. The old volunteer entity and its actions were removed, and seeded data was migrated.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+---
+
+### D-040 Idea progress tracker
+
+- Decision ID: D-040
+- Date: 2026-11-16
+- Topic: Idea progress tracker
+- Context: The founder asked for an inbuilt tracker so people can mark their own progress on an idea.
+- Problem being addressed: None recorded.
+- Options considered: A separate tracker beside the existing delivery task list, or one unified list.
+- Agent recommendations: None recorded.
+- Final decision: A "Team & progress" tab on every idea from submission onward, with milestones (assignee, due date, status Not started / In progress / Blocked / Done, blocker note), check-ins, a "My work" block, a "My tasks" view across ideas, and a derived progress bar on idea headers and cards. The tracker is the delivery task list: the separate delivery tasks and updates were removed and migrated to milestones and check-ins. The assignee changes the status of their own items. Author, co-author, owner, team lead and admin manage all items. The Innovation Workflow assistant proposes nudges for items blocked 5 days or more and for ideas with no check-in in the stale period; a person approves each nudge.
+- Reasoning: Two competing lists would confuse owners in Prototype.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
+---
+
+### D-041 Application file state (collaboration and tracker build)
+
+- Decision ID: D-041
+- Date: 2026-11-16
+- Topic: Application file state
+- Context: None recorded.
+- Problem being addressed: None recorded.
+- Options considered: None recorded.
+- Agent recommendations: None recorded.
+- Final decision: `idea-hub.html` is 6,753 lines and 882,626 bytes; schema version 6; build 0.8.0-collab-tracker. Stored data from older versions resets to the seed.
+- Reasoning: None recorded.
+- Impact on the application: None recorded.
+- Dependencies: None recorded.
+- Status: Accepted
+
 ---
 
 ## Rejected recommendations
@@ -524,6 +780,12 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 - An author can still type identifying text into an attachment label.
 - Design tokens, wordmark and icons are placeholders.
 - No Kompass connection.
+- Flow diagram arrows wrap awkwardly on narrow rows.
+- Admin forms re-render after a save, so unsaved edits in other fields of the same tab are lost.
+- Charts have no hover tooltips; the data tables carry the detail.
+- Layout of phase 5 and 6 screens has not been reviewed at mobile widths or in dark theme.
+- Agent statistics rely on seeded runs plus runs recorded during use.
+- Original seeded co-authors have no request record and cannot use Leave; the first request row on the Team tab shows its avatar on a separate line (cosmetic).
 
 ---
 
@@ -547,6 +809,16 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 - The independent QA agent has NOT re-tested the build after the fixes; post-fix verification is by the builder's tests and the orchestrator's re-run and screenshot review (Home dark 1280, Pipeline 1280, and pre-fix Home and Review workspace).
 - Not tested: browsers other than Chromium; screen readers; real touch devices; two tabs open at once; dark theme on pages other than Home after fixes; review-timer thresholds under changed configuration; opening the file on the founder's own machine.
 
+### Phases 4–6
+
+- Phase 4: builder test script phase4.js, 95 checks, all passed when re-run by the orchestrator on 2026-11-16, together with flows 21, misc 5, decisions 8, overflow 52 and fixes 93. These runs were made BEFORE phases 5 and 6 were added and have not been repeated since.
+- Phase 5: smoke check only by the builder (about 30 routes as four personas with no page or console errors; one scripted pass dispatching the new actions). Not tested beyond that.
+- Phase 6: smoke check only by the builder (new routes as five personas with no page or console errors; each new action dispatched once; overflow check at 375, 768 and 1920 on new views). Not tested beyond that.
+- Orchestrator: loaded 14 screens across five personas while capturing screenshots for the presentation, with no page errors, and viewed 9 of them at reduced size.
+- No independent QA has been run on phases 4–6. The existing phase 1–4 test scripts have not been re-run against the final file.
+- Problem radar and reopen conditions: smoke check only by the builder (new and changed routes as five personas with no page or console errors; each new action dispatched once, including an approve-reopen end to end; overflow check at four widths). The orchestrator viewed four of the new screens. Not tested beyond that.
+- Collaboration requests and progress tracker: smoke check only by the builder (changed routes as seven personas with no page or console errors; each new or changed action dispatched once, including request, accept, member updates own item, and request, decline, re-request). The orchestrator viewed the Team and progress tab for one idea. Not tested beyond that. The existing phase 1–4 test scripts reference actions that were removed (volunteer and delivery task actions) and will need updating before they can be re-run.
+
 ---
 
 ## Change history
@@ -555,3 +827,6 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 |---|---|
 | 2026-11-15 | Log established at end of discovery phase. |
 | 2026-11-16 | Phases 1–3 built, independently tested, defects fixed; entries D-021 to D-026 added. |
+| 2026-11-16 | Phases 4–6 built; testing deferred to phase 7 at the founder's instruction; entries D-027 to D-033 added. |
+| 2026-11-16 | Persona renamed; problem radar and reopen conditions added; entries D-034 to D-038. |
+| 2026-11-16 | Collaboration requests and progress tracker added; entries D-039 to D-041. |
