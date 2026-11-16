@@ -69,6 +69,7 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 | D-039 | Collaboration by request | Accepted |
 | D-040 | Idea progress tracker | Accepted |
 | D-041 | Application file state (collaboration and tracker build) | Accepted |
+| D-042 | Dotkonnekt design integrated from the founder's design file | Accepted |
 
 ---
 
@@ -709,6 +710,23 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 
 ---
 
+### D-042 Dotkonnekt design integrated from the founder's design file
+
+- Decision ID: D-042
+- Date: 2026-11-16
+- Topic: Dotkonnekt design integrated from the founder's design file
+- Context: The founder supplied a separate copy of `idea-hub.html` containing design changes and asked for them to be integrated. That file was a different line of work: it was based on the phase 1–3 build with its own phase 6 screens (insights, agent log, admin), without phases 4 and 5.
+- Problem being addressed: None recorded.
+- Options considered: Adopt the supplied file as the new base, or take only its design layer into the current build.
+- Agent recommendations: None recorded.
+- Final decision: Take only the design layer. Integrated: the tokens block, which the supplied file states was taken from the Dotkonnekt Design System artifact `tokens.css` (read 2026-11-16), including its documented deviations for text contrast; Geist and Geist Mono embedded as subsetted woff2 so the file makes no network requests (the Google Fonts link was removed); the official Dotkonnekt logo mark and wordmark in the sidebar; pill-shaped buttons with a black primary button (white in dark theme); wider letter-spacing on eyebrow labels, navigation labels and table headers; press and reduced-motion behaviour on buttons. Added by the orchestrator: values for ten token names that exist only in the current build (four extra category colours and six chart series colours), derived from the same colour ramps and marked as derived. Not taken: the supplied file's own insights, agent log and admin screens, because the current build already has fuller versions. The sidebar subtitle now reads "Idea Hub" as in the supplied file, instead of "Idea Hub · Polaris".
+- Reasoning: The current build contains phases 4–6 and later features that the supplied file lacks.
+- Impact on the application: `idea-hub.html` is now 960,682 bytes; build 0.8.1-dotkonnekt-design; schema version unchanged at 6. Verification: loaded from file:// with no page or console errors and no network requests; both fonts reported as loaded; self-check clean; the orchestrator viewed twelve screens in light theme and twelve in dark theme at reduced size. Limitation: the orchestrator did not verify the token values against the design system artifact itself, which it could not read; the icons remain hand-drawn and are not the official set. This supersedes the provisional-token status in D-010.
+- Dependencies: None recorded.
+- Status: Accepted
+
+---
+
 ## Rejected recommendations
 
 | What | Who recommended | Why rejected |
@@ -768,7 +786,7 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 
 ## Known limitations (as of 2026-11-16)
 
-- Dotkonnekt token values are unread. Only the file inventory of the design system could be read. All visual values are provisional.
+- Dotkonnekt token values are unread. Only the file inventory of the design system could be read. All visual values are provisional. (Superseded 2026-11-16 by D-042: token values now come from the founder's design file.)
 - Kompass external invocation, triggers, approval steps and structured output are undocumented in the pages read.
 - The Kompass documentation read is a staging site. The founder notes that it omits some features.
 - Subagent model versions cannot be selected, only the tier. Agent 6 self-reported Haiku 5.5, not the requested Claude 4.5 Haiku; the Sonnet version is unknown (D-020).
@@ -778,7 +796,7 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 - Reviewer-brief scores and lean are rule-based heuristics.
 - Anonymity is a display rule only; browser storage is readable on the device.
 - An author can still type identifying text into an attachment label.
-- Design tokens, wordmark and icons are placeholders.
+- Icons are hand-drawn, not the official Dotkonnekt set. Token values come from the founder's design file and were not checked by the orchestrator against the design system artifact.
 - No Kompass connection.
 - Flow diagram arrows wrap awkwardly on narrow rows.
 - Admin forms re-render after a save, so unsaved edits in other fields of the same tab are lost.
@@ -798,7 +816,7 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 | Q3 | Confirm the default timelines of 3, 10 and 14 days. | Founder | Nothing; proposed values ship as editable defaults |
 | Q4 | How is impact verified: self-reported or second-person confirmed? | Founder | Phase 4 (impact entry) and Phase 5 (impact bonus) |
 | Q5 | Is the demo audience internal only, or also customers? | Founder | Phase 6 (prominence of the Kompass integration map) |
-| Q6 | Supply `tokens.css` / `colors_and_type.css` and the logo from the design system. | Founder | Phase 1 visual fidelity; build can start on provisional tokens |
+| Q6 | Supply `tokens.css` / `colors_and_type.css` and the logo from the design system. | Founder | Phase 1 visual fidelity; build can start on provisional tokens — Resolved 2026-11-16 by the founder's design file (D-042). |
 | Q7 | Confirm the project name. | Founder | Nothing technical; naming in the app and documents |
 | Q8 | The eleven integration questions for Kompass listed in `04_ai_kompass.md`, section 6. | Kompass team | Any real Kompass integration; does not block the MVP |
 
@@ -830,3 +848,4 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 | 2026-11-16 | Phases 4–6 built; testing deferred to phase 7 at the founder's instruction; entries D-027 to D-033 added. |
 | 2026-11-16 | Persona renamed; problem radar and reopen conditions added; entries D-034 to D-038. |
 | 2026-11-16 | Collaboration requests and progress tracker added; entries D-039 to D-041. |
+| 2026-11-16 | Dotkonnekt tokens, embedded fonts and logo integrated from the founder's design file; entry D-042. |
