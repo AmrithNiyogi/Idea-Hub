@@ -21,10 +21,12 @@ const TITLE_MAP: Record<string, string> = {
   '/problems': 'Problem radar',
   '/profile': 'My profile',
   '/settings': 'Account settings',
+  '/integrations': 'Integrations',
 };
 
 function pageTitle(pathname: string): string {
   if (TITLE_MAP[pathname]) return TITLE_MAP[pathname];
+  if (pathname.startsWith('/integrations/')) return 'Integration';
   if (pathname.startsWith('/ideas/')) return 'Idea';
   if (pathname.startsWith('/review/')) return 'Review';
   if (pathname.startsWith('/ideathons/')) return 'Ideathon';

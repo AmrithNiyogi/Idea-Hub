@@ -64,6 +64,18 @@ export async function login(data: {
   }
 }
 
+export async function completeLogin(data: {
+  login_ticket: string;
+  role: string;
+}): Promise<LoginResponse> {
+  try {
+    const res = await http.post<LoginResponse>('/auth/complete-login', data);
+    return res.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error));
+  }
+}
+
 export async function refreshToken(): Promise<void> {
   await http.post('/auth/refresh');
 }

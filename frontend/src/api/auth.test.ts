@@ -6,6 +6,7 @@ import {
   getAuthProviders,
   getCurrentUser,
   getTotpStatus,
+  completeLogin,
   login,
   logout,
   microsoftLoginUrl,
@@ -66,6 +67,7 @@ describe('auth API', () => {
     mock.onPost('/auth/login').reply(200, {
       message: 'ok',
       user: mockUser,
+      requires_role_selection: false,
     });
     await expect(
       login({
@@ -75,6 +77,14 @@ describe('auth API', () => {
         otp_method: 'email',
       }),
     ).resolves.toMatchObject({ user: mockUser });
+
+    mock.onPost('/auth/complete-login').reply(200, {
+      message: 'ok',
+      user: { ...mockUser, active_role: 'lead' },
+    });
+    await expect(
+      completeLogin({ login_ticket: 't1', role: 'lead' }),
+    ).resolves.toMatchObject({ user: { active_role: 'lead' } });
 
     mock.onGet('/users/me').reply(200, mockUser);
     await expect(getCurrentUser()).resolves.toEqual(mockUser);

@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     LOGIN_OTP_TTL_SECONDS: int = 600
     LOGIN_OTP_MAX_ATTEMPTS: int = 5
     LOGIN_OTP_RESEND_COOLDOWN_SECONDS: int = 60
+    # After OTP succeeds for multi-role users, ticket must be redeemed with a role.
+    LOGIN_TICKET_TTL_SECONDS: int = 300
 
     # SMTP for login OTP delivery (STARTTLS on port 588 for emailsbit).
     SMTP_HOST: str = ""
@@ -151,6 +153,17 @@ class Settings(BaseSettings):
     AISTUDIO_AGENT_HELP: str = ""
     AISTUDIO_AGENT_IDEA_OPTIMIZER: str = ""
     AISTUDIO_AGENT_REVIEW_INTELLIGENCE: str = ""
+
+    # Optional OAuth app credentials for future ClickUp / Jira OAuth flows.
+    # MVP uses per-user API tokens / webhook secrets stored encrypted in DB.
+    # Leave blank until an OAuth app is registered; never commit real secrets.
+    CLICKUP_CLIENT_ID: str = ""
+    CLICKUP_CLIENT_SECRET: str = ""
+    JIRA_CLIENT_ID: str = ""
+    JIRA_CLIENT_SECRET: str = ""
+    # Optional default webhook for local demos of custom_webhook provider.
+    TRACKER_CUSTOM_WEBHOOK_URL: str = ""
+    TRACKER_CUSTOM_AUTH_HEADER: str = ""
 
     def allowed_cors_origins(self) -> list[str]:
         """Build the CORS allowlist for credentialed browser calls.

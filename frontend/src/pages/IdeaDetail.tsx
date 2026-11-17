@@ -16,6 +16,7 @@ import { StatusPill } from '../components/StatusPill';
 import { useAuth } from '../auth/AuthProvider';
 import { EFFORT_LABELS, STAGE_LABELS } from '../constants/status';
 import { DeliveryTab } from './DeliveryTab';
+import { TrackerTab } from './TrackerTab';
 import { CollabTrackerPanel } from '../components/CollabTrackerPanel';
 import { fmtDate, nextStep, relTime } from '../utils/format';
 import type { User } from '../types/auth';
@@ -28,6 +29,7 @@ type Tab =
   | 'decision'
   | 'team'
   | 'delivery'
+  | 'tracker'
   | 'activity';
 
 const TABS: Array<[Tab, string]> = [
@@ -36,6 +38,7 @@ const TABS: Array<[Tab, string]> = [
   ['decision', 'Decision history'],
   ['team', 'Team & progress'],
   ['delivery', 'Delivery'],
+  ['tracker', 'Tracker'],
   ['activity', 'Activity'],
 ];
 
@@ -100,6 +103,13 @@ export function IdeaDetailPage() {
 
   useEffect(() => {
     let cancelled = false;
+    // Drop previous idea immediately so tabs (esp. Tracker) don't keep
+    // showing another idea's data while the new id loads.
+    setIdea(null);
+    setError(null);
+    setRelated([]);
+    setCollabReqs([]);
+    setComments([]);
     setOptPreview({});
     (async () => {
       try {
@@ -739,6 +749,12 @@ export function IdeaDetailPage() {
 
           {tab === 'team' && <CollabTrackerPanel idea={idea} />}
           {tab === 'delivery' && <DeliveryTab idea={idea} />}
+          {tab === 'tracker' && (
+            <TrackerTab
+              idea={idea}
+              onOpenDelivery={() => setTab('delivery')}
+            />
+          )}
 
           {tab === 'activity' && (
             <div className="card">

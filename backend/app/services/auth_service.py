@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import settings
-from app.constants.lifecycle import VALID_ROLES
+from app.constants.lifecycle import ROLE_ORDER, VALID_ROLES
 from app.models.user import User
 from app.schemas.auth import UserPublic
 
@@ -238,16 +238,48 @@ def user_to_public(user: User, *, active_role: str | None = None) -> UserPublic:
     )
 
 
+def resolve_user_roles(user: User) -> list[str]:
+    """Return the ordered list of roles the user holds (VALID_ROLES order)."""
+    held = {str(r) for r in (user.roles or []) if str(r) in VALID_ROLES}
+    return [r for r in ROLE_ORDER if r in held]
+
+
+def default_active_role(user: User) -> str:
+    """Pick the single-role or primary role for auto-selection."""
+    roles = resolve_user_roles(user)
+    if not roles:
+        return "contributor"
+    if user.primary_role in roles:
+        return user.primary_role
+    return roles[0]
+
+
 def issue_login_tokens(
     user: User, *, active_role: str | None = None
 ) -> dict[str, Any]:
     """Create access + refresh tokens and sanitized user payload."""
-    role = active_role or user.primary_role
+    role = active_role or default_active_role(user)
     return {
         "access_token": create_access_token(user, active_role=role),
         "refresh_token": create_refresh_token(user.id),
         "user": user_to_public(user, active_role=role),
     }
+
+
+def assert_held_role(user: User, role: str) -> str:
+    """Validate ``role`` is a known role the user holds; return it."""
+    if role not in VALID_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown role: {role}",
+        )
+    roles = resolve_user_roles(user)
+    if role not in roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"You do not hold the {role} role",
+        )
+    return role
 
 
 async def refresh_access_token(
@@ -265,6 +297,20 @@ async def refresh_access_token(
     return access, user_to_public(user)
 
 
+async def complete_login_with_role(
+    session: AsyncSession, user_id: uuid.UUID, role: str
+) -> dict[str, Any]:
+    """Load user after ticket redeem and issue tokens for the chosen role."""
+    user = await get_user_by_id(session, user_id)
+    if not user or user.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account is disabled",
+        )
+    chosen = assert_held_role(user, role)
+    return issue_login_tokens(user, active_role=chosen)
+
+
 async def switch_role(
     session: AsyncSession, user: User, role: str, current_active: str
 ) -> dict[str, Any]:
@@ -273,22 +319,12 @@ async def switch_role(
     Refresh token is unchanged; only access token is rotated.
     """
     del current_active  # reserved for future audit
-    if role not in VALID_ROLES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unknown role: {role}",
-        )
-    roles = [str(r) for r in (user.roles or [])]
-    if role not in roles:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"You do not hold the {role} role",
-        )
+    chosen = assert_held_role(user, role)
     # Touch session so SQLAlchemy identity map stays consistent
     await session.refresh(user)
-    access = create_access_token(user, active_role=role)
+    access = create_access_token(user, active_role=chosen)
     return {
         "access_token": access,
-        "user": user_to_public(user, active_role=role),
-        "role": role,
+        "user": user_to_public(user, active_role=chosen),
+        "role": chosen,
     }

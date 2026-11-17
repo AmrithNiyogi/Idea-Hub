@@ -14,6 +14,8 @@ import { problemsApi } from './problems';
 import { profilesApi } from './profiles';
 import { recognitionApi } from './recognition';
 import { reopenApi } from './reopen';
+import { trackersApi } from './trackers';
+import { integrationsApi } from './integrations';
 import { usersApi } from './users';
 import { reviewApi } from './review';
 import { http } from './http';
@@ -113,6 +115,41 @@ describe('apiFetch-backed clients', () => {
     await deliveryApi.postUpdate('i1', 'hello', 't1');
     await deliveryApi.markImplemented('i1', {} as never);
     await deliveryApi.verifyImpact('i1', 'e1', 'ok');
+  });
+
+  it('trackersApi', async () => {
+    await trackersApi.listProviders();
+    await trackersApi.listConnections();
+    await trackersApi.listEffective();
+    await trackersApi.connect({
+      provider_id: 'clickup',
+      credentials: { api_token: 'x', list_id: '1' },
+    });
+    await trackersApi.disconnect('c1');
+    await trackersApi.listLinks('i1');
+    await trackersApi.createOrLink('i1', {
+      connection_id: 'c1',
+      mode: 'create',
+    });
+    await trackersApi.unlink('i1', 'l1');
+  });
+
+  it('integrationsApi', async () => {
+    await integrationsApi.listProviders();
+    await integrationsApi.listProviders('tracker');
+    await integrationsApi.listEffective();
+    await integrationsApi.listMine();
+    await integrationsApi.connectMine({
+      provider_id: 'jira',
+      credentials: { email: 'a@b.c', api_token: 'x' },
+    });
+    await integrationsApi.disconnectMine('c1');
+    await integrationsApi.listOrg();
+    await integrationsApi.connectOrg({
+      provider_id: 'clickup',
+      credentials: { api_token: 'x', list_id: '1' },
+    });
+    await integrationsApi.disconnectOrg('c2');
   });
 
   it('collab / agents / problems / reopen / ideathons', async () => {

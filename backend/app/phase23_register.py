@@ -26,12 +26,21 @@ def include_phase23_routers(app: "FastAPI", *, prefix: str = "/api/v1") -> None:
     Side Effects:
         Registers four routers on ``app``. Safe to call once at startup.
     """
-    from app.routers import delivery, ideathons, profiles, recognition
+    from app.routers import (
+        delivery,
+        ideathons,
+        integrations,
+        profiles,
+        recognition,
+        trackers,
+    )
 
     app.include_router(delivery.router, prefix=prefix)
     app.include_router(ideathons.router, prefix=prefix)
     app.include_router(recognition.router, prefix=prefix)
     app.include_router(profiles.router, prefix=prefix)
+    app.include_router(trackers.router, prefix=prefix)
+    app.include_router(integrations.router, prefix=prefix)
 
 
 # Models to import so Alembic / metadata sees Phase 2+3 tables.
@@ -39,6 +48,7 @@ PHASE23_MODEL_MODULES = (
     "app.models.delivery",
     "app.models.ideathon",
     "app.models.recognition",
+    "app.models.tracker",
 )
 
 

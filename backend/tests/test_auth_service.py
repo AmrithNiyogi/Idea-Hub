@@ -73,6 +73,35 @@ def test_user_to_public_and_issue_tokens(make_user) -> None:
     assert bundle["user"].id == user.id
 
 
+def test_resolve_user_roles_and_default(make_user) -> None:
+    multi = make_user(roles=["lead", "contributor", "reviewer"], primary_role="lead")
+    assert auth_service.resolve_user_roles(multi) == [
+        "contributor",
+        "reviewer",
+        "lead",
+    ]
+    assert auth_service.default_active_role(multi) == "lead"
+
+    single = make_user(roles=["admin"], primary_role="admin")
+    assert auth_service.resolve_user_roles(single) == ["admin"]
+    assert auth_service.default_active_role(single) == "admin"
+
+
+@pytest.mark.asyncio
+async def test_complete_login_with_role(make_user, async_session: AsyncMock) -> None:
+    user = make_user(roles=["contributor", "lead"], primary_role="contributor")
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = user
+    async_session.execute.return_value = result
+
+    out = await auth_service.complete_login_with_role(
+        async_session, user.id, "lead"
+    )
+    payload = auth_service.decode_token(out["access_token"], "access")
+    assert payload["active_role"] == "lead"
+    assert out["user"].active_role == "lead"
+
+
 @pytest.mark.asyncio
 async def test_authenticate_credentials_success(make_user, async_session: AsyncMock) -> None:
     user = make_user()

@@ -40,7 +40,21 @@ export interface SendLoginOtpResponse {
 
 export interface LoginResponse {
   message: string;
-  user: User;
+  user?: User | null;
+  /** When true, cookies are not set; redeem via completeLogin. */
+  requires_role_selection?: boolean;
+  login_ticket?: string | null;
+  roles?: Role[];
+  primary_role?: Role | null;
+  name?: string | null;
+}
+
+/** Result of OTP verify when the account must pick a role before session cookies. */
+export interface RoleSelectionPending {
+  login_ticket: string;
+  roles: Role[];
+  primary_role: Role;
+  name: string;
 }
 
 export interface SwitchRoleResponse {

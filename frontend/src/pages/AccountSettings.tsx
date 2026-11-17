@@ -298,12 +298,6 @@ export function AccountSettingsPage() {
         <div>
           <div className="eyebrow eyebrow--plain">Account</div>
           <h1>My profile</h1>
-          <p className="muted">
-            Update how you appear in Idea Hub. Your public contribution page is
-            at{' '}
-            <Link to={`/people/${user.id}`}>/people/{user.id.slice(0, 8)}…</Link>
-            .
-          </p>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import { mockUser } from '../test/fixtures';
 vi.mock('../api/auth', () => ({
   getCurrentUser: vi.fn(),
   login: vi.fn(),
+  completeLogin: vi.fn(),
   logout: vi.fn(),
   switchRole: vi.fn(),
 }));
@@ -48,6 +49,7 @@ describe('AuthProvider', () => {
   beforeEach(() => {
     vi.mocked(authApi.getCurrentUser).mockReset();
     vi.mocked(authApi.login).mockReset();
+    vi.mocked(authApi.completeLogin).mockReset();
     vi.mocked(authApi.logout).mockReset();
     vi.mocked(authApi.switchRole).mockReset();
   });
@@ -81,6 +83,7 @@ describe('AuthProvider', () => {
     vi.mocked(authApi.login).mockResolvedValue({
       message: 'ok',
       user: mockUser,
+      requires_role_selection: false,
     });
     vi.mocked(authApi.logout).mockResolvedValue(undefined);
     vi.mocked(authApi.switchRole).mockResolvedValue({
@@ -121,6 +124,7 @@ describe('AuthProvider', () => {
     vi.mocked(authApi.login).mockResolvedValue({
       message: 'ok',
       user: mockUser,
+      requires_role_selection: false,
     });
     await user.click(screen.getByRole('button', { name: 'login' }));
     await waitFor(() =>
@@ -129,6 +133,62 @@ describe('AuthProvider', () => {
 
     await user.click(screen.getByRole('button', { name: 'logout' }));
     await waitFor(() => expect(screen.getByTestId('name')).toHaveTextContent('none'));
+  });
+
+  it('login with role selection does not set session until completeLogin', async () => {
+    const user = userEvent.setup();
+    vi.mocked(authApi.getCurrentUser).mockRejectedValue(new Error('nope'));
+    vi.mocked(authApi.login).mockResolvedValue({
+      message: 'Choose a role',
+      requires_role_selection: true,
+      login_ticket: 'ticket-1',
+      roles: ['contributor', 'lead'],
+      primary_role: 'contributor',
+      name: 'Priya Sharma',
+    });
+    vi.mocked(authApi.completeLogin).mockResolvedValue({
+      message: 'ok',
+      user: { ...mockUser, active_role: 'lead', name: 'Priya Sharma' },
+    });
+
+    function RoleProbe() {
+      const auth = useAuth();
+      return (
+        <div>
+          <div data-testid="name">{auth.user?.name ?? 'none'}</div>
+          <div data-testid="logged">{String(auth.isLoggedIn)}</div>
+          <button
+            type="button"
+            onClick={() => void auth.login('a@x.com', 'pw', '123456')}
+          >
+            login
+          </button>
+          <button
+            type="button"
+            onClick={() => void auth.completeLogin('ticket-1', 'lead')}
+          >
+            complete
+          </button>
+        </div>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <RoleProbe />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('logged')).toHaveTextContent('false'));
+
+    await user.click(screen.getByRole('button', { name: 'login' }));
+    await waitFor(() => expect(screen.getByTestId('logged')).toHaveTextContent('false'));
+    expect(screen.getByTestId('name')).toHaveTextContent('none');
+
+    await user.click(screen.getByRole('button', { name: 'complete' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('name')).toHaveTextContent('Priya Sharma'),
+    );
+    expect(screen.getByTestId('logged')).toHaveTextContent('true');
   });
 
   it('logout still clears user when API fails', async () => {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, Icon } from '../Icons';
 import { useAuth } from '../../auth/AuthProvider';
+import { useToast } from '../ToastProvider';
 import { CAN_SUBMIT, roleLabel, sortRoles } from '../../constants/roles';
 import type { Role } from '../../types/auth';
 import { GlobalSearch } from './GlobalSearch';
@@ -38,6 +39,7 @@ export function Topbar({
   onOpenDrawer: () => void;
 }) {
   const { user, logout, switchRole } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [popover, setPopover] = useState<Popover>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -339,6 +341,20 @@ export function Topbar({
             <li>
               <Link
                 className="persona-item"
+                to="/integrations"
+                onClick={() => setPopover(null)}
+              >
+                <Icon name="layers" size={16} />
+                <span>
+                  <span className="strong">Integrations</span>
+                  <br />
+                  <span className="muted small">Trackers &amp; connections</span>
+                </span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="persona-item"
                 to={`/people/${user.id}`}
                 onClick={() => setPopover(null)}
               >
@@ -366,8 +382,18 @@ export function Topbar({
                       type="button"
                       className="persona-item"
                       onClick={async () => {
-                        await switchRole(r as Role);
-                        setPopover(null);
+                        try {
+                          await switchRole(r as Role);
+                          setPopover(null);
+                          toast(`Now working as ${roleLabel(r)}.`);
+                        } catch (err) {
+                          toast(
+                            err instanceof Error
+                              ? err.message
+                              : 'Could not switch role',
+                            'error',
+                          );
+                        }
                       }}
                     >
                       <Icon name="refresh" size={16} />

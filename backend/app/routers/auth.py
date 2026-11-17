@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
@@ -13,6 +14,7 @@ from app.dependencies.auth import DbSession, RequireUser
 from app.models.user import User
 from app.schemas.auth import (
     AuthProvidersResponse,
+    CompleteLoginRequest,
     LoginRequest,
     LoginResponse,
     LogoutResponse,
@@ -26,7 +28,13 @@ from app.schemas.auth import (
     TotpSetupResponse,
     TotpStatusResponse,
 )
-from app.services import auth_service, login_otp_service, microsoft_oidc_service, totp_service
+from app.services import (
+    auth_service,
+    login_otp_service,
+    login_ticket_service,
+    microsoft_oidc_service,
+    totp_service,
+)
 from app.services.email_adapter import send_login_otp_email
 from app.utils.cookies import clear_auth_cookies, set_auth_cookies
 
@@ -201,7 +209,10 @@ async def send_login_otp(
         "After password check, verifies either the Redis email OTP "
         "(``otp_method=email``) or the enrolled TOTP secret "
         "(``otp_method=totp``). When ``otp_method`` is omitted, TOTP is used "
-        "if MFA is enabled, otherwise email OTP. Issues the same JWT cookies."
+        "if MFA is enabled, otherwise email OTP. "
+        "Single-role accounts get JWT cookies immediately. Multi-role "
+        "accounts receive a ``login_ticket`` and must call "
+        "``POST /auth/complete-login`` before cookies are set."
     ),
 )
 async def login(
@@ -209,7 +220,7 @@ async def login(
     response: Response,
     session: DbSession,
 ) -> LoginResponse:
-    """Authenticate with password and second factor; set httpOnly JWT cookies."""
+    """Authenticate with password and second factor; set cookies or defer for role pick."""
     user = await auth_service.authenticate_credentials(
         session, body.email, body.password
     )
@@ -220,14 +231,86 @@ async def login(
         totp_service.verify_user_totp(user, body.otp)
     else:
         login_otp_service.verify_otp(str(user.id), body.otp)
-    tokens = auth_service.issue_login_tokens(user)
+
+    roles = auth_service.resolve_user_roles(user)
+    if len(roles) > 1:
+        ticket = login_ticket_service.issue_ticket(str(user.id))
+        logger.info(
+            "Login OTP ok for %s method=%s; awaiting role selection (%d roles)",
+            user.email,
+            method,
+            len(roles),
+        )
+        return LoginResponse(
+            message="Choose a role to continue",
+            requires_role_selection=True,
+            login_ticket=ticket,
+            roles=roles,
+            primary_role=user.primary_role,
+            name=user.name,
+        )
+
+    active = roles[0] if roles else auth_service.default_active_role(user)
+    tokens = auth_service.issue_login_tokens(user, active_role=active)
     set_auth_cookies(
         response,
         access_token=tokens["access_token"],
         refresh_token=tokens["refresh_token"],
     )
-    logger.info("Login successful for %s method=%s", user.email, method)
-    return LoginResponse(message="Login successful", user=tokens["user"])
+    logger.info("Login successful for %s method=%s role=%s", user.email, method, active)
+    return LoginResponse(
+        message="Login successful",
+        user=tokens["user"],
+        requires_role_selection=False,
+        roles=roles,
+        primary_role=user.primary_role,
+        name=user.name,
+    )
+
+
+@router.post(
+    "/complete-login",
+    response_model=LoginResponse,
+    summary="Complete multi-role login after OTP",
+    description=(
+        "Redeems the one-time ``login_ticket`` from ``POST /auth/login`` with "
+        "the chosen role and sets access + refresh JWT cookies. Single-role "
+        "logins never need this step."
+    ),
+    responses={
+        401: {"description": "Ticket expired or account disabled"},
+        403: {"description": "Role not held by the user"},
+    },
+)
+async def complete_login(
+    body: CompleteLoginRequest,
+    response: Response,
+    session: DbSession,
+) -> LoginResponse:
+    """Issue session cookies after the user picks an active role."""
+    user_id = login_ticket_service.consume_ticket(body.login_ticket)
+    tokens = await auth_service.complete_login_with_role(
+        session, uuid.UUID(user_id), body.role
+    )
+    set_auth_cookies(
+        response,
+        access_token=tokens["access_token"],
+        refresh_token=tokens["refresh_token"],
+    )
+    user = tokens["user"]
+    logger.info(
+        "Complete-login for %s role=%s",
+        user.email,
+        user.active_role,
+    )
+    return LoginResponse(
+        message="Login successful",
+        user=user,
+        requires_role_selection=False,
+        roles=list(user.roles or []),
+        primary_role=user.primary_role,
+        name=user.name,
+    )
 
 
 @router.get(

@@ -227,10 +227,51 @@ class ChangePasswordRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    """Login success body; tokens are set on cookies/headers."""
+    """OTP/password login result.
+
+    When ``requires_role_selection`` is true, cookies are NOT set yet. The
+    client must call ``POST /auth/complete-login`` with ``login_ticket`` and
+    the chosen role. When false, ``user`` is present and JWT cookies are set.
+    """
 
     message: str
-    user: UserPublic
+    user: UserPublic | None = None
+    requires_role_selection: bool = Field(
+        False,
+        description="True when the account holds multiple roles and must pick one",
+    )
+    login_ticket: str | None = Field(
+        None,
+        description="Opaque one-time ticket for complete-login (multi-role only)",
+    )
+    roles: list[str] = Field(
+        default_factory=list,
+        description="Roles available for selection when requires_role_selection",
+    )
+    primary_role: str | None = Field(
+        None,
+        description="Account default role (hint for the picker UI)",
+    )
+    name: str | None = Field(
+        None,
+        description="Display name for the role-selection step",
+    )
+
+
+class CompleteLoginRequest(BaseModel):
+    """Finish multi-role login by redeeming a ticket with a chosen role."""
+
+    login_ticket: str = Field(
+        ...,
+        min_length=8,
+        description="Ticket returned by POST /auth/login when role selection is required",
+    )
+    role: str = Field(
+        ...,
+        min_length=1,
+        description="Role to activate for this session (must be one the user holds)",
+        examples=["reviewer"],
+    )
 
 
 class LogoutResponse(BaseModel):

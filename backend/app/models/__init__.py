@@ -35,6 +35,7 @@ from app.models.problem import ProblemMeToo, ProblemMeta
 from app.models.reopen import ReopenConditionSet
 from app.models.collab import CollabRequest, TrackerCheckin, TrackerMilestone
 from app.models.notification import Notification
+from app.models.tracker import IdeaTrackerLink, TrackerConnection
 
 __all__ = [
     "AdminAudit",
@@ -56,6 +57,7 @@ __all__ = [
     "Ideathon",
     "IdeathonEntry",
     "IdeathonHandoff",
+    "IdeaTrackerLink",
     "ImpactEntry",
     "InnovationTimePool",
     "KompassAnswer",
@@ -75,6 +77,7 @@ __all__ = [
     "TimeGrantRequest",
     "TimeLog",
     "TrackerCheckin",
+    "TrackerConnection",
     "TrackerMilestone",
     "User",
     "Vote",

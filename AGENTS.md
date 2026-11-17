@@ -36,3 +36,7 @@ Demo users and shared password are documented in `backend/README.md` — do not 
 - `idea-hub-auth-otp` — JWT + OTP + SMTP
 - `idea-hub-code-review-graph` — build/query graph
 - `idea-hub-pull-idea` — fetch idea agent-context by UUID/URL
+
+## External trackers / Integrations
+
+ClickUp / Jira / custom webhook live under `backend/app/trackers/` (pluggable `TrackerProvider` registry). Broader catalog + org/user scopes: `backend/app/integrations/`. UI: `/integrations` (personal + admin org defaults). Delivery uses effective connections (user → org). Docs: `docs/INTEGRATIONS.md`, `docs/TRACKER_PROVIDERS.md`.

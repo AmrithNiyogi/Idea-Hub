@@ -17,6 +17,16 @@ export const ROLE_BLURBS: Record<Role, string> = {
   admin: 'Configure the platform and reset demo data.',
 };
 
+/** Sign-in role picker copy — idea-hub.html ROLE_SIGNIN */
+export const ROLE_SIGNIN: Record<Role, string> = {
+  contributor:
+    'Submit ideas, collaborate on other people’s ideas and track your own.',
+  reviewer: 'Your review queue and decisions for the panels you belong to.',
+  lead: 'Delivery, innovation hours and your team’s ideas.',
+  leadership: 'Insights, approvals, awards and the problem radar.',
+  admin: 'Configuration, people and roles, and platform health.',
+};
+
 export const ROLE_ORDER: Role[] = [
   'contributor',
   'reviewer',

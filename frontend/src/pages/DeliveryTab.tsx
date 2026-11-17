@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { deliveryApi } from '../api/delivery';
 import { usersApi } from '../api/users';
 import { useAuth } from '../auth/AuthProvider';
+import { ExternalTrackersPanel } from '../components/ExternalTrackersPanel';
 import { Avatar, Icon } from '../components/Icons';
 import { fmtDate, relTime } from '../utils/format';
 import type { DeliveryDetail } from '../types/delivery';
@@ -124,6 +125,11 @@ export function DeliveryTab({ idea }: Props) {
       isLeadOrAdmin ||
       data.contributors.some((c) => c.user_id === me?.id));
   const canManage = isOwner || isLeadOrAdmin;
+  const canManageTrackers =
+    isOwner ||
+    isLeadOrAdmin ||
+    me?.id === idea.author_id ||
+    (idea.co_author_ids ?? []).includes(me?.id ?? '');
 
   async function onRequestHours(e: FormEvent) {
     e.preventDefault();
@@ -270,22 +276,28 @@ export function DeliveryTab({ idea }: Props) {
   if (!data.project_id) {
     if (idea.status !== 'accepted' && idea.status !== 'prototype') {
       return (
-        <div className="card">
-          {error ? (
-            <div className="notice notice--danger" role="alert">
-              <Icon name="alert" size={16} />
-              <span>{error}</span>
+        <div className="stack">
+          <div className="card">
+            {error ? (
+              <div className="notice notice--danger" role="alert">
+                <Icon name="alert" size={16} />
+                <span>{error}</span>
+              </div>
+            ) : null}
+            <div className="empty" style={{ padding: 24 }}>
+              <Icon name="layers" size={28} />
+              <h3>Delivery starts after acceptance</h3>
+              <p className="muted">
+                Delivery begins once the idea is accepted, has an owner and
+                leadership grants innovation hours. Until then there is nothing
+                to track here.
+              </p>
             </div>
-          ) : null}
-          <div className="empty" style={{ padding: 24 }}>
-            <Icon name="layers" size={28} />
-            <h3>Delivery starts after acceptance</h3>
-            <p className="muted">
-              Delivery begins once the idea is accepted, has an owner and
-              leadership grants innovation hours. Until then there is nothing
-              to track here.
-            </p>
           </div>
+          <ExternalTrackersPanel
+            idea={idea}
+            canManage={canManageTrackers}
+          />
         </div>
       );
     }
@@ -295,6 +307,7 @@ export function DeliveryTab({ idea }: Props) {
       : { label: 'Not requested', tone: '' };
 
     return (
+      <div className="stack">
       <div className="card">
         {error ? (
           <div className="notice notice--danger" role="alert">
@@ -442,6 +455,8 @@ export function DeliveryTab({ idea }: Props) {
             </div>
           </div>
         ) : null}
+      </div>
+      <ExternalTrackersPanel idea={idea} canManage={canManageTrackers} />
       </div>
     );
   }
@@ -952,6 +967,8 @@ export function DeliveryTab({ idea }: Props) {
           </p>
         )}
       </div>
+
+      <ExternalTrackersPanel idea={idea} canManage={canManageTrackers} />
     </div>
   );
 }
