@@ -156,16 +156,42 @@ curl -sS "$GW/api/v1/prompts?q=IdeaKonnekt&limit=20" \
 
 ---
 
+## Execute agent runs (after prompts / Smart Agents exist)
+
+Authoritative contract (same as chatbot-admin embeddable curl):
+
+```http
+POST https://aistudio-apigateway-v2-staging.dotkonnekt.com/api/v2/runs/execute
+```
+
+```bash
+curl -X POST "$GW/api/v2/runs/execute" \
+  -H 'accept: */*' \
+  -H "X-Tenant-ID: $TENANT" \
+  -H 'project-slug: <your project slug>' \
+  -H 'X-Authorization: <optional tool auth token>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "agent_id": "<kompass agent id or slug>",
+  "input": "<string or JSON string>",
+  "conversation_id": null
+}'
+```
+
+Idea Hub maps surfaces → env agent ids (`AISTUDIO_AGENT_*`) and proxies
+server-side — see [`AGENT_SIMULATION.md`](AGENT_SIMULATION.md). Do **not** put
+`X-Authorization` in the browser Help widget.
+
 ## Inventory
 
-| name (UI) | slug (auto) | type | temp | model | Local sim |
-|-----------|-------------|------|------|-------|-----------|
+| name (UI) | slug (auto) | type | temp | model | Hub route / execute env |
+|-----------|-------------|------|------|-------|-------------------------|
 | IdeaKonnekt - WF Idea Intelligence | `ideakonnekt-wf-idea-intelligence` | text | 0.20 | `claude_4_6_sonnet` | `/agents/run` |
 | IdeaKonnekt - WF Idea Enhancement | `ideakonnekt-wf-idea-enhancement` | text | 0.30 | `claude_4_6_sonnet` | `/agents/run` |
-| IdeaKonnekt - WF Submit Assist | `ideakonnekt-wf-submit-assist` | text | 0.40 | `claude_4_6_sonnet` | `/simulate/submit-assist` |
-| IdeaKonnekt - WF Idea Optimizer | `ideakonnekt-wf-idea-optimizer` | text | 0.35 | `claude_4_6_sonnet` | `/simulate/idea-optimize` |
-| IdeaKonnekt - WF Review Intelligence | `ideakonnekt-wf-review-intelligence` | text | 0.10 | `claude_4_6_sonnet` | `/agents/run` |
-| IdeaKonnekt - WF Help Guide | `ideakonnekt-wf-help-guide` | text | 0.20 | `claude_4_5_haiku` | `/simulate/help` |
+| IdeaKonnekt - WF Submit Assist | `ideakonnekt-wf-submit-assist` | text | 0.40 | `claude_4_6_sonnet` | `/simulate/submit-assist` · `AISTUDIO_AGENT_SUBMIT_ASSIST` |
+| IdeaKonnekt - WF Idea Optimizer | `ideakonnekt-wf-idea-optimizer` | text | 0.35 | `claude_4_6_sonnet` | `/simulate/idea-optimize` · `AISTUDIO_AGENT_IDEA_OPTIMIZER` |
+| IdeaKonnekt - WF Review Intelligence | `ideakonnekt-wf-review-intelligence` | text | 0.10 | `claude_4_6_sonnet` | `/agents/run` · `AISTUDIO_AGENT_REVIEW_INTELLIGENCE` |
+| IdeaKonnekt - WF Help Guide | `ideakonnekt-wf-help-guide` | text | 0.20 | `claude_4_5_haiku` | `/simulate/help` · `AISTUDIO_AGENT_HELP` |
 | IdeaKonnekt - WF Innovation Workflow | `ideakonnekt-wf-innovation-workflow` | text | 0.25 | `claude_4_5_haiku` | `/agents/run` |
 | IdeaKonnekt - WF Recognition | `ideakonnekt-wf-recognition` | text | 0.20 | `claude_4_5_haiku` | `/agents/run` |
 | IdeaKonnekt - WF Innovation Analytics | `ideakonnekt-wf-innovation-analytics` | text | 0.25 | `claude_4_6_sonnet` | `/agents/run` |

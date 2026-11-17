@@ -53,6 +53,7 @@ export function IdeaOptimizePanel({ idea, onApplyPatches }: Props) {
   const [pending, setPending] = useState<Record<string, unknown>>({});
   const [staged, setStaged] = useState<Staged>({});
   const [note, setNote] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export function IdeaOptimizePanel({ idea, onApplyPatches }: Props) {
     setPending({});
     setStaged({});
     setNote(null);
+    setConversationId(null);
     setBusy(true);
     agentsApi
       .ideaOptimize({
@@ -73,7 +75,9 @@ export function IdeaOptimizePanel({ idea, onApplyPatches }: Props) {
         message: '',
       })
       .then((turn) => {
-        if (!cancelled) setMsgs([{ role: 'assistant', text: turn.reply }]);
+        if (cancelled) return;
+        setMsgs([{ role: 'assistant', text: turn.reply }]);
+        if (turn.conversation_id) setConversationId(turn.conversation_id);
       })
       .catch((e) => {
         if (cancelled) return;
@@ -109,9 +113,11 @@ export function IdeaOptimizePanel({ idea, onApplyPatches }: Props) {
         idea_id: idea.id,
         idea: ideaPayload(idea, staged),
         message: q,
+        conversation_id: conversationId,
       });
       setMsgs((m) => [...m, { role: 'assistant', text: turn.reply }]);
       setPending(turn.field_patches || {});
+      if (turn.conversation_id) setConversationId(turn.conversation_id);
     } catch (e) {
       setMsgs((m) => [
         ...m,

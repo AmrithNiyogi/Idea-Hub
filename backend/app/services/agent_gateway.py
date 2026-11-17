@@ -1,7 +1,9 @@
-"""AgentGateway — simulated agent seam with run log + approval gates (Phase 5).
+"""AgentGateway — agent seam with run log + approval gates (Phase 5).
 
-Adapter boundary for future Kompass: swap ``_execute_simulated`` for a
-Kompass HTTP client without changing routers. MVP never calls live Kompass.
+Adapter boundary for AI Studio / Kompass: when ``SIMULATE_AGENTS=false`` and
+``AISTUDIO_*`` env is configured, chat/review agents call
+``POST /api/v2/runs/execute`` via ``aistudio_execute_client``. Otherwise local
+heuristic stubs run (``mock-heuristic-v1``).
 """
 
 from __future__ import annotations
@@ -43,7 +45,7 @@ def _now() -> datetime:
 
 
 class AgentGateway:
-    """Run simulated agents, persist runs, and gate human approvals."""
+    """Run agents (simulate or live), persist runs, and gate human approvals."""
 
     ENGINE = "mock-heuristic-v1"
 
@@ -51,6 +53,9 @@ class AgentGateway:
         self.session = session
 
     def roster(self) -> list[AgentInfoOut]:
+        from app.services import aistudio_execute_client as studio
+
+        live = studio.use_live_execute()
         return [
             AgentInfoOut(
                 id=a["id"],
@@ -60,7 +65,7 @@ class AgentGateway:
                 triggers=list(a["triggers"]),
                 approval_default=a["approval_default"],
                 never=list(a["never"]),
-                simulated=True,
+                simulated=not live,
             )
             for a in AGENT_ROSTER
         ]
@@ -68,7 +73,7 @@ class AgentGateway:
     async def run(self, body: AgentRunRequest, actor: Actor) -> AgentRunOut:
         if body.agent_id not in AGENT_BY_ID:
             raise HTTPException(status_code=400, detail=f"Unknown agent: {body.agent_id}")
-        output, summary, approval = await self._execute_simulated(body)
+        output, summary, approval, engine, simulated = await self._execute(body)
         meta = AGENT_BY_ID[body.agent_id]
         approval_required = bool(approval.get("required"))
         approval_role = approval.get("role") or meta.get("approval_default")
@@ -81,8 +86,8 @@ class AgentGateway:
             idea_id=body.idea_id,
             summary=summary,
             output=output,
-            simulated=True,
-            engine=self.ENGINE,
+            simulated=simulated,
+            engine=engine,
             approval_required=approval_required,
             approval_role=approval_role if approval_required else None,
             approval_state=approval_state,
@@ -103,12 +108,21 @@ class AgentGateway:
             return {**DEFAULT_TIMELINES, **row.value}
         return dict(DEFAULT_TIMELINES)
 
-    async def _execute_simulated(
+    async def _execute(
         self, body: AgentRunRequest
-    ) -> tuple[dict[str, Any], str, dict[str, Any]]:
+    ) -> tuple[dict[str, Any], str, dict[str, Any], str, bool]:
+        """Dispatch to live AI Studio execute or local heuristics.
+
+        Returns:
+            Tuple of (output, summary, approval_meta, engine, simulated).
+        """
+        from app.services import aistudio_execute_client as studio
+
         idea: Optional[Idea] = None
         if body.idea_id:
             idea = await self.session.get(Idea, body.idea_id)
+
+        live = studio.use_live_execute()
 
         if body.agent_id == "idea-intelligence":
             corpus = (
@@ -119,19 +133,33 @@ class AgentGateway:
             cats = (await self.session.execute(select(Category))).scalars().all()
             draft = idea or body.context.get("draft") or body.context
             out = H.idea_intelligence(draft, corpus, cats)
-            return out, "Simulated Idea Intelligence: similar ideas + completeness", {}
+            return (
+                out,
+                "Simulated Idea Intelligence: similar ideas + completeness",
+                {},
+                self.ENGINE,
+                True,
+            )
 
         if body.agent_id == "idea-enhancement":
             draft = idea or body.context.get("draft") or body.context
             out = H.enhancement(draft)
-            return out, "Simulated Idea Enhancement suggestions", {
-                "required": True,
-                "role": "author",
-                "proposal_key": f"enhance:{body.idea_id or 'draft'}:{uuid.uuid4().hex[:8]}",
-            }
+            return (
+                out,
+                "Simulated Idea Enhancement suggestions",
+                {
+                    "required": True,
+                    "role": "author",
+                    "proposal_key": (
+                        f"enhance:{body.idea_id or 'draft'}:{uuid.uuid4().hex[:8]}"
+                    ),
+                },
+                self.ENGINE,
+                True,
+            )
 
         if body.agent_id == "idea-optimizer":
-            from app.services import agent_simulate_service as sim
+            from app.services import agent_live_turns as live_turns
 
             fields: dict[str, Any]
             if idea is not None:
@@ -149,8 +177,22 @@ class AgentGateway:
             else:
                 fields = dict(body.context.get("idea") or body.context or {})
             message = str(body.context.get("message") or "")
-            out = sim.idea_optimize_turn(idea=fields, message=message)
-            return out, "Simulated author Idea Optimizer turn", {}
+            conversation_id = body.context.get("conversation_id")
+            out = await live_turns.idea_optimize_turn(
+                idea=fields,
+                message=message,
+                conversation_id=(
+                    str(conversation_id) if conversation_id else None
+                ),
+            )
+            simulated = bool(out.get("simulated", True))
+            engine = str(out.get("engine") or self.ENGINE)
+            summary = (
+                "Live author Idea Optimizer turn"
+                if not simulated
+                else "Simulated author Idea Optimizer turn"
+            )
+            return out, summary, {}, engine, simulated
 
         if body.agent_id == "review-intelligence":
             if not idea:
@@ -170,8 +212,57 @@ class AgentGateway:
                 await self.session.execute(select(Idea).limit(100))
             ).scalars().all()
             similar = H.similar_ideas(idea, corpus)
+
+            if live and studio.resolve_kompass_agent_id("review-intelligence"):
+                from app.services import agent_live_turns as live_turns
+
+                idea_ctx = {
+                    "idea": {
+                        "id": str(idea.id),
+                        "title": idea.title,
+                        "problem": idea.problem,
+                        "solution": idea.solution,
+                        "beneficiaries": idea.beneficiaries,
+                        "success_metrics": idea.success_metrics,
+                        "tags": list(idea.tags or []),
+                        "effort": idea.effort,
+                        "status": idea.status,
+                    },
+                    "comment_count": len(comments),
+                    "comments": [
+                        {
+                            "body": getattr(c, "body", None) or getattr(c, "text", ""),
+                            "created_at": str(getattr(c, "created_at", "")),
+                        }
+                        for c in comments[:40]
+                    ],
+                    "votes": votes,
+                    "similar": similar,
+                }
+                live_out = await live_turns.review_intelligence_turn(
+                    idea_context=idea_ctx,
+                    conversation_id=(
+                        str(body.context.get("conversation_id"))
+                        if body.context.get("conversation_id")
+                        else None
+                    ),
+                )
+                return (
+                    live_out["output"],
+                    live_out["summary"],
+                    {},
+                    str(live_out.get("engine") or studio.ENGINE),
+                    False,
+                )
+
             out = H.review_brief(idea, comments, votes, similar)
-            return out, f"Simulated reviewer brief for “{idea.title}”", {}
+            return (
+                out,
+                f"Simulated reviewer brief for “{idea.title}”",
+                {},
+                self.ENGINE,
+                True,
+            )
 
         if body.agent_id == "innovation-workflow":
             tl = await self._timelines()
@@ -210,7 +301,13 @@ class AgentGateway:
                     "proposal_key": key,
                 }
                 summary = first["draft_message"]
-            return {"stuck": stuck, "simulated": True}, summary, approval
+            return (
+                {"stuck": stuck, "simulated": True},
+                summary,
+                approval,
+                self.ENGINE,
+                True,
+            )
 
         if body.agent_id == "innovation-analytics":
             from app.services.insights_service import InsightsService
@@ -219,7 +316,7 @@ class AgentGateway:
                 int(body.context.get("days") or 90)
             )
             out = H.analytics_narrative(dash.model_dump())
-            return out, "Simulated analytics narrative", {}
+            return out, "Simulated analytics narrative", {}, self.ENGINE, True
 
         if body.agent_id == "recognition":
             return (
@@ -231,6 +328,8 @@ class AgentGateway:
                 },
                 "Simulated recognition scan (no nominations this run)",
                 {},
+                self.ENGINE,
+                True,
             )
 
         if body.agent_id == "orchestrator":
@@ -242,9 +341,17 @@ class AgentGateway:
                 },
                 f"Orchestrator recorded event {body.event}",
                 {},
+                self.ENGINE,
+                True,
             )
 
-        return {"simulated": True}, f"No-op for {body.agent_id}", {}
+        return (
+            {"simulated": True},
+            f"No-op for {body.agent_id}",
+            {},
+            self.ENGINE,
+            True,
+        )
 
     async def list_runs(
         self,

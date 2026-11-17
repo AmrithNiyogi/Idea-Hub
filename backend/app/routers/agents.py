@@ -1,4 +1,4 @@
-"""Simulated agents / Kompass seam HTTP API — Phase 5."""
+"""Agents / Kompass seam HTTP API — Phase 5."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from app.schemas.agents import (
     SubmitAssistTurnOut,
 )
 from app.services.agent_gateway import AgentGateway
-from app.services import agent_simulate_service as simulate
+from app.services import agent_live_turns as live_turns
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -33,7 +33,7 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 @router.get(
     "/roster",
     response_model=list[AgentInfoOut],
-    summary="Simulated agent roster (KOMPASS-aligned)",
+    summary="Agent roster (KOMPASS-aligned; simulated or live)",
 )
 async def roster(session: DbSession, actor: RequireActor) -> list[AgentInfoOut]:
     return AgentGateway(session).roster()
@@ -42,10 +42,11 @@ async def roster(session: DbSession, actor: RequireActor) -> list[AgentInfoOut]:
 @router.post(
     "/run",
     response_model=AgentRunOut,
-    summary="Run a simulated agent (always labelled Simulated)",
+    summary="Run an agent (simulate or live AI Studio execute)",
     description=(
-        "Deterministic heuristics only. No live Kompass call. "
-        "Approval-gated runs appear in pending proposals until a human decides."
+        "Local heuristics when SIMULATE_AGENTS=true or AI Studio env is incomplete. "
+        "When live, idea-optimizer / review-intelligence call "
+        "POST /api/v2/runs/execute. Approval-gated runs still require a human decide."
     ),
 )
 async def run_agent(
@@ -121,11 +122,13 @@ async def answer_question(
 @router.post(
     "/simulate/submit-assist",
     response_model=SubmitAssistTurnOut,
-    summary="Simulated Submit ideation co-pilot turn",
+    summary="Submit ideation co-pilot turn (simulate or live)",
     description=(
         "Freeform brainstorm / refine chat that returns optional form patches "
         "(title, problem, solution, tags, category_slug, effort, …). "
-        "Local heuristic while SIMULATE_AGENTS=true. Never persists the draft."
+        "Local heuristic while SIMULATE_AGENTS=true; otherwise "
+        "POST /api/v2/runs/execute with AISTUDIO_AGENT_SUBMIT_ASSIST. "
+        "Echo conversation_id for multi-turn. Never persists the draft."
     ),
     responses={401: {"description": "Not authenticated"}},
 )
@@ -133,12 +136,13 @@ async def submit_assist_turn(
     body: SubmitAssistTurnIn,
     actor: RequireActor,
 ) -> SubmitAssistTurnOut:
-    """Run one simulated Submit assist turn for the authenticated author."""
+    """Run one Submit assist turn for the authenticated author."""
     _ = actor
-    out = simulate.submit_assist_turn(
+    out = await live_turns.submit_assist_turn(
         draft=body.draft,
         message=body.message,
         awaiting_field=body.awaiting_field,
+        conversation_id=body.conversation_id,
     )
     return SubmitAssistTurnOut.model_validate(out)
 
@@ -146,28 +150,33 @@ async def submit_assist_turn(
 @router.post(
     "/simulate/help",
     response_model=HelpTurnOut,
-    summary="Simulated in-app help chatbot turn",
+    summary="In-app help chatbot turn (simulate or live)",
     description=(
-        "Canned FAQ / intent map for Idea Hub navigation and roles. "
-        "No external LLM. Does not accept or store secrets."
+        "FAQ / intent map locally when simulating; live Help agent via "
+        "runs/execute when configured. Does not accept or store secrets. "
+        "Echo conversation_id for Help FAB multi-turn."
     ),
     responses={401: {"description": "Not authenticated"}},
 )
 async def help_turn(body: HelpTurnIn, actor: RequireActor) -> HelpTurnOut:
-    """Answer a basic product FAQ question from the local help map."""
+    """Answer a product FAQ question (stub map or live Kompass agent)."""
     _ = actor
-    out = simulate.help_turn(message=body.message)
+    out = await live_turns.help_turn(
+        message=body.message,
+        conversation_id=body.conversation_id,
+    )
     return HelpTurnOut.model_validate(out)
 
 
 @router.post(
     "/simulate/idea-optimize",
     response_model=IdeaOptimizeTurnOut,
-    summary="Simulated author Idea Optimizer turn",
+    summary="Author Idea Optimizer turn (simulate or live)",
     description=(
         "Post-submit author co-pilot: clarity, metrics, tags, problem framing. "
         "Returns reply + field_patches for the human to apply. Distinct from "
-        "Review Intelligence (scores / decision lean). Never persists changes."
+        "Review Intelligence (scores / decision lean). Never persists changes. "
+        "Echo conversation_id for multi-turn optimizer sessions."
     ),
     responses={401: {"description": "Not authenticated"}},
 )
@@ -175,14 +184,15 @@ async def idea_optimize_turn(
     body: IdeaOptimizeTurnIn,
     actor: RequireActor,
 ) -> IdeaOptimizeTurnOut:
-    """Run one simulated author-optimizer turn for the authenticated user."""
+    """Run one author-optimizer turn for the authenticated user."""
     _ = actor
     idea = dict(body.idea or {})
     if body.idea_id and "id" not in idea:
         idea["id"] = str(body.idea_id)
-    out = simulate.idea_optimize_turn(
+    out = await live_turns.idea_optimize_turn(
         idea=idea,
         message=body.message,
         messages=body.messages,
+        conversation_id=body.conversation_id,
     )
     return IdeaOptimizeTurnOut.model_validate(out)

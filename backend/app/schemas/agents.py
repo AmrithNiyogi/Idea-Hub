@@ -83,7 +83,7 @@ class KompassAnswerIn(BaseModel):
 
 
 class SubmitAssistTurnIn(BaseModel):
-    """One conversational turn for the Submit side assistant (simulated)."""
+    """One conversational turn for the Submit side assistant."""
 
     draft: dict[str, Any] = Field(
         default_factory=dict,
@@ -99,6 +99,13 @@ class SubmitAssistTurnIn(BaseModel):
         default=None,
         description="Field the assistant last asked for (title, problem, …).",
     )
+    conversation_id: Optional[str] = Field(
+        default=None,
+        description=(
+            "AI Studio conversation thread id. Omit on first turn; echo the "
+            "id returned by the previous response for multi-turn chat."
+        ),
+    )
 
 
 class HelpLinkOut(BaseModel):
@@ -109,13 +116,17 @@ class HelpLinkOut(BaseModel):
 class SubmitAssistTurnOut(BaseModel):
     simulated: bool = True
     engine: str
-    mode: str = Field(description="simulate | kompass-pending")
+    mode: str = Field(description="simulate | live | kompass-pending")
     reply: str
     patches: dict[str, Any] = Field(default_factory=dict)
     awaiting_field: Optional[str] = None
     field_prompt: Optional[str] = None
     done: bool = False
     notice: str = "Simulated — Kompass soon"
+    conversation_id: Optional[str] = Field(
+        default=None,
+        description="AI Studio conversation id to send on the next turn.",
+    )
 
 
 class HelpTurnIn(BaseModel):
@@ -124,6 +135,10 @@ class HelpTurnIn(BaseModel):
         min_length=1,
         max_length=2000,
         description="User question about Idea Hub (no secrets).",
+    )
+    conversation_id: Optional[str] = Field(
+        default=None,
+        description="AI Studio conversation thread id for Help FAB multi-turn.",
     )
 
 
@@ -135,10 +150,14 @@ class HelpTurnOut(BaseModel):
     reply: str
     links: list[HelpLinkOut] = Field(default_factory=list)
     notice: str = "Simulated — Kompass soon"
+    conversation_id: Optional[str] = Field(
+        default=None,
+        description="AI Studio conversation id to send on the next turn.",
+    )
 
 
 class IdeaOptimizeTurnIn(BaseModel):
-    """One conversational turn for the author Idea Optimizer (simulated)."""
+    """One conversational turn for the author Idea Optimizer."""
 
     idea_id: Optional[uuid.UUID] = Field(
         default=None,
@@ -166,7 +185,11 @@ class IdeaOptimizeTurnIn(BaseModel):
     )
     messages: list[dict[str, Any]] = Field(
         default_factory=list,
-        description="Optional prior chat turns for future Kompass context.",
+        description="Optional prior chat turns for Kompass / client context.",
+    )
+    conversation_id: Optional[str] = Field(
+        default=None,
+        description="AI Studio conversation thread id for this optimizer session.",
     )
 
 
@@ -175,7 +198,7 @@ class IdeaOptimizeTurnOut(BaseModel):
 
     simulated: bool = True
     engine: str
-    mode: str = Field(description="simulate | kompass-pending")
+    mode: str = Field(description="simulate | live | kompass-pending")
     reply: str
     field_patches: dict[str, Any] = Field(
         default_factory=dict,
@@ -186,3 +209,7 @@ class IdeaOptimizeTurnOut(BaseModel):
         description="Heuristic weak-field names (problem, success_metrics, …).",
     )
     notice: str = "Simulated — Kompass soon"
+    conversation_id: Optional[str] = Field(
+        default=None,
+        description="AI Studio conversation id to send on the next turn.",
+    )

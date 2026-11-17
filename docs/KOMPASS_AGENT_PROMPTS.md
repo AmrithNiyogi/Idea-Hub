@@ -15,14 +15,16 @@ Local stubs while prompts are created: [`AGENT_SIMULATION.md`](AGENT_SIMULATION.
 
 ## Product surfaces ↔ prompts (simulation status)
 
-| Product surface | Roster / simulate id | Prompt slug | Simulated locally today | To-create in Kompass |
-|-----------------|----------------------|-------------|-------------------------|----------------------|
-| **Submit ideation co-pilot** — freeform chat from blank; brainstorm; iterative field patches (title/problem/solution/tags/category/effort); live form sync. Not a rigid wizard. | `POST …/simulate/submit-assist` | `ideakonnekt-wf-submit-assist` | Yes | Yes (new) |
-| **Idea Intelligence** (structured classify / similar / missing) | `idea-intelligence` via `/agents/run` | `ideakonnekt-wf-idea-intelligence` | Yes (heuristics) | Payload exists |
-| **Idea Enhancement** (one-shot rewrite / metrics proposals) | `idea-enhancement` via `/agents/run` | `ideakonnekt-wf-idea-enhancement` | Yes | Payload exists |
-| **Author idea optimizer** — **NEW**, separate from reviewer agent. After submit, author chats on Idea Detail to improve clarity / metrics / tags / problem framing. Proposes edits; human Apply. | `idea-optimizer` · `POST …/simulate/idea-optimize` | `ideakonnekt-wf-idea-optimizer` | Yes | Yes (new) |
-| **Review intelligence** — scores + decision lean + merge `target_id` from similar ideas; human confirms. | `review-intelligence` via `/agents/run` | `ideakonnekt-wf-review-intelligence` | Yes | Payload exists (extend merge target in prompt) |
-| **Help / app guide chatbot** — FAQ navigation only; no secrets. | `POST …/simulate/help` | `ideakonnekt-wf-help-guide` | Yes | Yes (new) |
+| Product surface | Roster / simulate id | Prompt slug | Execute `agent_id` env | Input (live) | `conversation_id` |
+|-----------------|----------------------|-------------|------------------------|--------------|-------------------|
+| **Submit ideation co-pilot** | `POST …/simulate/submit-assist` | `ideakonnekt-wf-submit-assist` | `AISTUDIO_AGENT_SUBMIT_ASSIST` | JSON `draft`+`message`+`awaiting_field` | Per Submit thread |
+| **Idea Intelligence** | `idea-intelligence` via `/agents/run` | `ideakonnekt-wf-idea-intelligence` | (stub for now) | — | — |
+| **Idea Enhancement** | `idea-enhancement` via `/agents/run` | `ideakonnekt-wf-idea-enhancement` | (stub for now) | — | — |
+| **Author idea optimizer** | `idea-optimizer` · `POST …/simulate/idea-optimize` | `ideakonnekt-wf-idea-optimizer` | `AISTUDIO_AGENT_IDEA_OPTIMIZER` | JSON `idea`+`message`+`messages` | Per optimizer session |
+| **Review intelligence** | `review-intelligence` via `/agents/run` | `ideakonnekt-wf-review-intelligence` | `AISTUDIO_AGENT_REVIEW_INTELLIGENCE` | JSON idea context | Usually one-shot |
+| **Help / app guide** | `POST …/simulate/help` | `ideakonnekt-wf-help-guide` | `AISTUDIO_AGENT_HELP` | Plain `message` string | Per Help FAB thread |
+
+Live path: `POST /api/v2/runs/execute` (headers `X-Tenant-ID`, `project-slug`, optional `X-Authorization`) — see [`AGENT_SIMULATION.md`](AGENT_SIMULATION.md). Default remains local simulation until `SIMULATE_AGENTS=false` and env is filled.
 
 **Do not conflate personas:** Review Intelligence scores and leans for **reviewers**. Author Idea Optimizer only helps **authors** improve text. Submit co-pilot is pre-submit draft chat. Help never touches idea fields.
 

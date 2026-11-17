@@ -158,7 +158,15 @@ AGENT_BY_ID = {a["id"]: a for a in AGENT_ROSTER}
 
 # Kompass integration map open questions (admin can mark answered).
 KOMPASS_OPEN_QUESTIONS: list[dict[str, str]] = [
-    {"id": "q1", "text": "Exact Hub → Kompass invoke contract (URL, auth, payload)?"},
+    {
+        "id": "q1",
+        "text": (
+            "Hub → Kompass invoke: POST /api/v2/runs/execute with X-Tenant-ID, "
+            "project-slug, optional X-Authorization; body agent_id + input + "
+            "conversation_id (see AGENT_SIMULATION.md). Confirm staging project-slug "
+            "and agent ids in AISTUDIO_* env."
+        ),
+    },
     {"id": "q2", "text": "Does Kompass support pause-and-resume / human approval nodes?"},
     {"id": "q3", "text": "Structured output / JSON schema enforcement available?"},
     {"id": "q4", "text": "Webhook or callback for run completion?"},

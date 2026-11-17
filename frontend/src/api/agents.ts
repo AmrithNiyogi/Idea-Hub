@@ -16,6 +16,7 @@ export type SubmitAssistTurn = {
   field_prompt: string | null;
   done: boolean;
   notice: string;
+  conversation_id?: string | null;
 };
 
 export type HelpTurn = {
@@ -26,6 +27,7 @@ export type HelpTurn = {
   reply: string;
   links: Array<{ label: string; href: string }>;
   notice: string;
+  conversation_id?: string | null;
 };
 
 export type IdeaOptimizeTurn = {
@@ -36,6 +38,7 @@ export type IdeaOptimizeTurn = {
   field_patches: Record<string, unknown>;
   focus_fields: string[];
   notice: string;
+  conversation_id?: string | null;
 };
 
 export const agentsApi = {
@@ -82,6 +85,7 @@ export const agentsApi = {
     draft: Record<string, unknown>;
     message?: string;
     awaiting_field?: string | null;
+    conversation_id?: string | null;
   }) =>
     apiFetch<SubmitAssistTurn>('/agents/simulate/submit-assist', {
       method: 'POST',
@@ -89,13 +93,17 @@ export const agentsApi = {
         draft: body.draft,
         message: body.message ?? '',
         awaiting_field: body.awaiting_field ?? null,
+        conversation_id: body.conversation_id ?? null,
       }),
     }),
 
-  help: (message: string) =>
+  help: (message: string, conversation_id?: string | null) =>
     apiFetch<HelpTurn>('/agents/simulate/help', {
       method: 'POST',
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({
+        message,
+        conversation_id: conversation_id ?? null,
+      }),
     }),
 
   ideaOptimize: (body: {
@@ -103,6 +111,7 @@ export const agentsApi = {
     idea: Record<string, unknown>;
     message?: string;
     messages?: Array<Record<string, unknown>>;
+    conversation_id?: string | null;
   }) =>
     apiFetch<IdeaOptimizeTurn>('/agents/simulate/idea-optimize', {
       method: 'POST',
@@ -111,6 +120,7 @@ export const agentsApi = {
         idea: body.idea,
         message: body.message ?? '',
         messages: body.messages ?? [],
+        conversation_id: body.conversation_id ?? null,
       }),
     }),
 };

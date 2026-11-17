@@ -1,14 +1,21 @@
-/** Floating help chatbot — simulated FAQ map (no external LLM). */
+/**
+ * Idea Hub Help chat widget — UX adapted from aistudio-chatbot-ui-v2
+ * (DotAgent launcher + panel). Calls Idea Hub ``/agents/simulate/help``
+ * (simulate or live runs/execute via backend) and echoes ``conversation_id``.
+ */
 
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { agentsApi } from '../api/agents';
-import { Icon } from './Icons';
 
 type Msg = {
+  id: string;
   role: 'user' | 'assistant';
   text: string;
   links?: Array<{ label: string; href: string }>;
+  loading?: boolean;
+  error?: boolean;
+  at: Date;
 };
 
 const STARTERS = [
@@ -18,47 +25,106 @@ const STARTERS = [
   'SSO and MFA?',
 ];
 
+const WELCOME: Msg = {
+  id: 'welcome',
+  role: 'assistant',
+  text:
+    'Hi — I am the Idea Hub help guide. Ask about Submit, Review, roles, Explore, Admin, or SSO/MFA. I never need passwords or OTP codes.',
+  links: [
+    { label: 'Submit', href: '/submit' },
+    { label: 'Review', href: '/review' },
+  ],
+  at: new Date(0),
+};
+
+function formatTime(d: Date) {
+  if (d.getTime() === 0) return '';
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export function HelpChatFab() {
+  const titleId = useId();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [msgs, setMsgs] = useState<Msg[]>([
-    {
-      role: 'assistant',
-      text: 'Hi — I am the Idea Hub help bot (Simulated — Kompass soon). Ask about Submit, Review, roles, Explore, Admin, or SSO/MFA. I never need passwords or OTP codes.',
-      links: [
-        { label: 'Submit', href: '/submit' },
-        { label: 'Review', href: '/review' },
-      ],
-    },
-  ]);
-  const endRef = useRef<HTMLDivElement | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [modeLabel, setModeLabel] = useState('Simulated');
+  const [msgs, setMsgs] = useState<Msg[]>([{ ...WELCOME, at: new Date() }]);
+  const logRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    if (open) endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [msgs, open]);
+    if (!open) return;
+    const el = logRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [msgs, open, busy]);
+
+  useEffect(() => {
+    if (open) {
+      window.setTimeout(() => inputRef.current?.focus(), 120);
+    }
+  }, [open]);
+
+  const clearChat = () => {
+    setMsgs([{ ...WELCOME, id: `welcome-${Date.now()}`, at: new Date() }]);
+    setConversationId(null);
+    setModeLabel('Simulated');
+    setInput('');
+  };
 
   const ask = async (text: string) => {
     const q = text.trim();
     if (!q || busy) return;
     setInput('');
-    setMsgs((m) => [...m, { role: 'user', text: q }]);
+    const userMsg: Msg = {
+      id: `u-${Date.now()}`,
+      role: 'user',
+      text: q,
+      at: new Date(),
+    };
+    const loadingId = `a-load-${Date.now()}`;
+    setMsgs((m) => [
+      ...m,
+      userMsg,
+      {
+        id: loadingId,
+        role: 'assistant',
+        text: 'Thinking…',
+        loading: true,
+        at: new Date(),
+      },
+    ]);
     setBusy(true);
     try {
-      const turn = await agentsApi.help(q);
+      const turn = await agentsApi.help(q, conversationId);
+      if (turn.conversation_id) {
+        setConversationId(turn.conversation_id);
+      }
+      setModeLabel(
+        turn.mode === 'live' || turn.simulated === false ? 'Live' : 'Simulated',
+      );
       setMsgs((m) => [
-        ...m,
-        { role: 'assistant', text: turn.reply, links: turn.links },
+        ...m.filter((x) => x.id !== loadingId),
+        {
+          id: `a-${Date.now()}`,
+          role: 'assistant',
+          text: turn.reply,
+          links: turn.links,
+          at: new Date(),
+        },
       ]);
     } catch (e) {
       setMsgs((m) => [
-        ...m,
+        ...m.filter((x) => x.id !== loadingId),
         {
+          id: `a-err-${Date.now()}`,
           role: 'assistant',
           text:
             e instanceof Error
               ? e.message
               : 'Help is temporarily unavailable.',
+          error: true,
+          at: new Date(),
         },
       ]);
     } finally {
@@ -71,42 +137,82 @@ export function HelpChatFab() {
     void ask(input);
   };
 
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void ask(input);
+    }
+  };
+
   return (
-    <div className={`help-fab ${open ? 'is-open' : ''}`}>
+    <div className={`ik-chat ${open ? 'ik-chat--open' : ''}`}>
       {open ? (
         <div
-          className="help-fab__panel agent"
+          className="ik-chat__panel"
           role="dialog"
-          aria-label="Idea Hub help"
+          aria-modal="false"
+          aria-labelledby={titleId}
         >
-          <div className="agent__head">
-            <Icon name="help" size={16} />
-            <span className="agent__name">Help</span>
-            <span className="pill pill--agent">Simulated — Kompass soon</span>
-            <button
-              type="button"
-              className="btn btn--sm btn--ghost"
-              style={{ marginLeft: 'auto' }}
-              onClick={() => setOpen(false)}
-              aria-label="Close help"
-            >
-              <Icon name="x" size={14} />
-            </button>
-          </div>
-          <div className="agent__body">
-            <div className="help-fab__log" role="log" aria-live="polite">
-              {msgs.map((m, i) => (
-                <div
-                  key={i}
-                  className={`sf-chat__bubble sf-chat__bubble--${m.role}`}
-                >
-                  <p style={{ margin: 0 }}>{m.text}</p>
+          <header className="ik-chat__header">
+            <div className="ik-chat__brand">
+              <img
+                className="ik-chat__header-logo"
+                src="/ideakonnect-mark.svg"
+                alt=""
+                width={28}
+                height={28}
+              />
+              <div className="ik-chat__title-wrap">
+                <h2 className="ik-chat__title" id={titleId}>
+                  Idea Hub Help
+                </h2>
+                <span className="ik-chat__mode">{modeLabel}</span>
+              </div>
+            </div>
+            <div className="ik-chat__header-actions">
+              <button
+                type="button"
+                className="ik-chat__clear"
+                onClick={clearChat}
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                className="ik-chat__close"
+                onClick={() => setOpen(false)}
+                aria-label="Close help chat"
+              >
+                ✕
+              </button>
+            </div>
+          </header>
+
+          <div className="ik-chat__messages" ref={logRef} role="log" aria-live="polite">
+            {msgs.map((m) => (
+              <div
+                key={m.id}
+                className={`ik-chat__msg ik-chat__msg--${m.role}${
+                  m.error ? ' ik-chat__msg--error' : ''
+                }${m.loading ? ' ik-chat__msg--loading' : ''}`}
+              >
+                <div className="ik-chat__msg-content">
+                  <div className="ik-chat__msg-header">
+                    <span>{m.role === 'user' ? 'You' : 'Help'}</span>
+                    {formatTime(m.at) ? (
+                      <span className="ik-chat__msg-time">{formatTime(m.at)}</span>
+                    ) : null}
+                  </div>
+                  <div className="ik-chat__msg-text">
+                    {m.loading ? <span className="ik-chat__loading-dot" /> : null}
+                    {m.text}
+                  </div>
                   {m.links?.length ? (
-                    <div className="chip-row" style={{ marginTop: 8 }}>
+                    <div className="ik-chat__links">
                       {m.links.map((l) => (
                         <Link
                           key={l.href}
-                          className="btn btn--sm"
+                          className="ik-chat__link"
                           to={l.href}
                           onClick={() => setOpen(false)}
                         >
@@ -116,16 +222,17 @@ export function HelpChatFab() {
                     </div>
                   ) : null}
                 </div>
-              ))}
-              {busy ? <p className="muted small">Looking that up…</p> : null}
-              <div ref={endRef} />
-            </div>
-            <div className="chip-row">
+              </div>
+            ))}
+          </div>
+
+          <div className="ik-chat__input">
+            <div className="ik-chat__starters">
               {STARTERS.map((s) => (
                 <button
                   key={s}
                   type="button"
-                  className="btn btn--sm"
+                  className="ik-chat__starter"
                   disabled={busy}
                   onClick={() => void ask(s)}
                 >
@@ -133,39 +240,64 @@ export function HelpChatFab() {
                 </button>
               ))}
             </div>
-            <form className="sf-chat__compose" onSubmit={onSubmit}>
-              <input
-                className="input"
+            <form className="ik-chat__form" onSubmit={onSubmit}>
+              <textarea
+                ref={inputRef}
+                className="ik-chat__textarea"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about Idea Hub…"
+                onKeyDown={onKeyDown}
+                placeholder="Type your message here…"
+                rows={1}
                 disabled={busy}
                 aria-label="Help question"
               />
               <button
                 type="submit"
-                className="btn btn--sm btn--primary"
+                className="ik-chat__send"
                 disabled={busy || !input.trim()}
               >
-                <Icon name="send" size={14} />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+                {busy ? 'Sending…' : 'Send'}
               </button>
             </form>
-          </div>
-          <div className="agent__foot">
-            Canned FAQ stub — no secrets, no live Kompass.
+            <p className="ik-chat__tip">
+              Enter to send · Shift+Enter for a new line · No passwords or OTP
+            </p>
           </div>
         </div>
       ) : null}
 
-      <button
-        type="button"
-        className="help-fab__btn"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-label={open ? 'Close help chat' : 'Open help chat'}
-      >
-        <Icon name={open ? 'x' : 'help'} size={20} />
-      </button>
+      {!open ? (
+        <button
+          type="button"
+          className="ik-chat__launcher"
+          onClick={() => setOpen(true)}
+          aria-expanded={false}
+          aria-label="Open help chat"
+        >
+          <img
+            className="ik-chat__launcher-icon"
+            src="/ideakonnect-mark.svg"
+            alt=""
+            width={40}
+            height={40}
+          />
+        </button>
+      ) : null}
     </div>
   );
 }

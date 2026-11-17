@@ -114,9 +114,43 @@ class Settings(BaseSettings):
     MICROSOFT_SSO_STATE_TTL_SECONDS: int = 600
 
     # Agent seam: when True (default), submit-assist / help / review briefs use
-    # local heuristics only. Set False later once Kompass HTTP adapter is wired
-    # in AgentGateway (see docs/AGENT_SIMULATION.md).
+    # local heuristics only. Set False once AI Studio execute env is filled in
+    # (see docs/AGENT_SIMULATION.md). Live path: POST /api/v2/runs/execute.
     SIMULATE_AGENTS: bool = True
+
+    # AI Studio / Kompass API Gateway (runs/execute). Placeholders only in
+    # .env.example — put real project-slug / tool tokens in local .env.
+    AISTUDIO_API_BASE_URL: str = Field(
+        default="",
+        description=(
+            "API Gateway origin with no trailing slash, e.g. "
+            "https://aistudio-apigateway-v2-staging.dotkonnekt.com"
+        ),
+    )
+    AISTUDIO_TENANT_ID: str = Field(
+        default="",
+        description="X-Tenant-ID header value (staging often 'devtest').",
+    )
+    AISTUDIO_PROJECT_SLUG: str = Field(
+        default="",
+        description="project-slug header; required for public/project-scoped execute.",
+    )
+    AISTUDIO_TOOL_AUTH_TOKEN: str = Field(
+        default="",
+        description=(
+            "Optional X-Authorization value forwarded for tool auth. "
+            "Leave empty when agents do not call authenticated tools."
+        ),
+    )
+    AISTUDIO_EXECUTE_TIMEOUT_SECONDS: int = Field(
+        default=120,
+        description="HTTP timeout for POST /api/v2/runs/execute (and poll budget).",
+    )
+    # Kompass agent id or slug per Idea Hub surface (fill after agents exist).
+    AISTUDIO_AGENT_SUBMIT_ASSIST: str = ""
+    AISTUDIO_AGENT_HELP: str = ""
+    AISTUDIO_AGENT_IDEA_OPTIMIZER: str = ""
+    AISTUDIO_AGENT_REVIEW_INTELLIGENCE: str = ""
 
     def allowed_cors_origins(self) -> list[str]:
         """Build the CORS allowlist for credentialed browser calls.

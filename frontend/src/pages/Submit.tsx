@@ -101,6 +101,9 @@ export function SubmitPage() {
   const [chatInput, setChatInput] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
   const [awaitingField, setAwaitingField] = useState<string | null>(null);
+  const [assistConversationId, setAssistConversationId] = useState<
+    string | null
+  >(null);
   const [chatOpen, setChatOpen] = useState(true);
   const [undoToast, setUndoToast] = useState<UndoToast | null>(null);
   const [flashFields, setFlashFields] = useState<Set<string>>(new Set());
@@ -194,6 +197,7 @@ export function SubmitPage() {
       .then((turn) => {
         setChat([{ role: 'assistant', text: turn.reply }]);
         setAwaitingField(turn.awaiting_field);
+        if (turn.conversation_id) setAssistConversationId(turn.conversation_id);
       })
       .catch(() => {
         setChat([
@@ -309,6 +313,7 @@ export function SubmitPage() {
         draft: draftPayload(formRef.current),
         message: text,
         awaiting_field: awaitingField,
+        conversation_id: assistConversationId,
       });
       const labels =
         turn.patches && Object.keys(turn.patches).length
@@ -323,6 +328,7 @@ export function SubmitPage() {
         },
       ]);
       setAwaitingField(turn.awaiting_field);
+      if (turn.conversation_id) setAssistConversationId(turn.conversation_id);
     } catch (err) {
       setChat((c) => [
         ...c,
