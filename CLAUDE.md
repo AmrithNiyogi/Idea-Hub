@@ -42,8 +42,14 @@ API: `http://127.0.0.1:8000/docs` · UI: `http://localhost:5173`
 
 ## Design rules
 
-- Port UI from `idea-hub.html`; use `frontend/src/styles/tokens.css`
-- Do not invent a new visual system
+Full Cursor rule: `.cursor/rules/idea-hub-frontend-parity.mdc` (applies to `frontend/**/*.{tsx,ts,css}`). Skill: `idea-hub-ui-html-parity`.
+
+- Port from `idea-hub.html`; use `frontend/src/styles/tokens.css` + `app.css` — do not invent a new visual system
+- Fonts: DM Sans + IBM Plex Mono; reuse `AppShell`, `StatusPill`, `IdeaCard`
+- Prefer **list/row** patterns (Integrations, Tracker) over generic card grids for catalog/task surfaces
+- Status via chips/`StatusPill`, not raw browser selects when product patterns already use chips
+- Scope new CSS (`.trk-*`, `.integ-*`); never overload bare `.check` as an 18px box (it is a flex label row)
+- Preserve Idea Hub brand tokens; avoid AI-slop extras (glow stacks, pill clusters, cream+serif terracotta, etc.)
 
 ## Secrets
 

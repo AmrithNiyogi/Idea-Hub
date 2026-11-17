@@ -5,6 +5,8 @@ description: Port Idea Hub UI from idea-hub.html into the Vite React app while p
 
 # UI parity with idea-hub.html
 
+Persistent constraints (always follow): **`.cursor/rules/idea-hub-frontend-parity.mdc`**. Also summarized under **Design rules** in `CLAUDE.md`.
+
 ## Source of truth
 
 1. Visual / interaction design → root `idea-hub.html`
@@ -23,13 +25,16 @@ description: Port Idea Hub UI from idea-hub.html into the Vite React app while p
 ## Checklist
 
 - [ ] Same hierarchy and primary CTAs as HTML for that view
-- [ ] Status / category / stage colors match tokens
+- [ ] Status / category / stage colors match tokens; chips/`StatusPill` over raw selects when applicable
 - [ ] Typography uses `--font-sans` / `--font-mono`
-- [ ] No divergent “AI purple dashboard” chrome
+- [ ] List/row surfaces for catalogs (Integrations, Tracker) — not generic card grids
+- [ ] New CSS scoped (e.g. `.trk-*`); no global bleed; do not misuse bare `.check` as a box
 - [ ] Empty / loading / error states fit existing patterns
+- [ ] No divergent AI-slop chrome; keep Idea Hub brand tokens
 
 ## Anti-patterns
 
-- Cards-for-everything when HTML uses flat sections
+- Cards-for-everything when HTML / product uses flat list rows
 - Random Tailwind palette instead of tokens
 - Duplicating shell chrome inside a page
+- Overloading short global class names for one-off checkbox/box sizing

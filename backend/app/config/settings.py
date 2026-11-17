@@ -154,13 +154,19 @@ class Settings(BaseSettings):
     AISTUDIO_AGENT_IDEA_OPTIMIZER: str = ""
     AISTUDIO_AGENT_REVIEW_INTELLIGENCE: str = ""
 
-    # Optional OAuth app credentials for future ClickUp / Jira OAuth flows.
-    # MVP uses per-user API tokens / webhook secrets stored encrypted in DB.
-    # Leave blank until an OAuth app is registered; never commit real secrets.
+    # Optional OAuth app credentials for future ClickUp / Jira / Notion OAuth.
+    # MVP uses per-user API tokens / webhook secrets / Notion internal secrets
+    # stored encrypted in DB. Leave blank until an OAuth app is registered;
+    # never commit real secrets.
     CLICKUP_CLIENT_ID: str = ""
     CLICKUP_CLIENT_SECRET: str = ""
     JIRA_CLIENT_ID: str = ""
     JIRA_CLIENT_SECRET: str = ""
+    NOTION_CLIENT_ID: str = ""
+    NOTION_CLIENT_SECRET: str = ""
+    NOTION_REDIRECT_URI: str = (
+        "http://localhost:8000/api/v1/integrations/notion/oauth/callback"
+    )
     # Optional default webhook for local demos of custom_webhook provider.
     TRACKER_CUSTOM_WEBHOOK_URL: str = ""
     TRACKER_CUSTOM_AUTH_HEADER: str = ""

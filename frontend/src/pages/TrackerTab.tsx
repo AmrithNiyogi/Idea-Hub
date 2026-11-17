@@ -88,7 +88,13 @@ export function TrackerTab({ idea, onOpenDelivery }: Props) {
         trackersApi.listLiveTasks(idea.id),
         trackersApi.listProviders().catch(() => [] as TrackerProvider[]),
       ]);
-      setTasks(live);
+      const trackerIds = new Set(prov.map((p) => p.id));
+      // Docs adapters (e.g. Notion) share idea links; keep Tracker tab tracker-only.
+      setTasks(
+        trackerIds.size
+          ? live.filter((t) => trackerIds.has(t.provider_id))
+          : live.filter((t) => t.provider_id !== 'notion'),
+      );
       setProviders(prov);
     } catch (err) {
       const message =
@@ -99,8 +105,12 @@ export function TrackerTab({ idea, onOpenDelivery }: Props) {
           trackersApi.listProviders().catch(() => [] as TrackerProvider[]),
         ]);
         setProviders(prov);
-        if (links.length > 0) {
-          setTasks(cachedFromLinks(links, message));
+        const trackerIds = new Set(prov.map((p) => p.id));
+        const trackerLinks = trackerIds.size
+          ? links.filter((l) => trackerIds.has(l.provider_id))
+          : links.filter((l) => l.provider_id !== 'notion');
+        if (trackerLinks.length > 0) {
+          setTasks(cachedFromLinks(trackerLinks, message));
           setError(message);
         } else {
           setTasks([]);

@@ -1,19 +1,19 @@
-"""Unified Integrations catalog: live trackers + future stubs.
+"""Unified Integrations catalog: live trackers + docs adapters + stubs.
 
 Adding a new *tracker* still goes through ``app.trackers.registry``.
-Adding a non-tracker (Sheets, Notion, Teams, …) later:
+Adding a non-tracker (Notion today; Sheets/Teams later):
 
-1. Implement its adapter (oauth / API).
-2. Replace the stub here with ``status="available"`` + ``connect_fields``,
-   or call ``register_integration(...)``.
-3. Wire connect/validate in a dedicated service (same two-tier connection
-   table can store encrypted credentials by ``provider_id``).
+1. Implement its adapter (same connect/create/link surface as TrackerProvider).
+2. Register it in ``app.integrations.adapters``.
+3. It appears in this catalog with ``status=available`` and its
+   ``integration_category`` (default ``docs``).
 """
 
 from __future__ import annotations
 
 from typing import Optional
 
+from app.integrations.adapters import list_adapters, adapter_public_dict
 from app.integrations.base import FUTURE_STUBS, IntegrationDescriptor
 from app.trackers.base import ConnectField
 from app.trackers.registry import list_providers as list_tracker_providers
@@ -43,7 +43,7 @@ def get_integration(integration_id: str) -> IntegrationDescriptor:
 def list_integrations(
     *, category: Optional[str] = None
 ) -> list[IntegrationDescriptor]:
-    """Merge tracker providers (available) with stubs and extras."""
+    """Merge trackers, docs/chat adapters, stubs, and extras."""
     items: dict[str, IntegrationDescriptor] = {}
 
     for p in list_tracker_providers():
@@ -64,6 +64,30 @@ def list_integrations(
             display_name=p.display_name,
             description=getattr(p, "description", "") or "",
             category="tracker",
+            status="available",
+            auth_mode=getattr(p, "auth_mode", "") or "",
+            connect_fields=fields,
+        )
+
+    for p in list_adapters():
+        pub = adapter_public_dict(p)
+        fields = [
+            ConnectField(
+                key=f["key"],
+                label=f["label"],
+                secret=bool(f.get("secret")),
+                required=bool(f.get("required", True)),
+                placeholder=str(f.get("placeholder") or ""),
+                help_text=str(f.get("help_text") or ""),
+            )
+            for f in pub.get("connect_fields") or []
+        ]
+        cat = getattr(p, "integration_category", None) or "docs"
+        items[p.id] = IntegrationDescriptor(
+            id=p.id,
+            display_name=p.display_name,
+            description=getattr(p, "description", "") or "",
+            category=cat,  # type: ignore[arg-type]
             status="available",
             auth_mode=getattr(p, "auth_mode", "") or "",
             connect_fields=fields,

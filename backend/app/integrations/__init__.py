@@ -1,8 +1,7 @@
-"""Broader Integrations surface (trackers today; docs/chat/sheets later).
+"""Broader Integrations surface (trackers + Notion docs; Sheets/Teams stubs).
 
-Tracker providers remain in ``app.trackers``. This package adds categories,
-coming-soon stubs, and a unified catalog for the Integrations settings UI.
-See ``docs/INTEGRATIONS.md``.
+Tracker providers remain in ``app.trackers``. Docs adapters live in
+``app.integrations.adapters`` (Notion today). See ``docs/INTEGRATIONS.md``.
 """
 
 from __future__ import annotations

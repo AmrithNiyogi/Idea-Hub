@@ -41,9 +41,10 @@ from app.schemas.trackers import (
     TrackerProviderOut,
 )
 from app.services.spine_bridge import SpineBridge
+from app.integrations.adapters import resolve_provider
 from app.trackers.base import CreateIssuePayload, RemoteTask, UpdateTaskPayload
 from app.trackers.crypto import decrypt_credentials, encrypt_credentials
-from app.trackers.registry import get_provider, list_providers, provider_public_dict
+from app.trackers.registry import list_providers, provider_public_dict
 
 
 class TrackerService:
@@ -118,11 +119,10 @@ class TrackerService:
             self._require_admin(actor)
 
         try:
-            provider = get_provider(body.provider_id)
+            provider = resolve_provider(body.provider_id)
         except KeyError as exc:
             raise HTTPException(404, str(exc)) from exc
 
-        # Only tracker providers are connectable today.
         credentials = dict(body.credentials or {})
         self._assert_required_fields(provider, credentials)
         try:
@@ -217,12 +217,12 @@ class TrackerService:
         if idea.status not in TRACKER_LINKABLE_STATUSES:
             raise HTTPException(
                 400,
-                "External trackers are available after an idea is accepted.",
+                "External integrations are available after an idea is accepted.",
             )
 
         conn = await self._resolve_connection_for_link(body, actor)
         try:
-            provider = get_provider(conn.provider_id)
+            provider = resolve_provider(conn.provider_id)
         except KeyError as exc:
             raise HTTPException(404, str(exc)) from exc
 
@@ -234,6 +234,8 @@ class TrackerService:
             else self._default_description(idea)
         )
         idea_url = self._idea_url(idea_id)
+        is_docs = getattr(provider, "integration_category", None) == "docs"
+        remote_noun = "pages" if is_docs else "tasks"
 
         try:
             if body.mode == "link":
@@ -248,8 +250,8 @@ class TrackerService:
                 if idea.status not in TRACKER_CREATABLE_STATUSES:
                     raise HTTPException(
                         400,
-                        "New remote tasks can be created while the idea is "
-                        "accepted or in prototype.",
+                        f"New remote {remote_noun} can be created while the "
+                        "idea is accepted or in prototype.",
                     )
                 remote = await provider.create_issue(
                     credentials,
@@ -467,7 +469,7 @@ class TrackerService:
                     "under Integrations or ask an admin for an org default.",
                 )
         try:
-            provider = get_provider(conn.provider_id)
+            provider = resolve_provider(conn.provider_id)
         except KeyError as exc:
             raise HTTPException(404, str(exc)) from exc
         return conn, provider
@@ -641,7 +643,7 @@ class TrackerService:
         raise HTTPException(
             403,
             "Only the owner, authors, a team lead or an administrator "
-            "can manage external tracker links.",
+            "can manage external integration links.",
         )
 
     def _require_admin(self, actor: Actor) -> None:

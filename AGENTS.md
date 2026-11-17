@@ -10,7 +10,7 @@ FastAPI + Postgres + Redis (OTP) backend · Vite React TS frontend · design fro
 
 1. Read `CLAUDE.md` and `docs/AGENT_TOOLING.md`
 2. For relationship questions, use **code-review-graph** MCP (`user-code-review-graph`)
-3. Match UI to `idea-hub.html` + `frontend/src/styles/tokens.css`
+3. Match UI to `idea-hub.html` + `frontend/src/styles/tokens.css` — see `.cursor/rules/idea-hub-frontend-parity.mdc` / `CLAUDE.md` Design rules
 4. Keep backend layering: routers → services → repos
 
 ## Run

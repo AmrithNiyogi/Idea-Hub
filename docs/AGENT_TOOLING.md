@@ -18,7 +18,7 @@ How coding agents should use project rules, skills, hooks, subagents, and the **
 | Rule | When |
 |------|------|
 | `idea-hub-architecture` | Always — stack, spine/phases, run commands |
-| `idea-hub-frontend-parity` | Frontend TS/CSS — match `idea-hub.html` |
+| `idea-hub-frontend-parity` | Frontend TS/CSS — HTML/tokens parity, list/row patterns, scoped CSS, anti-slop (see rule body) |
 | `idea-hub-backend-layering` | Backend Python — layers + secrets |
 | `idea-hub-code-review-graph` | Always — when to use the graph MCP |
 

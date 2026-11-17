@@ -40,12 +40,25 @@ export function ExternalTrackersPanel({ idea, canManage }: Props) {
     return m;
   }, [providers]);
 
+  const trackerIds = useMemo(
+    () => new Set(providers.map((p) => p.id)),
+    [providers],
+  );
+
   const usable = useMemo(
     () =>
       effective.filter(
-        (e) => e.source !== 'none' && e.connection != null,
+        (e) =>
+          e.source !== 'none' &&
+          e.connection != null &&
+          trackerIds.has(e.connection.provider_id),
       ),
-    [effective],
+    [effective, trackerIds],
+  );
+
+  const trackerLinks = useMemo(
+    () => links.filter((l) => trackerIds.has(l.provider_id)),
+    [links, trackerIds],
   );
 
   const reload = useCallback(async () => {
@@ -123,9 +136,9 @@ export function ExternalTrackersPanel({ idea, canManage }: Props) {
   }
 
   const linkList =
-    links.length > 0 ? (
+    trackerLinks.length > 0 ? (
       <ul className="trk-list trk-list--compact">
-        {links.map((link) => {
+        {trackerLinks.map((link) => {
           const pname =
             providerMap.get(link.provider_id)?.display_name ?? link.provider_id;
           return (
@@ -203,11 +216,11 @@ export function ExternalTrackersPanel({ idea, canManage }: Props) {
     return (
       <div className="card card--tight trk-panel">
         {head}
-        {links.length > 0 ? linkList : null}
+        {trackerLinks.length > 0 ? linkList : null}
         <div className="notice">
           <Icon name="lock" size={16} />
           <span>
-            {links.length
+            {trackerLinks.length
               ? 'New links can be added after the idea is accepted. Existing links stay visible on the Tracker tab.'
               : 'Connect ClickUp, Jira, or a custom tracker after the idea is accepted and ready for development.'}
           </span>

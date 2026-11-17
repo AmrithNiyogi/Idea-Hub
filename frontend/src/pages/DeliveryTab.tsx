@@ -9,6 +9,7 @@ import { deliveryApi } from '../api/delivery';
 import { usersApi } from '../api/users';
 import { useAuth } from '../auth/AuthProvider';
 import { ExternalTrackersPanel } from '../components/ExternalTrackersPanel';
+import { NotionDocsPanel } from '../components/NotionDocsPanel';
 import { Avatar, Icon } from '../components/Icons';
 import { fmtDate, relTime } from '../utils/format';
 import type { DeliveryDetail } from '../types/delivery';
@@ -298,6 +299,7 @@ export function DeliveryTab({ idea }: Props) {
             idea={idea}
             canManage={canManageTrackers}
           />
+          <NotionDocsPanel idea={idea} canManage={canManageTrackers} />
         </div>
       );
     }
@@ -457,6 +459,7 @@ export function DeliveryTab({ idea }: Props) {
         ) : null}
       </div>
       <ExternalTrackersPanel idea={idea} canManage={canManageTrackers} />
+      <NotionDocsPanel idea={idea} canManage={canManageTrackers} />
       </div>
     );
   }
@@ -969,6 +972,7 @@ export function DeliveryTab({ idea }: Props) {
       </div>
 
       <ExternalTrackersPanel idea={idea} canManage={canManageTrackers} />
+      <NotionDocsPanel idea={idea} canManage={canManageTrackers} />
     </div>
   );
 }

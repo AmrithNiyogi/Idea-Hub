@@ -1,8 +1,8 @@
 """Integration catalog metadata — categories beyond trackers.
 
 Fully wired providers (ClickUp/Jira/custom) implement ``TrackerProvider`` and
-are mirrored here as ``available``. Future Sheets / Notion / Teams register
-as ``coming_soon`` stubs until their adapters exist.
+are mirrored here as ``available``. Notion is a docs adapter (see
+``app.integrations.notion``). Sheets / Teams remain ``coming_soon`` stubs.
 """
 
 from __future__ import annotations
@@ -68,16 +68,6 @@ STUB_SHEETS = IntegrationDescriptor(
     coming_soon_note="OAuth connect and sheet mapping ship in a later release.",
 )
 
-STUB_NOTION = IntegrationDescriptor(
-    id="notion",
-    display_name="Notion",
-    description="Mirror accepted ideas into a Notion database.",
-    category="docs",
-    status="coming_soon",
-    auth_mode="oauth",
-    coming_soon_note="Notion OAuth and database sync are planned.",
-)
-
 STUB_TEAMS = IntegrationDescriptor(
     id="teams",
     display_name="Microsoft Teams",
@@ -90,6 +80,5 @@ STUB_TEAMS = IntegrationDescriptor(
 
 FUTURE_STUBS: tuple[IntegrationDescriptor, ...] = (
     STUB_SHEETS,
-    STUB_NOTION,
     STUB_TEAMS,
 )

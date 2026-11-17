@@ -499,7 +499,8 @@ a.kpi:hover{border-color:var(--brand-line);text-decoration:none;box-shadow:0 0 0
 .task:last-child{border-bottom:0}
 .task__title{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
 .task--done .task__title{color:var(--text-3);text-decoration:line-through}
-.check{width:18px;height:18px;margin-top:2px;accent-color:var(--brand);flex:0 0 auto}
+/* Bare checkbox inside delivery .task rows — must NOT target label.check (flex label + text). */
+input.check,.task>input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--brand);flex:0 0 auto}
 .inline-form{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-top:12px}
 .inline-form>.input{flex:1 1 200px;min-width:0}
 .inline-form .field .input,.inline-form .field .select{flex:none;width:100%;min-width:0}

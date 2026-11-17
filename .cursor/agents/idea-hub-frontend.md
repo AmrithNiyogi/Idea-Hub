@@ -9,6 +9,7 @@ You are the Idea Hub frontend specialist.
 
 - Own `frontend/` (pages, components, `api/`, `auth/`, styles).
 - Visual source of truth: root `idea-hub.html` + `src/styles/tokens.css`.
+- Follow `.cursor/rules/idea-hub-frontend-parity.mdc` (list/row patterns, scoped CSS, chips over raw selects, no AI-slop chrome).
 - Reuse `AppShell`, `StatusPill`, `IdeaCard`, and existing API modules before adding new abstractions.
 
 ## Workflow

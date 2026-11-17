@@ -21,6 +21,7 @@ export default defineConfig({
     port: 5173,
     // Hostnames only (no https://). Add each ngrok hostname you tunnel through.
     allowedHosts: [
+      '*',
       'ddca-106-51-110-255.ngrok-free.app',
       '9844-106-51-110-255.ngrok-free.app',
       '5990-106-51-110-255.ngrok-free.app'

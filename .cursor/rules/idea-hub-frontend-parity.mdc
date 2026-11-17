@@ -1,30 +1,47 @@
 ---
-description: Frontend must match idea-hub.html design tokens and visual language
+description: Idea Hub UI design — HTML parity, tokens, list patterns, scoped CSS
 globs: frontend/**/*.{tsx,ts,css}
 alwaysApply: false
 ---
 
-# Frontend ↔ idea-hub.html parity
+# Idea Hub UI design
 
-`idea-hub.html` is the design source of truth. React must look like that prototype, not a generic dashboard.
+`idea-hub.html` + `frontend/src/styles/tokens.css` are the design source of truth. Port; do not invent a new visual system.
 
-## Do
+## Source of truth
 
-- Use CSS variables from `frontend/src/styles/tokens.css` (`--brand`, `--bg`, `--surface`, radii, spacing, stage/category colors)
-- Keep fonts: **DM Sans** + **IBM Plex Mono**
-- Prefer existing shell (`AppShell`, `Sidebar`, `Topbar`), `StatusPill`, `IdeaCard`, icons in `components/`
-- Match status/lifecycle colors from the HTML (Submitted / Under review / Prototype etc.)
-- Port structure and copy from the HTML section you are implementing before inventing new UI
+- Prototype: root `idea-hub.html`
+- Tokens / base: `frontend/src/styles/tokens.css`
+- App chrome CSS: `frontend/src/styles/app.css`
+- Reuse: `AppShell`, `Sidebar`, `Topbar`, `StatusPill`, `IdeaCard`, icons in `components/`
+- Fonts: **DM Sans** + **IBM Plex Mono** via `--font-sans` / `--font-mono`
 
-## Don't
+## Layout patterns
 
-- Introduce Inter/Roboto/system-only stacks or new purple-on-white themes that diverge from tokens
-- Add card chrome, pill clusters, or layout patterns not present in the HTML for that screen
-- Hardcode hex colors when a token already exists
-- Change light-theme defaults without updating tokens + HTML together
+- Prefer **list/row** surfaces (`.listrow`, `.integ-row`, `.trk-task`) over generic card grids when the product surface is a catalog or task list (Integrations, Tracker, feeds)
+- Cards only when the HTML / existing page already uses them for that interaction (e.g. idea explore cards)
+- Match typography scale (`--fs-*`), spacing (`--space-*`), tab/segment bars, toolbars, and empty/loading/error states from neighboring pages — do not invent new chrome
+
+## Status & controls
+
+- Status / lifecycle: use `StatusPill` or existing chip patterns (`.trk-chip`, integ status) — not raw browser `<select>` when chips/menus already exist for that control
+- Prefer scoped chip menus / custom controls that match Tracker / Integrations over unstyled native widgets
+
+## CSS scoping (required)
+
+- Prefix new feature CSS (e.g. `.trk-*`, `.integ-*`) — **no global selector bleed**
+- Never redefine or overload bare utility classes (`.row`, `.check`, `.btn`) for one-off layouts
+- **Checkbox/label lesson (Kompass):** `.check` is a flex *label row* (`display:flex; gap…`), not an 18×18 box. Do not reuse `.check` (or similarly short names) for checkbox-sized squares that crush adjacent labels — use a scoped class (e.g. `.trk-check`)
+
+## Brand vs AI-slop
+
+- **Preserve** Idea Hub brand tokens (`--brand` purple family, cool blue-gray canvas, stage/category hues). Brand purple in tokens is correct.
+- **Do not** add AI-default chrome on top: purple glow stacks, random pill clusters, cream+serif+terracotta themes, broadsheet hairline layouts, multi-layer neon shadows, emoji decoration, or a second unrelated palette
+- No new hex when a token exists; add tokens in HTML + `tokens.css` together if truly new
 
 ## Workflow
 
-1. Open the matching screen/section in `idea-hub.html`
-2. Map classes → React components / CSS in `app.css` + `tokens.css`
-3. Wire data via `frontend/src/api/*` — keep presentational components thin
+1. Open the matching screen/section in `idea-hub.html` (or the closest existing React page)
+2. Map structure → components; colors/spacing → CSS variables
+3. Wire data via `frontend/src/api/*`; keep presentational components thin
+4. Spot-check light theme first; dark only via existing `[data-theme="dark"]` tokens
