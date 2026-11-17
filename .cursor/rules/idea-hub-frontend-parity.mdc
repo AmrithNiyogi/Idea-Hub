@@ -1,0 +1,30 @@
+---
+description: Frontend must match idea-hub.html design tokens and visual language
+globs: frontend/**/*.{tsx,ts,css}
+alwaysApply: false
+---
+
+# Frontend ↔ idea-hub.html parity
+
+`idea-hub.html` is the design source of truth. React must look like that prototype, not a generic dashboard.
+
+## Do
+
+- Use CSS variables from `frontend/src/styles/tokens.css` (`--brand`, `--bg`, `--surface`, radii, spacing, stage/category colors)
+- Keep fonts: **DM Sans** + **IBM Plex Mono**
+- Prefer existing shell (`AppShell`, `Sidebar`, `Topbar`), `StatusPill`, `IdeaCard`, icons in `components/`
+- Match status/lifecycle colors from the HTML (Submitted / Under review / Prototype etc.)
+- Port structure and copy from the HTML section you are implementing before inventing new UI
+
+## Don't
+
+- Introduce Inter/Roboto/system-only stacks or new purple-on-white themes that diverge from tokens
+- Add card chrome, pill clusters, or layout patterns not present in the HTML for that screen
+- Hardcode hex colors when a token already exists
+- Change light-theme defaults without updating tokens + HTML together
+
+## Workflow
+
+1. Open the matching screen/section in `idea-hub.html`
+2. Map classes → React components / CSS in `app.css` + `tokens.css`
+3. Wire data via `frontend/src/api/*` — keep presentational components thin

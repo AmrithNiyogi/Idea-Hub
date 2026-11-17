@@ -1,0 +1,37 @@
+# OPTIONAL secondary path. Prefer backend/scripts/dev-services.sh (native Postgres+Redis
+# under backend/.dev/, ports 15432/16379) — same pattern as the tracing repo.
+# Compose uses default host ports 5432/6379; update backend/.env if you use this instead.
+services:
+  postgres:
+    image: postgres:16
+    container_name: ideahub-postgres
+    environment:
+      POSTGRES_USER: ideahub
+      POSTGRES_PASSWORD: ideahub
+      POSTGRES_DB: ideahub
+    ports:
+      - "5432:5432"
+    volumes:
+      - ideahub_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ideahub -d ideahub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: ideahub-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ideahub_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  ideahub_pgdata:
+  ideahub_redisdata:

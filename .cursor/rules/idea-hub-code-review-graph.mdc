@@ -1,0 +1,32 @@
+---
+description: When and how to use the code-review-graph MCP for Idea Hub
+alwaysApply: true
+---
+
+# code-review-graph MCP
+
+Namespace in Cursor: `user-code-review-graph` (project MCP: `.cursor/mcp.json` → `uvx code-review-graph serve`).
+
+## Use the graph when the question is about relationships
+
+- Who calls / imports X → `query_graph_tool` (`callers_of`, `importers_of`, `references_to`)
+- Blast radius of a change → `get_impact_radius_tool` / `detect_changes_tool`
+- Review context for a diff → `get_review_context_tool`
+- Architecture / communities / flows → `get_architecture_overview_tool`, `list_flows_tool`
+
+Prefer graph tools over blind Grep for call graphs, re-exports, and cross-phase wiring.
+
+## Do not use the graph for
+
+- String literals, env keys, log messages, comments → Grep / Read
+- One-file typo fixes with no callers
+
+## Keep the graph fresh
+
+After major structural edits (new routers, phase modules, big refactors):
+
+1. Call `build_or_update_graph_tool` (incremental), or CLI: `uvx code-review-graph update`
+2. Full rebuild if needed: `uvx code-review-graph build`
+3. Start with `get_minimal_context_tool` / `list_graph_stats_tool` to confirm the graph exists
+
+Repo path: `/home/nakula/Desktop/DotKonnekt/REPOS/Idea-Hub` (graph DB under `.code-review-graph/`).

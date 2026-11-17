@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/protect-env.sh",
+        "matcher": "git\\s+(add|commit|stage)|\\.env",
+        "failClosed": false
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": ".cursor/hooks/post-edit-hint.sh"
+      }
+    ]
+  }
+}

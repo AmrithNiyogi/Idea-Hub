@@ -1,0 +1,149 @@
+"""Application settings loaded from environment variables."""
+
+from __future__ import annotations
+
+from functools import lru_cache
+from typing import Literal
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Runtime configuration for the Idea Hub spine API.
+
+    Responsibilities:
+    - Centralize env-driven knobs for DB, Redis, JWT, OTP, SMTP, and CORS.
+    - Provide safe local-dev defaults (override in production).
+
+    Side Effects:
+    - Reads `.env` from the process working directory when present.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    ENV: Literal["dev", "staging", "prod"] = "dev"
+    APP_NAME: str = "IdeaKonnekt"
+    API_PREFIX: str = "/api/v1"
+    FRONTEND_ORIGIN: str = "http://localhost:5173"
+    # Comma-separated extra browser origins (ngrok HTTPS UI, etc.).
+    # FRONTEND_ORIGIN + localhost:5173 variants are always included.
+    CORS_ORIGINS: str = ""
+    # Public API origin embedded in agent handoff prompts / skill install copy
+    # (no trailing slash). Agents also honor IDEA_HUB_API_URL in their env.
+    PUBLIC_API_URL: str = "http://127.0.0.1:8000"
+
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://ideahub:ideahub@127.0.0.1:15432/ideahub"
+    )
+
+    REDIS_HOST: str = "127.0.0.1"
+    REDIS_PORT: int = 16379
+    REDIS_PASSWORD: str | None = None
+    REDIS_DB: int = 0
+
+    JWT_SECRET_KEY: str = "IdeaHubDevSecretChangeMe!2026"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    LOGIN_OTP_TTL_SECONDS: int = 600
+    LOGIN_OTP_MAX_ATTEMPTS: int = 5
+    LOGIN_OTP_RESEND_COOLDOWN_SECONDS: int = 60
+
+    # SMTP for login OTP delivery (STARTTLS on port 588 for emailsbit).
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 588
+    SMTP_SECURITY: Literal["STARTTLS", "SSL", "NONE"] = "STARTTLS"
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = ""
+    # When set, OTP emails are delivered here instead of the login account email.
+    OTP_EMAIL_OVERRIDE: str | None = None
+
+    # Domain-event notification emails (decisions, collab, hours, …).
+    # When NOTIFY_EMAIL_OVERRIDE is empty, OTP_EMAIL_OVERRIDE is used as To.
+    NOTIFY_EMAIL_ENABLED: bool = True
+    NOTIFY_EMAIL_OVERRIDE: str | None = None
+
+    COOKIE_SECURE: bool = False
+    COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
+
+    SEED_PASSWORD: str = Field(
+        default="IdeaHub!2026",
+        description="Shared password for demo seed users.",
+    )
+
+    UPLOAD_DIR: str = Field(
+        default="uploads",
+        description="Directory for user uploads (avatars); served at /uploads.",
+    )
+
+    # Microsoft Entra ID (Azure AD) OIDC — work/school accounts (M365 / Teams users).
+    # Leave empty / MICROSOFT_ENABLED=false until Azure app registration is filled in.
+    MICROSOFT_ENABLED: bool = False
+    MICROSOFT_CLIENT_ID: str = ""
+    MICROSOFT_CLIENT_SECRET: str = ""
+    MICROSOFT_TENANT_ID: str = Field(
+        default="common",
+        description=(
+            "Entra authority tenant: 'common' (orgs + MSA), 'organizations' "
+            "(work/school only), 'consumers' (MSA only), or a directory GUID "
+            "(single-tenant). Must align with Azure Supported account types."
+        ),
+    )
+    MICROSOFT_REDIRECT_URI: str = (
+        "http://localhost:8000/api/v1/auth/microsoft/callback"
+    )
+    MICROSOFT_FRONTEND_SUCCESS_URL: str = Field(
+        default="http://localhost:5173/",
+        description=(
+            "Default frontend landing after Microsoft SSO when no relative "
+            "redirect path was requested. Origin is also used as the base for "
+            "non-default redirect paths."
+        ),
+    )
+    MICROSOFT_DEFAULT_ROLE: str = Field(
+        default="contributor",
+        description="Primary role assigned to users created via Microsoft SSO.",
+    )
+    MICROSOFT_SSO_STATE_TTL_SECONDS: int = 600
+
+    def allowed_cors_origins(self) -> list[str]:
+        """Build the CORS allowlist for credentialed browser calls.
+
+        Always includes ``FRONTEND_ORIGIN`` and local Vite origins, then any
+        extra entries from ``CORS_ORIGINS`` (comma-separated). Trailing slashes
+        are stripped. Order is preserved; duplicates are dropped.
+
+        Returns:
+            list[str]: Absolute origins suitable for ``CORSMiddleware.allow_origins``.
+        """
+        origins: list[str] = []
+        seen: set[str] = set()
+        candidates = [
+            self.FRONTEND_ORIGIN,
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            *self.CORS_ORIGINS.split(","),
+        ]
+        for raw in candidates:
+            origin = raw.strip().rstrip("/")
+            if not origin or origin in seen:
+                continue
+            seen.add(origin)
+            origins.append(origin)
+        return origins
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """Return a process-wide cached Settings instance."""
+    return Settings()
+
+
+settings = get_settings()

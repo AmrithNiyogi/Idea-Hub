@@ -1,0 +1,30 @@
+---
+description: Backend routers/services/repos contracts and secret hygiene
+globs: backend/**/*.py
+alwaysApply: false
+---
+
+# Backend layering & secrets
+
+## Layer contracts
+
+| Layer | May | Must not |
+|-------|-----|----------|
+| `routers/` | Deps, status codes, call services, return schemas | Business rules, raw SQL, Redis OTP logic |
+| `services/` | Domain rules, orchestration, email/Redis via adapters | Know FastAPI `Request`/`Response` details |
+| `repositories/` | Queries, persistence | Auth decisions, HTTP |
+| `schemas/` | Pydantic I/O + Field descriptions | Side effects |
+| `models/` | SQLAlchemy ORM | Business workflows |
+
+Phase features mount through `include_phase23_routers` / `include_phase456_routers`. Prefer existing service patterns (`*_service.py`, `SpineBridge` for idea status).
+
+## Secrets
+
+- Real SMTP / JWT / DB passwords live only in `backend/.env` (gitignored)
+- Commit placeholders in `backend/.env.example` only
+- Never print OTP or SMTP passwords into docs, commits, or seed files beyond the documented demo password in README
+
+## Migrations & seed
+
+- Schema changes → new Alembic revision under `backend/alembic/versions/`
+- Demo data → `app.seed.*` modules; run after `alembic upgrade head`

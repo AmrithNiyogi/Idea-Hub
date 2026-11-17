@@ -1,0 +1,23 @@
+title = "idea-hub-backend gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Tooling noise and committed placeholders — never allow live .env"
+paths = [
+    '''uv\.lock''',
+    '''\.env\.example''',
+    '''coverage\.xml''',
+    '''htmlcov/''',
+    '''\.pytest_cache/''',
+    '''\.mypy_cache/''',
+    '''docs/''',
+    '''frontend/package-lock\.json''',
+    '''frontend/node_modules/''',
+    '''\.cursor/''',
+    '''idea-hub\.html''',
+]
+
+# Explicitly keep scanning real secrets in .env (gitignored) if ever staged.
+# Do not add '''\.env''' here.

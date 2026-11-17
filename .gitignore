@@ -1,0 +1,10 @@
+# Secrets / local env (never commit)
+.env
+**/.env
+
+# Local throwaway Postgres/Redis data
+backend/.dev/
+
+
+# Local code-review-graph SQLite / wiki
+.code-review-graph/

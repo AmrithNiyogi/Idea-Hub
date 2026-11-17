@@ -1,0 +1,52 @@
+---
+description: Idea Hub stack, spine+phases layout, and layering contracts
+alwaysApply: true
+---
+
+# Idea Hub Architecture
+
+## Stack
+
+- **Backend**: FastAPI + SQLAlchemy async + Postgres + Redis (OTP) under `backend/`
+- **Frontend**: Vite + React 18 + TypeScript under `frontend/`
+- **Auth**: email+password → Redis OTP → JWT cookies (Kompass-admin pattern)
+- **API prefix**: `/api/v1`
+
+## Spine vs phases
+
+| Layer | What it owns | Entry |
+|-------|----------------|-------|
+| Spine | Auth, users/roles, ideas lifecycle, explore, engagement, review | `routers/{auth,users,ideas,review}` |
+| Phase 2+3 | Ideathons, recognition, profiles, delivery, collab, admin | `phase23_register.include_phase23_routers` |
+| Phase 4+5+6 | Agents, insights, problems, reopen, etc. | `phase456_register.include_phase456_routers` |
+
+Do not invent new top-level apps. Extend the existing register helpers when adding phase routers.
+
+## Backend layering (required)
+
+```
+routers → services → repositories/models
+schemas validate I/O; dependencies handle auth
+```
+
+- Routers: HTTP only (status codes, deps, schema in/out)
+- Services: business rules, status transitions, side effects (email, Redis)
+- Repositories: SQL / persistence; no HTTP knowledge
+- Never put secrets in code or commit `backend/.env` — use `.env.example` placeholders
+
+## Frontend map
+
+- Pages: `frontend/src/pages/`
+- API clients: `frontend/src/api/`
+- Auth: `frontend/src/auth/`
+- Design tokens: `frontend/src/styles/tokens.css` (must match `idea-hub.html`)
+
+## Local run (preferred)
+
+```bash
+cd backend && ./scripts/dev-services.sh up && uv sync && uv run alembic upgrade head && uv run python -m app.seed.demo
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+cd frontend && npm run dev   # :5173
+```
+
+Seed users/password: see `backend/README.md` (never invent new seed secrets).

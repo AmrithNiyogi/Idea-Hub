@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Idea Hub (Project Polaris) - Dotkonnekt</title>
+<title>Idea Hub (Project IdeaKonnekt) - Dotkonnekt</title>
 <meta name="description" content="Idea Hub MVP: an AI-native innovation management prototype. All agent activity is simulated.">
 <!-- Fonts: Geist and Geist Mono (SIL Open Font License 1.1) are embedded below as subsetted woff2. The file makes no network requests. -->
 <!--
@@ -739,6 +739,13 @@ a.kpi:hover{border-color:var(--brand-line);text-decoration:none;box-shadow:0 0 0
 .signin-card__head{display:flex;gap:12px;align-items:center;min-width:0;width:100%}
 .signin-card__chips{display:flex;gap:6px;flex-wrap:wrap}
 .signin__roles{display:grid;gap:var(--space-3);grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.signin__legend{padding:var(--space-4);border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface)}
+.signin__legend-title{margin:0 0 4px;font-size:14px;font-weight:600}
+.signin__legend-intro{margin:0 0 var(--space-3)}
+.signin__legend-list{display:grid;gap:10px;margin:0}
+.signin__legend-row{display:grid;grid-template-columns:132px minmax(0,1fr);gap:var(--space-3);align-items:start}
+.signin__legend-row dt{margin:0}
+.signin__legend-row dd{margin:0;line-height:1.4}
 .signin__foot{display:flex;flex-direction:column;align-items:center;gap:6px;padding:var(--space-5);border-top:1px solid var(--border)}
 .signin__results .listrow{width:100%;background:none;border:0;border-bottom:1px solid var(--border);text-align:left;font:inherit;color:inherit;cursor:pointer}
 .signin__results .listrow:hover{background:var(--surface-2)}
@@ -749,7 +756,7 @@ a.kpi:hover{border-color:var(--brand-line);text-decoration:none;box-shadow:0 0 0
 .rolestrip__item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer;min-width:0;max-width:100%}
 .rolestrip__item:hover{border-color:var(--brand);background:var(--brand-soft)}
 @media (max-width:820px){.signin__cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:520px){.signin__cards{grid-template-columns:minmax(0,1fr)}.signin__main{padding:0 var(--space-4) var(--space-5)}}
+@media (max-width:520px){.signin__cards{grid-template-columns:minmax(0,1fr)}.signin__main{padding:0 var(--space-4) var(--space-5)}.signin__legend-row{grid-template-columns:minmax(0,1fr)}}
 /* ==== END SECTION C4.10 ==== */
 
 /* ==== SECTION C5 RESPONSIVE ==== */
@@ -867,7 +874,7 @@ a.kpi:hover{border-color:var(--brand-line);text-decoration:none;box-shadow:0 0 0
 'use strict';
 
 // ==== SECTION 0 NAMESPACE ====
-const IH = { version:'0.9.0-multi-role-signin', schemaVersion:7, storageKey:'ideahub.v1', engine:'mock-heuristic-v1', build:'People hold many roles and sign in for one (simulated account picker). Phases 1-6 plus Problem radar, self-reopening decisions, collaboration requests and the team progress tracker (foundation, idea core, review and pipeline, delivery and impact, ideathons and recognition, insights, administration and agent hub)' };
+const IH = { version:'0.9.0-multi-role-signin', schemaVersion:8, storageKey:'ideahub.v1', engine:'mock-heuristic-v1', build:'People hold many roles and sign in for one (simulated account picker). Phases 1-6 plus Problem radar, self-reopening decisions, collaboration requests and the team progress tracker (foundation, idea core, review and pipeline, delivery and impact, ideathons and recognition, insights, administration and agent hub)' };
 const SIM_FOOTER = 'Simulated output computed from demo data. No language model was called.';
 // ==== END SECTION 0 ====
 
@@ -1012,16 +1019,16 @@ const TRANSITIONS = {
   prototype:['implemented','parked','declined'], merged:[], declined:[], implemented:[], withdrawn:[]
 };
 const ROLES = {
-  employee:{ label:'Employee', blurb:'Submit and follow ideas, collaborate, track your own ideas.' },
+  contributor:{ label:'Contributor', blurb:'Submit and follow ideas, collaborate, track your own ideas.' },
   reviewer:{ label:'Reviewer', blurb:'Work the review queue, score ideas and record decisions.' },
   lead:{ label:'Team lead', blurb:'Take ownership of accepted ideas and run them through delivery.' },
   leadership:{ label:'Leadership', blurb:'See pipeline health, bottlenecks and impact.' },
   admin:{ label:'Administrator', blurb:'Configure the platform and reset demo data.' }
 };
 const PERSONAS = ['u_priya','u_marcus','u_elena','u_tomas','u_dana','u_sam'];   /* the six featured demo accounts on the sign-in screen */
-const ROLE_ORDER = ['employee','reviewer','lead','leadership','admin'];
+const ROLE_ORDER = ['contributor','reviewer','lead','leadership','admin'];
 const ROLE_SIGNIN = {
-  employee:'Submit ideas, collaborate on other people’s ideas and track your own.',
+  contributor:'Submit ideas, collaborate on other people’s ideas and track your own.',
   reviewer:'Your review queue and decisions for the panels you belong to.',
   lead:'Delivery, innovation hours and your team’s ideas.',
   leadership:'Insights, approvals, awards and the problem radar.',
@@ -1033,8 +1040,8 @@ const ROLE_SIGNIN = {
 function ar(u){ return u && _state && u.id === _state.meta.currentUserId ? _state.meta.activeRole : (u ? u.primaryRole : null); }
 function hasRole(u, r){ return !!u && Array.isArray(u.roles) && u.roles.includes(r); }
 function holdsAny(u, rs){ return !!u && rs.some(r => hasRole(u, r)); }
-/* display text for the roles a person holds, leaving out the universal Employee role unless it is the only one */
-function rolesText(u){ const rs = sortRoles(u.roles).filter(r => r !== 'employee'); return (rs.length ? rs : ['employee']).map(r => ROLES[r].label).join(' + '); }
+/* display text for the roles a person holds, leaving out the universal Contributor role unless it is the only one */
+function rolesText(u){ const rs = sortRoles(u.roles).filter(r => r !== 'contributor'); return (rs.length ? rs : ['contributor']).map(r => ROLES[r].label).join(' + '); }
 function roleLabel(r){ return ROLES[r] ? ROLES[r].label : String(r || ''); }
 function sortRoles(rs){ return ROLE_ORDER.filter(r => rs.includes(r)); }
 const CONTRIB_ROLES = ['Builder','Reviewer','Tester','Designer','Advisor'];
@@ -1183,7 +1190,7 @@ const AGENT_REGISTRY = [
 ];
 /* flows: kind 'agent' | 'rules' | 'human'. gate marks a human approval. k is the planned Kompass concept (design only). */
 const FLOWS = [
-  { id:'A', title:'Idea drafted and submitted', trigger:'idea.submitted', events:['idea.submitted','idea.routed'], link:['Submit an idea (employees)', '#/submit'],
+  { id:'A', title:'Idea drafted and submitted', trigger:'idea.submitted', events:['idea.submitted','idea.routed'], link:['Submit an idea (contributors)', '#/submit'],
     steps:[{ l:'Trigger: idea submitted', kind:'rules' }, { l:'Idea Intelligence: similar ideas, tags, gaps', kind:'agent', k:'Smart Agent + AI Brain lookup' }, { l:'Idea Enhancement: suggestions', kind:'agent', k:'Smart Agent' }, { l:'Author applies or dismisses suggestions', kind:'human', gate:true }, { l:'Orchestrator routes to the category panel (fixed rule)', kind:'rules' }, { l:'Run recorded; status Submitted, review clock starts', kind:'rules' }] },
   { id:'B', title:'Review overdue', trigger:'review.overdue', events:['review.overdue','prototype.stale','reopen.ready','parked.revisit'], link:['Pipeline, stuck ideas', '#/pipeline?stuck=1'],
     steps:[{ l:'Trigger: review clock breached (checked when a page opens)', kind:'rules' }, { l:'Innovation Workflow: works out days over and who to nudge', kind:'agent', k:'Mostly deterministic' }, { l:'Review Intelligence: refreshes the brief', kind:'agent', k:'Smart Agent' }, { l:'Reviewer or admin approves the reminder', kind:'human', gate:true }, { l:'Reminder sent to the panel', kind:'rules' }, { l:'Outcome recorded; attention list updates', kind:'rules' }] },
@@ -1218,49 +1225,49 @@ const TEAMS = [
   ['team_cs','Customer Success'],['team_rev','Revenue Operations'],['team_ops','People and Operations']
 ];
 const USERS = [
-  ['priya','Ted Lasso','Senior Product Designer','team_des','employee'],
-  ['marcus','Marcus Webb','Backend Engineer','team_plat','employee'],
+  ['priya','Ted Lasso','Senior Product Designer','team_des','contributor'],
+  ['marcus','Marcus Webb','Backend Engineer','team_plat','contributor'],
   ['elena','Elena Rossi','Staff Engineer','team_plat','reviewer'],
   ['tomas','Tomas Berg','Engineering Manager','team_plat','lead'],
   ['dana','Dana Okafor','VP Product','team_des','leadership'],
   ['sam','Sam Patel','Business Systems Administrator','team_ops','admin'],
-  ['aiko','Aiko Tanaka','ML Engineer','team_ai','employee'],
-  ['ben','Ben Carter','Data Analyst','team_ai','employee'],
-  ['chloe','Chloe Martin','Customer Success Manager','team_cs','employee'],
-  ['dev','Dev Malhotra','Site Reliability Engineer','team_plat','employee'],
-  ['emma','Emma Lindqvist','UX Researcher','team_des','employee'],
-  ['farid','Farid Haddad','Solutions Engineer','team_cs','employee'],
-  ['grace','Grace Obi','Revenue Operations Analyst','team_rev','employee'],
+  ['aiko','Aiko Tanaka','ML Engineer','team_ai','contributor'],
+  ['ben','Ben Carter','Data Analyst','team_ai','contributor'],
+  ['chloe','Chloe Martin','Customer Success Manager','team_cs','contributor'],
+  ['dev','Dev Malhotra','Site Reliability Engineer','team_plat','contributor'],
+  ['emma','Emma Lindqvist','UX Researcher','team_des','contributor'],
+  ['farid','Farid Haddad','Solutions Engineer','team_cs','contributor'],
+  ['grace','Grace Obi','Revenue Operations Analyst','team_rev','contributor'],
   ['hannah','Hannah Kim','Head of Support Operations','team_cs','reviewer'],
   ['ivan','Ivan Petrov','Security Engineer','team_plat','reviewer'],
-  ['jess','Jess Alvarez','Account Executive','team_rev','employee'],
+  ['jess','Jess Alvarez','Account Executive','team_rev','contributor'],
   ['kofi','Kofi Mensah','Product Manager','team_des','reviewer'],
-  ['lena','Lena Fischer','People Partner','team_ops','employee'],
-  ['mateo','Mateo Silva','Frontend Engineer','team_plat','employee'],
+  ['lena','Lena Fischer','People Partner','team_ops','contributor'],
+  ['mateo','Mateo Silva','Frontend Engineer','team_plat','contributor'],
   ['nina','Nina Volkov','Data Scientist','team_ai','reviewer'],
   ['omar','Omar Rahman','Engineering Manager','team_ai','lead'],
-  ['pia','Pia Sorensen','Technical Writer','team_des','employee'],
-  ['quinn','Quinn Murphy','Finance Analyst','team_ops','employee'],
+  ['pia','Pia Sorensen','Technical Writer','team_des','contributor'],
+  ['quinn','Quinn Murphy','Finance Analyst','team_ops','contributor'],
   ['ravi','Ravi Menon','Director of Revenue Operations','team_rev','reviewer'],
-  ['sofia','Sofia Marino','QA Engineer','team_plat','employee'],
+  ['sofia','Sofia Marino','QA Engineer','team_plat','contributor'],
   ['theo','Theo Laurent','Customer Support Lead','team_cs','lead'],
-  ['uma','Uma Reddy','Product Designer','team_des','employee'],
-  ['victor','Victor Nguyen','Sales Engineer','team_rev','employee'],
-  ['wen','Wen Zhao','ML Platform Engineer','team_ai','employee'],
-  ['yara','Yara Costa','Onboarding Specialist','team_cs','employee'],
+  ['uma','Uma Reddy','Product Designer','team_des','contributor'],
+  ['victor','Victor Nguyen','Sales Engineer','team_rev','contributor'],
+  ['wen','Wen Zhao','ML Platform Engineer','team_ai','contributor'],
+  ['yara','Yara Costa','Onboarding Specialist','team_cs','contributor'],
   /* recent joiners who have not yet engaged with Idea Hub, so participation is a realistic figure (see QUIET in the seed builder) */
-  ['noor','Noor Rahim','Support Engineer','team_cs','employee'],
-  ['jonas','Jonas Keller','Account Manager','team_rev','employee'],
-  ['leila','Leila Haddad','Operations Analyst','team_ops','employee'],
-  ['owen','Owen Doyle','Platform Engineer','team_plat','employee'],
-  ['ines','Ines Duarte','Data Engineer','team_ai','employee'],
-  ['rhea','Rhea Kapoor','Visual Designer','team_des','employee']
+  ['noor','Noor Rahim','Support Engineer','team_cs','contributor'],
+  ['jonas','Jonas Keller','Account Manager','team_rev','contributor'],
+  ['leila','Leila Haddad','Operations Analyst','team_ops','contributor'],
+  ['owen','Owen Doyle','Platform Engineer','team_plat','contributor'],
+  ['ines','Ines Duarte','Data Engineer','team_ai','contributor'],
+  ['rhea','Rhea Kapoor','Visual Designer','team_des','contributor']
 ];
 const CATEGORIES = [
   ['tech','Tech','var(--cat-tech)'],['business','Business','var(--cat-business)'],
   ['process','Process Improvement','var(--cat-process)'],['innovation','New Innovation','var(--cat-innovation)']
 ];
-/* Roles held in addition to the primary role (everyone also holds employee). */
+/* Roles held in addition to the primary role (everyone also holds contributor). */
 const EXTRA_ROLES = { priya:['lead'], tomas:['reviewer'], sam:['reviewer'] };
 const PANELS = [
   ['tech',['elena','nina','ivan'],'elena'], ['business',['ravi','kofi','hannah'],'ravi'],
@@ -1607,7 +1614,7 @@ function buildSeed(prefs){
   const E = st.ent, nid = p => p + '_' + (st.meta.seq++);
   const leaders = { team_plat:'u_tomas', team_ai:'u_omar', team_cs:'u_theo', team_des:'u_dana', team_rev:'u_ravi', team_ops:'u_sam' };
   TEAMS.forEach(([id, name]) => { E.teams[id] = { id, name, leadId:leaders[id] }; });
-  USERS.forEach(([k, name, title, teamId, role], i) => { const id = 'u_' + k; E.users[id] = { id, name, title, teamId, roles:sortRoles(uniq([role, 'employee'].concat(EXTRA_ROLES[k] || []))), primaryRole:role, avatar:(i % 8) + 1, email:k + '@dotkonnekt.example' }; });
+  USERS.forEach(([k, name, title, teamId, role], i) => { const id = 'u_' + k; E.users[id] = { id, name, title, teamId, roles:sortRoles(uniq([role, 'contributor'].concat(EXTRA_ROLES[k] || []))), primaryRole:role, avatar:(i % 8) + 1, email:k + '@dotkonnekt.example' }; });
   CATEGORIES.forEach(([id, label, color]) => { E.categories[id] = { id, label, color, colorKey:id, description:CATEGORY_HELP[id] ? CATEGORY_HELP[id].blurb : '', enabled:true, panelId:'panel_' + id }; });
   PANELS.forEach(([c, members, chair]) => { E.panels['panel_' + c] = { id:'panel_' + c, categoryId:c, name:E.categories[c].label + ' review panel', memberIds:members.map(m => 'u_' + m), chairId:'u_' + chair }; });
   const U = k => 'u_' + k, IDX = k => 'idea_' + k;
@@ -1685,7 +1692,7 @@ function buildSeed(prefs){
   // votes, follows, volunteers, comments
   const hot = ['supportdraft','runbook','gallery','renewal','flaky','releasechk','embeddings'];
   const userIds = Object.keys(E.users);
-  /* A few employees are deliberately quiet: the random seed engagement below is handed to the next active colleague instead,
+  /* A few people are deliberately quiet: the random seed engagement below is handed to the next active colleague instead,
      so per-idea vote counts stay about the same but participation is a realistic figure rather than 100%. */
   const QUIET = new Set(['u_uma','u_noor','u_jonas','u_leila','u_owen','u_ines','u_rhea']);
   const nextActive = (u, ok) => { const n0 = userIds.indexOf(u); for (let k = 1; k <= userIds.length; k++) { const v = userIds[(n0 + k) % userIds.length]; if (!QUIET.has(v) && ok(v)) return v; } return null; };
@@ -1948,6 +1955,21 @@ function fixSession(st){
   if (!u) { m.currentUserId = null; m.activeRole = null; return; }
   if (!hasRole(u, m.activeRole)) m.activeRole = u.primaryRole;
 }
+/* schema 7 used role key "employee"; schema 8 renames it to "contributor".
+   Old saves that still hold "employee" would otherwise vanish from chips: sortRoles only keeps keys in ROLE_ORDER. */
+function mapLegacyRole(r){ return r === 'employee' ? 'contributor' : r; }
+function migrateRoles(st){
+  Object.values(st.ent.users || {}).forEach(u => {
+    u.roles = sortRoles(uniq((Array.isArray(u.roles) ? u.roles : []).map(mapLegacyRole).concat(['contributor'])));
+    u.primaryRole = mapLegacyRole(u.primaryRole) || 'contributor';
+    if (!u.roles.includes(u.primaryRole)) u.primaryRole = u.roles[0] || 'contributor';
+  });
+  const m = st.meta;
+  if (m.activeRole) m.activeRole = mapLegacyRole(m.activeRole);
+  if (m.rememberedRoles) Object.keys(m.rememberedRoles).forEach(uid => { m.rememberedRoles[uid] = mapLegacyRole(m.rememberedRoles[uid]); });
+  if (Array.isArray(m.signIns)) m.signIns.forEach(s => { if (s && s.role) s.role = mapLegacyRole(s.role); });
+  m.schemaVersion = IH.schemaVersion;
+}
 function bootState(){
   let loaded = null;
   if (!storageAvailable()) { Store.persistence = 'memory'; Store.persistNote = 'Browser storage is unavailable here, so changes will not survive a refresh.'; }
@@ -1956,12 +1978,14 @@ function bootState(){
       const raw = localStorage.getItem(IH.storageKey);
       if (raw != null) {
         const o = JSON.parse(raw);
-        if (!o || !o.meta || o.meta.schemaVersion !== IH.schemaVersion || !o.ent || !o.ent.ideas || !o.ent.users) throw new Error('Unexpected data shape or schema version');
+        const ver = o && o.meta ? o.meta.schemaVersion : null;
+        /* accept 7 (pre-rename) or current; migrateRoles rewrites employee → contributor */
+        if (!o || !o.meta || (ver !== IH.schemaVersion && ver !== 7) || !o.ent || !o.ent.ideas || !o.ent.users) throw new Error('Unexpected data shape or schema version');
         loaded = o;
       }
     } catch (e) { Store.persistence = 'recovered'; Store.persistNote = 'Saved data could not be read (' + e.message + '). Fresh demo data was loaded; it replaces the unreadable copy on your next change.'; console.warn('[IdeaHub] stored state unreadable', e); }
   }
-  if (loaded) { _state = loaded; shiftDates(_state); }
+  if (loaded) { _state = loaded; migrateRoles(_state); shiftDates(_state); }
   else { _state = buildSeed(); }
   fixSession(_state);
   Store.persistNow();
@@ -3307,7 +3331,7 @@ const SEL = {
   /* what is waiting in each role the person holds but is not using now (Home strip) */
   otherRoles(u){
     const act = ar(u);
-    return sortRoles(u.roles).filter(r => r !== act).map(r => { const items = SEL.attention(u, r, r !== 'employee'); return { role:r, n:items.length, top:items[0] ? items[0].text : '', href:items[0] ? items[0].href : '#/home' }; });
+    return sortRoles(u.roles).filter(r => r !== act).map(r => { const items = SEL.attention(u, r, r !== 'contributor'); return { role:r, n:items.length, top:items[0] ? items[0].text : '', href:items[0] ? items[0].href : '#/home' }; });
   },
   unread(u){ let n = 0; for (const k in _state.ent.notifications) { const x = _state.ent.notifications[k]; if (x.userId === u && !x.read) n++; } return n; },
   feed(n){
@@ -4371,7 +4395,7 @@ const MockEngine = {
     }
     if (agent === 'innovation-analytics') {
       const over = SEL.overdueByPanel().sort((a, b) => b.n - a.n)[0], med = SEL.medianDecisionDays(), part = SEL.participation(90), imp = SEL.impactTotals();
-      const ins = []; if (over && over.n) ins.push(SEL.cat(over.panel.categoryId).label + ' has ' + plural(over.n, 'decision') + ' overdue, the largest backlog.'); if (med != null) ins.push('Median time from submission to decision is ' + med.toFixed(0) + ' days.'); ins.push(part.pct + '% of employees (' + part.active + ' of ' + part.total + ') took part in the last 90 days.'); ins.push(plural(imp.count, 'implemented idea') + ' now save about ' + Math.round(imp.hoursPerMonth) + ' hours a month.');
+      const ins = []; if (over && over.n) ins.push(SEL.cat(over.panel.categoryId).label + ' has ' + plural(over.n, 'decision') + ' overdue, the largest backlog.'); if (med != null) ins.push('Median time from submission to decision is ' + med.toFixed(0) + ' days.'); ins.push(part.pct + '% of people (' + part.active + ' of ' + part.total + ') took part in the last 90 days.'); ins.push(plural(imp.count, 'implemented idea') + ' now save about ' + Math.round(imp.hoursPerMonth) + ' hours a month.');
       return { steps:[st('trigger', 'Analytics requested'), st('retrieve', 'Loaded ideas, decisions and impact records'), st('analyse', 'Computed stage conversion, participation and bottlenecks'), st('recommend', ins.length + ' insights prepared')], summary:ins[0] || '', output:{ insights:ins }, approval:{ required:false, role:null, state:'not_required' } };
     }
     return { steps:[st('trigger', 'Event received: ' + event), st('record', 'No handler for this event in the simulated engine')], summary:'No action.', output:{}, approval:{ required:false, role:null, state:'not_required' } };
@@ -4649,7 +4673,7 @@ function matchRoute(){ const { path, query } = parseHash(); for (const r of ROUT
 function go(path, query, replace){ const h = '#' + path + (query && Object.keys(query).length && keyQuery(query) ? '?' + keyQuery(query) : ''); if (replace) history.replaceState(null, '', h), RT.render(true); else location.hash = h; }
 const NAV = [
   { id:'home', label:'Home', icon:'home', href:'#/home' }, { id:'explore', label:'Explore', icon:'compass', href:'#/explore' },
-  { id:'my', label:'My ideas', icon:'list', href:'#/my', roles:['employee','reviewer','lead'] },
+  { id:'my', label:'My ideas', icon:'list', href:'#/my', roles:['contributor','reviewer','lead'] },
   { section:'Work' },
   { id:'review', label:'Review', icon:'checkcircle', href:'#/review', roles:['reviewer','admin'] }, { id:'pipeline', label:'Pipeline', icon:'columns', href:'#/pipeline' }, { id:'approvals', label:'Approvals', icon:'clock', href:'#/approvals', roles:['leadership','admin'] },
   { section:'Community' },
@@ -4658,7 +4682,7 @@ const NAV = [
   { id:'problems', label:'Problem radar', icon:'target', href:'#/problems' }, { id:'insights', label:'Insights', icon:'chart', href:'#/insights', roles:['leadership','admin'] }, { id:'agents', label:'Agent hub', icon:'spark', href:'#/agents', roles:['reviewer','lead','leadership','admin'] },
   { id:'admin', label:'Admin', icon:'settings', href:'#/admin', roles:['admin'] }
 ];
-const CAN_SUBMIT = ['employee','reviewer','lead'];
+const CAN_SUBMIT = ['contributor','reviewer','lead'];
 function renderSidebar(){
   const me = SEL.me(), cur = RT.cur && RT.cur.def ? RT.cur.def.nav : null; let pendingSection = null, out = [];
   const badge = id => { if (id === 'approvals') { const n = SEL.pendingRequests().length; return n ? html`<span class="nav-item__badge" title="${n} waiting">${n}</span>` : ''; } if (id === 'review' && ['reviewer','admin'].includes(ar(me))) { const n = SEL.panelsFor(me).reduce((a, p) => a + SEL.overdueIdeas(p.id).length, 0); return n ? html`<span class="nav-item__badge" title="${n} overdue">${n}</span>` : ''; } if (id === 'my') { const n = SEL.allIdeas().filter(i => i.status === 'needs_info' && (i.authorId === me.id || i.coAuthorIds.includes(me.id))).length; return n ? html`<span class="nav-item__badge" title="${n} need your answer">${n}</span>` : ''; } return ''; };
@@ -4669,7 +4693,7 @@ function renderSidebar(){
     out.push(html`<a class="nav-item" href="${n.href}" ${cur === n.id ? raw('aria-current="page"') : ''} title="${n.label}">${icon(n.icon, 20)}<span class="nav-item__text">${n.label}</span>${badge(n.id)}</a>`);
   });
   $('#sidebar').innerHTML = String(html`
-    <a class="brand" href="#/home" aria-label="Polaris, Idea Hub. Home"><span class="brand__glyph">${icon('logo', 18)}</span><span class="brand__text"><span class="brand__name">Polaris</span><span class="brand__sub">Idea Hub</span></span></a>
+    <a class="brand" href="#/home" aria-label="IdeaKonnekt, Idea Hub. Home"><span class="brand__glyph">${icon('logo', 18)}</span><span class="brand__text"><span class="brand__name">IdeaKonnekt</span><span class="brand__sub">Idea Hub</span></span></a>
     ${CAN_SUBMIT.includes(ar(me)) ? html`<a class="btn btn--primary" href="#/submit">${icon('plus', 18)}<span class="btn__text">Submit an idea</span></a>` : ''}
     <nav class="nav" aria-label="Main">${out}</nav>
     <div class="sidebar__foot"><div class="dk-logo" role="img" aria-label="dotkonnekt">${raw('<svg class="dk-logo__mark" viewBox="52 46 162 62" fill="currentColor" aria-hidden="true" focusable="false">' + LOGO_MARK + '</svg>')}${raw('<svg class="dk-logo__word" viewBox="17 119 232 34" fill="currentColor" aria-hidden="true" focusable="false">' + LOGO_WORD + '</svg>')}</div><button class="btn btn--ghost btn--sm" id="collapse-btn" data-action="ui.toggleSidebar" aria-pressed="${!!S().meta.sidebarCollapsed}">${icon('sidebar', 18)}<span class="btn__text">${S().meta.sidebarCollapsed ? 'Expand' : 'Collapse'}</span></button><p class="sidebar__note">Prototype build on demo data. Agents are simulated. Icons are not the official set.</p></div>`);
@@ -4798,7 +4822,7 @@ function scheduleStoreRender(name){
 const SI = { step:1, userId:null, role:null, remember:false };
 function dkLogoBlock(){ return html`<div class="dk-logo" role="img" aria-label="dotkonnekt">${raw('<svg class="dk-logo__mark" viewBox="52 46 162 62" fill="currentColor" aria-hidden="true" focusable="false">' + LOGO_MARK + '</svg>')}${raw('<svg class="dk-logo__word" viewBox="17 119 232 34" fill="currentColor" aria-hidden="true" focusable="false">' + LOGO_WORD + '</svg>')}</div>`; }
 /* ', as Reviewer' for records made in a non-default capacity; older seeded decisions default to Reviewer when the decider holds it */
-function asRoleText(rec, u){ const r = rec.asRole || (rec.deciderId && hasRole(u, 'reviewer') ? 'reviewer' : ''); return r && r !== 'employee' ? ', as ' + roleLabel(r) : ''; }
+function asRoleText(rec, u){ const r = rec.asRole || (rec.deciderId && hasRole(u, 'reviewer') ? 'reviewer' : ''); return r && r !== 'contributor' ? ', as ' + roleLabel(r) : ''; }
 /* a one-click way to get the right role: switch if the person holds it, otherwise sign in as someone else */
 function switchHint(me, roles){ const r = roles.find(x => hasRole(me, x)); return r ? html`<button class="btn btn--sm" data-action="role.switch" data-id="${r}" data-stay="1">Switch to ${roleLabel(r)}</button>` : html`<button class="btn btn--sm" data-action="session.signInOther">Sign in as someone else</button>`; }
 function roleChips(u){ return html`<span class="signin-card__chips">${sortRoles(u.roles).map(r => pill(roleLabel(r), r === u.primaryRole ? 'brand' : ''))}</span>`; }
@@ -4815,9 +4839,14 @@ function renderSignIn(){
   let main;
   if (!u) {
     SI.step = 1;
-    main = html`<div><h1 id="si-h" tabindex="-1">Who are you?</h1><p class="muted">Pick a demo account to explore Polaris, or search for anyone else.</p></div>
+    main = html`<div><h1 id="si-h" tabindex="-1">Who are you?</h1><p class="muted">Pick a demo account to explore IdeaKonnekt, or search for anyone else.</p></div>
+      <aside class="signin__legend" aria-labelledby="si-legend-h">
+        <h2 class="signin__legend-title" id="si-legend-h">Roles</h2>
+        <p class="muted small signin__legend-intro">Everyone is a Contributor. Extra roles open review, delivery, leadership or admin views. Purple chip on a card is that person’s default role.</p>
+        <dl class="signin__legend-list">${ROLE_ORDER.map(r => html`<div class="signin__legend-row"><dt>${pill(ROLES[r].label, 'brand')}</dt><dd class="muted small">${ROLES[r].blurb}</dd></div>`)}</dl>
+      </aside>
       <div class="signin__cards">${PERSONAS.map(id => siPersonCard(SEL.user(id)))}</div>
-      <div class="field" style="max-width:420px"><label for="si-search">Find another employee</label><input class="input" id="si-search" type="search" placeholder="Search by name or title" autocomplete="off" data-input="si.search"></div>
+      <div class="field" style="max-width:420px"><label for="si-search">Find another person</label><input class="input" id="si-search" type="search" placeholder="Search by name or title" autocomplete="off" data-input="si.search"></div>
       <div class="signin__results" id="si-results" aria-live="polite">${siResults('')}</div>`;
   } else {
     SI.step = 2; const roles = sortRoles(u.roles); if (!roles.includes(SI.role)) SI.role = roles.includes(u.primaryRole) ? u.primaryRole : roles[0];
@@ -4828,7 +4857,7 @@ function renderSignIn(){
       <div class="row"><button class="btn btn--primary" data-action="si.go">Sign in as ${roleLabel(SI.role)}</button></div>`;
   }
   root.innerHTML = String(html`<div class="signin"><div class="signin__top"><button class="btn btn--ghost btn--icon" data-action="ui.toggleTheme" aria-label="Switch to ${S().meta.theme === 'dark' ? 'light' : 'dark'} theme">${icon(S().meta.theme === 'dark' ? 'sun' : 'moon', 20)}</button></div>
-    <main class="signin__main" id="signin-main"><div class="signin__brand"><span class="brand__glyph">${icon('logo', 18)}</span><span class="brand__text"><span class="brand__name">Polaris</span><span class="brand__sub">Idea Hub</span></span></div>${main}
+    <main class="signin__main" id="signin-main"><div class="signin__brand"><span class="brand__glyph">${icon('logo', 18)}</span><span class="brand__text"><span class="brand__name">IdeaKonnekt</span><span class="brand__sub">Idea Hub</span></span></div>${main}
       <p class="muted small">${icon('lock', 12)} Demo sign-in — no password. In production this would be single sign-on.</p></main>
     <footer class="signin__foot">${dkLogoBlock()}</footer></div>`);
   const h = $('#si-h'); if (h && SI.userId) h.focus({ preventScroll:true });
@@ -4927,7 +4956,7 @@ function viewHome(){
         ${homeIdeathonCard()}
         <div class="card"><div class="card__head"><h2>Announcements</h2><span class="muted small">Implemented ideas</span></div>${announcementsList(3)}</div>
         <div class="card"><div class="card__head"><h2>Where ideas are now</h2></div>${stageBar(counts)}</div>
-        <div class="card"><div class="card__head"><h2>Engagement and impact</h2></div><div class="mini-kpis"><div><div class="kpi__label">Taking part</div><div class="kpi__value">${part.pct}%</div><div class="muted small">${part.active} of ${part.total} employees, last 90 days</div></div><div><div class="kpi__label">Hours saved</div><div class="kpi__value">${Math.round(imp.hoursPerMonth)}</div><div class="muted small">per month, ${Math.round(imp.hoursVerified)} verified</div></div><div><div class="kpi__label">Days to decide</div><div class="kpi__value">${med == null ? '—' : Math.round(med)}</div><div class="muted small">median</div></div></div><p class="muted small" style="margin-top:12px">Impact figures are the owners’ recorded entries on ${plural(imp.count, 'implemented idea')}. ${imp.verified} of ${imp.entries} entries are verified by a second person; the rest are owner-reported.</p></div>
+        <div class="card"><div class="card__head"><h2>Engagement and impact</h2></div><div class="mini-kpis"><div><div class="kpi__label">Taking part</div><div class="kpi__value">${part.pct}%</div><div class="muted small">${part.active} of ${part.total} people, last 90 days</div></div><div><div class="kpi__label">Hours saved</div><div class="kpi__value">${Math.round(imp.hoursPerMonth)}</div><div class="muted small">per month, ${Math.round(imp.hoursVerified)} verified</div></div><div><div class="kpi__label">Days to decide</div><div class="kpi__value">${med == null ? '—' : Math.round(med)}</div><div class="muted small">median</div></div></div><p class="muted small" style="margin-top:12px">Impact figures are the owners’ recorded entries on ${plural(imp.count, 'implemented idea')}. ${imp.verified} of ${imp.entries} entries are verified by a second person; the rest are owner-reported.</p></div>
       </div>
     </div>`;
 }
@@ -6433,7 +6462,7 @@ function ithTabSubmissions(it, me){
     ${open && elig.length ? html`<div class="field" style="margin:0"><label for="ith-link-select">Or link one of your existing ideas</label><div class="row"><select class="select" id="ith-link-select" style="max-width:360px">${elig.map(i => html`<option value="${i.id}">${trunc(i.title, 70)} (${STATUS[i.status].label})</option>`)}</select><button class="btn" data-action="ith.link" data-id="${it.id}">Link idea</button></div></div>` : ''}</div>
     ${status === 'upcoming' ? html`<div class="notice" style="margin-top:12px">${icon('calendar', 16)}<span>Submissions open on <strong>${fmtDate(it.startAt, true)}</strong>.</span></div>` : ''}
     ${!open && status !== 'upcoming' ? html`<div class="notice" style="margin-top:12px">${icon('lock', 16)}<span>Submissions are closed. Entries are locked.</span></div>` : ''}
-    ${open && !elig.length && !CAN_SUBMIT.includes(ar(me)) ? html`<p class="muted small">Employees, reviewers and team leads can submit or link ideas. Your role can follow the campaign and take part in pitch day.</p>` : ''}
+    ${open && !elig.length && !CAN_SUBMIT.includes(ar(me)) ? html`<p class="muted small">Contributors, reviewers and team leads can submit or link ideas. Your role can follow the campaign and take part in pitch day.</p>` : ''}
     ${open && !elig.length && CAN_SUBMIT.includes(ar(me)) ? html`<p class="muted small" style="margin-top:8px">You have no existing active idea that can be linked, so submit a new one.</p>` : ''}</div>`;
   if (!entries.length) return html`<div class="stack">${top}<div class="card">${emptyState('flag', 'No entries yet', 'Ideas submitted to or linked with this ideathon appear here.')}</div></div>`;
   const grouped = clusters.filter(c => !c.single).length;

@@ -1,0 +1,248 @@
+[project]
+name = "idea-hub-backend"
+version = "0.1.0"
+description = "Idea Hub Phase 1 spine — FastAPI + Postgres + Redis"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+  "sqlalchemy[asyncio]>=2.0.36",
+  "asyncpg>=0.30.0",
+  "alembic>=1.14.0",
+  "pydantic[email]>=2.10.0",
+  "pydantic-settings>=2.6.0",
+  "python-jose[cryptography]>=3.3.0",
+  "bcrypt>=4.2.0",
+  "redis>=5.2.0",
+  "python-multipart>=0.0.17",
+  "email-validator>=2.2.0",
+  "httpx>=0.28.0",
+  "pyotp>=2.9.0",
+  "qrcode[pil]>=8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28.0",
+  "pytest>=8.3.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=7.0.0",
+  "mypy>=1.14.0",
+  "pylint>=3.3.0",
+  "pylint-pydantic>=0.3.5",
+  "pydoclint>=0.6.0,<0.9",
+  "types-python-jose>=3.3.0",
+  "types-redis>=4.6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.uv]
+package = true
+
+# ---------------------------------------------------------------------------
+# pytest — fail-fast + coverage gate on critical paths
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+  "-x",
+  "--maxfail=1",
+  # Critical paths only (delivery is smoke-tested separately; not in the gate).
+  "--cov=app.services.auth_service",
+  "--cov=app.services.login_otp_service",
+  "--cov=app.services.idea_service",
+  "--cov=app.services.review_service",
+  "--cov=app.services.notification_service",
+  "--cov=app.services.email_adapter",
+  "--cov=app.constants.lifecycle",
+  "--cov=app.dependencies.auth",
+  "--cov-report=term-missing:skip-covered",
+  "--cov-report=xml:coverage.xml",
+  "--cov-fail-under=85",
+]
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "smoke: lightweight smoke tests (no external services)",
+]
+
+[tool.coverage.run]
+branch = true
+omit = [
+  "*/tests/*",
+  "*/__pycache__/*",
+  "app/seed/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]
+
+# ---------------------------------------------------------------------------
+# mypy — strict-ish (mirrors aistudio-admin-v2 / logger-service)
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+packages = ["app"]
+exclude = [
+  "^app/seed/",
+  "^alembic/",
+  "^tests/",
+]
+
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_calls = false
+disallow_any_generics = false
+disallow_subclassing_any = false
+
+no_implicit_optional = true
+strict_optional = true
+
+strict_equality = true
+warn_return_any = false
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_no_return = true
+
+pretty = true
+show_error_codes = true
+follow_imports = "silent"
+ignore_missing_imports = false
+
+[[tool.mypy.overrides]]
+module = [
+  "jose.*",
+  "redis.*",
+  "bcrypt.*",
+  "asyncpg.*",
+  "httpx.*",
+  "pyotp.*",
+  "qrcode.*",
+]
+ignore_missing_imports = true
+
+# Pre-existing phase modules: gate them later; do not block spine quality gates.
+[[tool.mypy.overrides]]
+module = [
+  "app.seed.*",
+  "app.db.base",
+  "app.db.session_deps",
+  "app.services.agent_gateway",
+  "app.services.agent_heuristics",
+  "app.services.agent_context_service",
+  "app.services.insights_service",
+  "app.services.admin_service",
+  "app.services.recognition_service",
+  "app.services.profile_service",
+  "app.services.reopen_service",
+  "app.services.microsoft_oidc_service",
+  "app.services.totp_service",
+  "app.services.ideathon_service",
+  "app.services.problem_service",
+  "app.services.collab_service",
+  "app.services.account_service",
+  "app.services.spine_bridge",
+  "app.repositories.delivery_repository",
+  "app.repositories.recognition_repository",
+  "app.repositories.ideathon_repository",
+]
+ignore_errors = true
+
+# ---------------------------------------------------------------------------
+# pylint
+# ---------------------------------------------------------------------------
+[tool.pylint.main]
+max-line-length = 120
+load-plugins = ["pylint_pydantic"]
+ignore-paths = [
+  "^alembic/.*$",
+  "^tests/.*$",
+  "^app/seed/.*$",
+]
+jobs = 0
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint."messages control"]
+disable = [
+  "too-few-public-methods",
+  "too-many-arguments",
+  "too-many-positional-arguments",
+  "too-many-locals",
+  "too-many-branches",
+  "too-many-statements",
+  "too-many-instance-attributes",
+  "too-many-return-statements",
+  "duplicate-code",
+  "not-callable",
+  "missing-module-docstring",
+  "missing-class-docstring",
+  "missing-function-docstring",
+  "line-too-long",
+  "import-outside-toplevel",
+  "broad-exception-caught",
+  "protected-access",
+  "no-member",
+  "unsubscriptable-object",
+  "invalid-name",
+  "unused-argument",
+  "unused-import",
+  "unused-variable",
+  "redefined-outer-name",
+  "global-statement",
+  "consider-using-f-string",
+  "raise-missing-from",
+  "unnecessary-pass",
+  "try-except-raise",
+  "superfluous-parens",
+  "cell-var-from-loop",
+  "unknown-option-value",
+]
+
+[tool.pylint.reports]
+score = true
+fail-under = 7.0
+
+[tool.pylint.similarities]
+ignore-imports = true
+
+# ---------------------------------------------------------------------------
+# pydoclint — Google-style (repo documentation standards)
+# ---------------------------------------------------------------------------
+[tool.pydoclint]
+style = "google"
+arg-type-hints-in-docstring = false
+arg-type-hints-in-signature = true
+check-return-types = false
+check-yield-types = false
+check-class-attributes = false
+skip-checking-short-docstrings = true
+skip-checking-raises = true
+require-return-section-when-returning-nothing = false
+allow-init-docstring = true
+exclude = [
+  "alembic/",
+  "tests/",
+  "app/seed/",
+  ".venv/",
+]

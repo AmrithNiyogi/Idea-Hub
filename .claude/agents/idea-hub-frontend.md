@@ -1,0 +1,1 @@
+../../.cursor/agents/idea-hub-frontend.md

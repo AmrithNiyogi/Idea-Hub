@@ -1,0 +1,12 @@
+.dev/
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+uploads/
+!uploads/.gitkeep
