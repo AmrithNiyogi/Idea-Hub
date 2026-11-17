@@ -279,11 +279,8 @@ export function HomePage() {
             <Icon name="plus" size={28} />
             <h3>No ideas yet</h3>
             <p className="muted small">
-              Share the first one. It takes about five minutes.
+              Use New idea in the top bar — it takes about five minutes.
             </p>
-            <Link className="btn btn--primary" to="/submit">
-              Submit an idea
-            </Link>
           </div>
         )}
       </div>
@@ -298,11 +295,6 @@ export function HomePage() {
           <h1>Welcome back, {firstName(user?.name)}</h1>
           <p>{ROLE_BLURBS[active] ?? roleLabel(active)}</p>
         </div>
-        {canSubmit ? (
-          <Link className="btn btn--primary" to="/submit">
-            <Icon name="plus" size={16} /> Submit an idea
-          </Link>
-        ) : null}
       </div>
 
       <div className="grid grid-5 kpi-row">

@@ -130,6 +130,28 @@ class AgentGateway:
                 "proposal_key": f"enhance:{body.idea_id or 'draft'}:{uuid.uuid4().hex[:8]}",
             }
 
+        if body.agent_id == "idea-optimizer":
+            from app.services import agent_simulate_service as sim
+
+            fields: dict[str, Any]
+            if idea is not None:
+                fields = {
+                    "id": str(idea.id),
+                    "title": idea.title,
+                    "problem": idea.problem,
+                    "solution": idea.solution,
+                    "beneficiaries": idea.beneficiaries,
+                    "success_metrics": idea.success_metrics,
+                    "tags": list(idea.tags or []),
+                    "effort": idea.effort,
+                    "category_id": str(idea.category_id) if idea.category_id else None,
+                }
+            else:
+                fields = dict(body.context.get("idea") or body.context or {})
+            message = str(body.context.get("message") or "")
+            out = sim.idea_optimize_turn(idea=fields, message=message)
+            return out, "Simulated author Idea Optimizer turn", {}
+
         if body.agent_id == "review-intelligence":
             if not idea:
                 raise HTTPException(status_code=400, detail="idea_id required")

@@ -82,21 +82,60 @@ export function AdminPage() {
   const [panelNameDrafts, setPanelNameDrafts] = useState<Record<string, string>>(
     {},
   );
-
-  const reviewers = useMemo(
-    () =>
-      users.filter(
-        (u) =>
-          u.roles.includes('reviewer') || u.roles.includes('admin'),
-      ),
-    [users],
+  // Create-panel (orphan category) drafts
+  const [orphanPanelName, setOrphanPanelName] = useState<Record<string, string>>(
+    {},
   );
+  const [orphanPanelReviewer, setOrphanPanelReviewer] = useState<
+    Record<string, string>
+  >({});
+  // Add review panel (= new category + 1:1 panel)
+  const [panelLabel, setPanelLabel] = useState('');
+  const [panelDesc, setPanelDesc] = useState('');
+  const [panelColor, setPanelColor] = useState<CategoryColorKey>('amber');
+  const [panelCustomName, setPanelCustomName] = useState('');
+  const [panelReviewer, setPanelReviewer] = useState('');
+
+  /** People with the Reviewer role — HTML parity for panel seats / first reviewer. */
+  const reviewers = useMemo(() => {
+    const fromPeople = people.filter(
+      (u) => u.is_active && u.roles.includes('reviewer'),
+    );
+    if (fromPeople.length) {
+      return fromPeople.map((u) => ({
+        id: u.id,
+        name: u.name,
+        title: u.title,
+        email: u.email,
+        roles: u.roles,
+      }));
+    }
+    return users.filter((u) => u.roles.includes('reviewer'));
+  }, [people, users]);
 
   const usersById = useMemo(() => {
     const m = new Map<string, User>();
     users.forEach((u) => m.set(u.id, u));
+    // Prefer admin directory names when /users is empty or incomplete
+    people.forEach((p) => {
+      if (!m.has(p.id)) {
+        m.set(p.id, {
+          id: p.id,
+          email: p.email,
+          name: p.name,
+          title: p.title,
+          team_id: null,
+          roles: p.roles,
+          primary_role: p.primary_role,
+          active_role: p.primary_role,
+          status: p.status,
+          avatar: 1,
+          slug: p.id,
+        });
+      }
+    });
     return m;
-  }, [users]);
+  }, [users, people]);
 
   const peopleFiltered = useMemo(() => {
     const q = peopleQ.trim().toLowerCase();
@@ -227,6 +266,31 @@ export function AdminPage() {
     }, 'Category added. It is now open on Submit and has its own review panel.');
   };
 
+  const onAddReviewPanel = async (e: FormEvent) => {
+    e.preventDefault();
+    await run(async () => {
+      const cat = await adminApi.createCategory({
+        label: panelLabel.trim(),
+        description: panelDesc.trim(),
+        color_key: panelColor,
+        reviewer_id: panelReviewer,
+      });
+      const custom = panelCustomName.trim();
+      if (custom) {
+        const snap = await adminApi.config();
+        const panel = snap.panels.find((p) => p.category_id === cat.id);
+        if (panel && panel.name !== custom) {
+          await adminApi.updatePanel(panel.id, { name: custom });
+        }
+      }
+      setPanelLabel('');
+      setPanelDesc('');
+      setPanelColor('amber');
+      setPanelCustomName('');
+      setPanelReviewer('');
+    }, 'Review panel created. It appears in the review queue for that category.');
+  };
+
   const saveCategory = (id: string) =>
     run(async () => {
       const d = catDrafts[id];
@@ -247,7 +311,7 @@ export function AdminPage() {
   const tabs: Array<[Tab, string]> = [
     ['categories', 'Categories'],
     ['people', 'People and roles'],
-    ['panels', 'Panels'],
+    ['panels', 'Review panels'],
     ['scoring', 'Scoring'],
     ['timelines', 'Timelines'],
     ['points', 'Points'],
@@ -295,6 +359,64 @@ export function AdminPage() {
       }
     }, `${roleLabel(role)} role removed from ${target.name}.`);
 
+  const toggleActive = (target: AdminUser) => {
+    if (user?.id === target.id) {
+      fail(new Error('You cannot disable or enable your own account.'));
+      return;
+    }
+    if (target.is_active) {
+      const ok = confirm(
+        `Disable ${target.name}?\n\n${target.email}\n\nThey will not be able to sign in (password or Microsoft SSO) until re-enabled.`,
+      );
+      if (!ok) return;
+      void run(async () => {
+        await adminApi.disableUser(target.id);
+      }, `${target.name} disabled.`);
+      return;
+    }
+    void run(async () => {
+      await adminApi.enableUser(target.id);
+    }, `${target.name} enabled.`);
+  };
+
+  const deleteAccount = (target: AdminUser) => {
+    if (user?.id === target.id) {
+      fail(new Error('You cannot delete your own account.'));
+      return;
+    }
+    const typed = window.prompt(
+      `Delete ${target.name} permanently?\n\nThis cannot be undone. Type their email to confirm:\n${target.email}`,
+    );
+    if (typed === null) return;
+    if (typed.trim().toLowerCase() !== target.email.trim().toLowerCase()) {
+      fail(new Error('Email did not match — account was not deleted.'));
+      return;
+    }
+    void run(async () => {
+      try {
+        await adminApi.deleteUser(target.id, false);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 409) {
+          const detail = (
+            e.body as {
+              detail?: { needs_confirm?: boolean; panels?: string[]; message?: string };
+            }
+          )?.detail;
+          if (detail?.needs_confirm) {
+            const panels = (detail.panels || []).join(', ');
+            const ok = confirm(
+              `Delete ${target.name}?\n\nThey will also be removed from these review panels: ${panels}.`,
+            );
+            if (!ok) return;
+            await adminApi.deleteUser(target.id, true);
+            return;
+          }
+        }
+        throw e;
+      }
+    }, `${target.name} (${target.email}) deleted.`);
+  };
+
   return (
     <div className="stack stack--lg page admin">
       <div className="page-head">
@@ -336,8 +458,9 @@ export function AdminPage() {
             <span>
               A person holds one or more roles and signs in for one of them.
               Permissions follow the role they are working in, not all roles at
-              once. Everyone keeps at least one role, there is always one
+              once. Everyone keeps at least one role, there is always one active
               administrator, and the last reviewer on a panel cannot be removed.
+              Disable blocks sign-in; Delete permanently removes the account.
             </span>
           </div>
           <div className="card">
@@ -386,8 +509,14 @@ export function AdminPage() {
                         {u.name}
                       </Link>
                       <div className="muted small">
-                        {u.title || u.email}
-                        {!u.is_active ? ' · inactive' : ''}
+                        {u.email}
+                        {u.title ? ` · ${u.title}` : ''}
+                        {!u.is_active ? (
+                          <>
+                            {' · '}
+                            <Pill variant="warning">Disabled</Pill>
+                          </>
+                        ) : null}
                       </div>
                       <div
                         className="row"
@@ -433,7 +562,10 @@ export function AdminPage() {
                         ))}
                       </div>
                     </div>
-                    <div className="row" style={{ gap: 6 }}>
+                    <div
+                      className="row"
+                      style={{ gap: 6, flexWrap: 'wrap', alignItems: 'center' }}
+                    >
                       <label className="sr-only" htmlFor={`rl-add-${u.id}`}>
                         Add a role for {u.name}
                       </label>
@@ -466,6 +598,28 @@ export function AdminPage() {
                         onClick={() => addRole(u.id)}
                       >
                         <Icon name="plus" size={14} /> Add
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--sm"
+                        disabled={busy || user?.id === u.id}
+                        aria-label={
+                          u.is_active
+                            ? `Disable ${u.name}`
+                            : `Enable ${u.name}`
+                        }
+                        onClick={() => toggleActive(u)}
+                      >
+                        {u.is_active ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--sm btn--danger"
+                        disabled={busy || user?.id === u.id}
+                        aria-label={`Delete ${u.name}`}
+                        onClick={() => deleteAccount(u)}
+                      >
+                        <Icon name="trash" size={14} /> Delete
                       </button>
                     </div>
                   </div>
@@ -698,9 +852,9 @@ export function AdminPage() {
           <div className="notice">
             <Icon name="info" size={16} />
             <span>
-              Changes take effect in the review queue immediately. Only people
-              who hold the Reviewer role can be added to a panel. To make
-              someone a reviewer, give them the role in{' '}
+              Each category has one review panel. Changes take effect in the
+              review queue immediately. Only people who hold the Reviewer role
+              can sit on a panel — grant that role in{' '}
               <button
                 type="button"
                 className="linkish"
@@ -720,9 +874,21 @@ export function AdminPage() {
               . A panel needs at least one reviewer.
             </span>
           </div>
+          {!reviewers.length ? (
+            <div className="notice notice--warning" role="status">
+              <Icon name="alert" size={16} />
+              <span>
+                No one has the Reviewer role yet. Add it under People and roles
+                before creating or staffing a panel.
+              </span>
+            </div>
+          ) : null}
           {cfg.categories.map((c) => {
             const panel = cfg.panels.find((p) => p.category_id === c.id);
             if (!panel) {
+              const draftName =
+                orphanPanelName[c.id] ?? `${c.label} review panel`;
+              const draftRev = orphanPanelReviewer[c.id] || '';
               return (
                 <div key={c.id} className="card">
                   <div className="card__head">
@@ -735,26 +901,94 @@ export function AdminPage() {
                     </h3>
                     <span className="muted small">No panel yet</span>
                   </div>
-                  <p className="muted small">
-                    Seed or create a panel for this category.
+                  <p className="muted small" style={{ marginBottom: 10 }}>
+                    This category is missing its review panel. Choose a name and
+                    first reviewer to create it.
                   </p>
-                  <button
-                    type="button"
-                    className="btn btn--primary btn--sm"
-                    disabled={busy || reviewers.length === 0}
-                    onClick={() =>
-                      void run(async () => {
-                        const first = reviewers[0];
-                        await adminApi.createPanel({
-                          category_id: c.id,
-                          member_ids: [first.id],
-                          chair_id: first.id,
-                        });
-                      }, 'Panel created.')
-                    }
+                  <div
+                    className="adm-row"
+                    style={{
+                      gridTemplateColumns:
+                        'minmax(0,1.4fr) minmax(0,1fr) auto',
+                    }}
                   >
-                    <Icon name="plus" size={14} /> Create panel
-                  </button>
+                    <div className="field">
+                      <label htmlFor={`pn-orphan-name-${c.id}`}>
+                        Panel name
+                      </label>
+                      <input
+                        className="input"
+                        id={`pn-orphan-name-${c.id}`}
+                        maxLength={160}
+                        value={draftName}
+                        onChange={(e) =>
+                          setOrphanPanelName({
+                            ...orphanPanelName,
+                            [c.id]: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="field">
+                      <label htmlFor={`pn-orphan-rev-${c.id}`}>
+                        First reviewer
+                      </label>
+                      <select
+                        className="select"
+                        id={`pn-orphan-rev-${c.id}`}
+                        required
+                        disabled={!reviewers.length || busy}
+                        value={draftRev}
+                        onChange={(e) =>
+                          setOrphanPanelReviewer({
+                            ...orphanPanelReviewer,
+                            [c.id]: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Choose a reviewer</option>
+                        {reviewers.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="row" style={{ paddingBottom: 2 }}>
+                      <button
+                        type="button"
+                        className="btn btn--primary btn--sm"
+                        disabled={
+                          busy ||
+                          !draftRev ||
+                          !draftName.trim() ||
+                          !reviewers.length
+                        }
+                        onClick={() =>
+                          void run(async () => {
+                            await adminApi.createPanel({
+                              category_id: c.id,
+                              name: draftName.trim(),
+                              member_ids: [draftRev],
+                              chair_id: draftRev,
+                            });
+                            setOrphanPanelName((prev) => {
+                              const next = { ...prev };
+                              delete next[c.id];
+                              return next;
+                            });
+                            setOrphanPanelReviewer((prev) => {
+                              const next = { ...prev };
+                              delete next[c.id];
+                              return next;
+                            });
+                          }, 'Panel created.')
+                        }
+                      >
+                        <Icon name="plus" size={14} /> Create panel
+                      </button>
+                    </div>
+                  </div>
                 </div>
               );
             }
@@ -903,6 +1137,105 @@ export function AdminPage() {
               </div>
             );
           })}
+
+          <form
+            className="card"
+            onSubmit={(e) => void onAddReviewPanel(e)}
+            aria-label="Add a review panel"
+          >
+            <div className="card__head">
+              <h3>Add a review panel</h3>
+            </div>
+            <p className="muted small" style={{ marginBottom: 10 }}>
+              Creates a new category and its dedicated review panel (one panel
+              per category). The first reviewer becomes chair.
+            </p>
+            <div
+              className="adm-row"
+              style={{
+                gridTemplateColumns:
+                  'minmax(0,1fr) minmax(0,1.2fr) 140px minmax(0,1fr) minmax(0,1fr) auto',
+              }}
+            >
+              <div className="field">
+                <label htmlFor="pn-new-label">Category name</label>
+                <input
+                  className="input"
+                  id="pn-new-label"
+                  maxLength={40}
+                  required
+                  value={panelLabel}
+                  onChange={(e) => setPanelLabel(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="pn-new-desc">Description</label>
+                <input
+                  className="input"
+                  id="pn-new-desc"
+                  maxLength={160}
+                  required
+                  minLength={10}
+                  value={panelDesc}
+                  onChange={(e) => setPanelDesc(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="pn-new-color">Colour</label>
+                <select
+                  className="select"
+                  id="pn-new-color"
+                  value={panelColor}
+                  onChange={(e) =>
+                    setPanelColor(e.target.value as CategoryColorKey)
+                  }
+                >
+                  {COLOR_OPTIONS.map((o) => (
+                    <option key={o.key} value={o.key}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="pn-new-name">Panel name (optional)</label>
+                <input
+                  className="input"
+                  id="pn-new-name"
+                  maxLength={160}
+                  placeholder="Defaults to “{category} review panel”"
+                  value={panelCustomName}
+                  onChange={(e) => setPanelCustomName(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="pn-new-reviewer">First reviewer</label>
+                <select
+                  className="select"
+                  id="pn-new-reviewer"
+                  required
+                  value={panelReviewer}
+                  onChange={(e) => setPanelReviewer(e.target.value)}
+                >
+                  <option value="">Choose a reviewer</option>
+                  {reviewers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <button
+                  className="btn btn--primary btn--sm"
+                  type="submit"
+                  disabled={busy || !panelReviewer || !reviewers.length}
+                >
+                  <Icon name="plus" size={14} /> Add panel
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       ) : null}
 

@@ -265,6 +265,19 @@ export function LoginPage() {
         }}
       >
         <div
+          className="signin__brand"
+          style={{ justifyContent: 'center', marginBottom: 28 }}
+        >
+          <span className="brand__glyph" aria-hidden="true">
+            <Icon name="logo" size={18} />
+          </span>
+          <span className="brand__text">
+            <span className="brand__name">IdeaKonnekt</span>
+            <span className="brand__sub">Idea Hub</span>
+          </span>
+        </div>
+
+        <div
           className="row"
           style={{ justifyContent: 'center', gap: 8, marginBottom: 24 }}
         >

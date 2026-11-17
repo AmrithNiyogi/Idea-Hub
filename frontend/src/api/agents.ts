@@ -6,6 +6,38 @@ import type {
   PendingProposal,
 } from '../types/phase456';
 
+export type SubmitAssistTurn = {
+  simulated: boolean;
+  engine: string;
+  mode: string;
+  reply: string;
+  patches: Record<string, unknown>;
+  awaiting_field: string | null;
+  field_prompt: string | null;
+  done: boolean;
+  notice: string;
+};
+
+export type HelpTurn = {
+  simulated: boolean;
+  engine: string;
+  mode: string;
+  topic: string;
+  reply: string;
+  links: Array<{ label: string; href: string }>;
+  notice: string;
+};
+
+export type IdeaOptimizeTurn = {
+  simulated: boolean;
+  engine: string;
+  mode: string;
+  reply: string;
+  field_patches: Record<string, unknown>;
+  focus_fields: string[];
+  notice: string;
+};
+
 export const agentsApi = {
   roster: () => apiFetch<AgentInfo[]>('/agents/roster'),
 
@@ -44,5 +76,41 @@ export const agentsApi = {
     apiFetch<KompassMap>(`/agents/kompass/questions/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ answered, note }),
+    }),
+
+  submitAssist: (body: {
+    draft: Record<string, unknown>;
+    message?: string;
+    awaiting_field?: string | null;
+  }) =>
+    apiFetch<SubmitAssistTurn>('/agents/simulate/submit-assist', {
+      method: 'POST',
+      body: JSON.stringify({
+        draft: body.draft,
+        message: body.message ?? '',
+        awaiting_field: body.awaiting_field ?? null,
+      }),
+    }),
+
+  help: (message: string) =>
+    apiFetch<HelpTurn>('/agents/simulate/help', {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+
+  ideaOptimize: (body: {
+    idea_id?: string;
+    idea: Record<string, unknown>;
+    message?: string;
+    messages?: Array<Record<string, unknown>>;
+  }) =>
+    apiFetch<IdeaOptimizeTurn>('/agents/simulate/idea-optimize', {
+      method: 'POST',
+      body: JSON.stringify({
+        idea_id: body.idea_id ?? null,
+        idea: body.idea,
+        message: body.message ?? '',
+        messages: body.messages ?? [],
+      }),
     }),
 };

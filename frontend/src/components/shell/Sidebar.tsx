@@ -1,7 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Icon } from '../Icons';
 import { useAuth } from '../../auth/AuthProvider';
-import { CAN_SUBMIT } from '../../constants/roles';
 import { collectExtraNavItems, type ExtraNavItem } from '../../routeModules';
 import type { Role } from '../../types/auth';
 
@@ -34,7 +33,6 @@ export function Sidebar({
 }) {
   const { user } = useAuth();
   const active = (user?.active_role ?? 'contributor') as Role;
-  const canSubmit = CAN_SUBMIT.includes(active);
 
   const nav = [...SPINE_NAV, ...collectExtraNavItems()].filter(
     (n) => !n.roles || n.roles.includes(active),
@@ -51,13 +49,6 @@ export function Sidebar({
           <span className="brand__sub">Idea Hub</span>
         </span>
       </Link>
-
-      {canSubmit ? (
-        <Link className="btn btn--primary" to="/submit">
-          <Icon name="plus" size={18} />
-          <span className="btn__text">Submit an idea</span>
-        </Link>
-      ) : null}
 
       <nav className="nav" aria-label="Main">
         {nav.map((n) => (

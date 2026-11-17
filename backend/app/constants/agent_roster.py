@@ -41,12 +41,30 @@ AGENT_ROSTER: list[dict[str, Any]] = [
         ],
     },
     {
+        "id": "idea-optimizer",
+        "prompt_slug": "ideakonnekt-wf-idea-optimizer",
+        "form": "Chat co-pilot (simulated)",
+        "purpose": (
+            "After submit, help the author improve clarity, metrics, tags, and "
+            "problem framing via chat. Proposes field_patches; human applies. "
+            "Not the reviewer scoring agent."
+        ),
+        "triggers": ["idea.optimize_requested", "idea.submitted"],
+        "approval_default": "author",
+        "never": [
+            "Persist edits without author Apply",
+            "Score or decide like Review Intelligence",
+            "Invent customers, metrics, or facts not grounded in the idea",
+        ],
+    },
+    {
         "id": "review-intelligence",
-        "prompt_slug": "ideakonnekt-review-intelligence",
+        "prompt_slug": "ideakonnekt-wf-review-intelligence",
         "form": "Smart Agent (planned)",
         "purpose": (
-            "Prepare a reviewer brief with risks, discussion themes, and "
-            "suggested scores. Never records a decision."
+            "Prepare a reviewer brief with risks, discussion themes, suggested "
+            "scores, decision lean, and merge target_id when similar ideas "
+            "warrant merge. Never records a decision."
         ),
         "triggers": [
             "idea.review_started",

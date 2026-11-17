@@ -80,3 +80,109 @@ class KompassMapOut(BaseModel):
 class KompassAnswerIn(BaseModel):
     answered: bool = True
     note: str = ""
+
+
+class SubmitAssistTurnIn(BaseModel):
+    """One conversational turn for the Submit side assistant (simulated)."""
+
+    draft: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Current form values (title, problem, solution, tags, …).",
+        examples=[{"title": "", "problem": ""}],
+    )
+    message: str = Field(
+        default="",
+        max_length=4000,
+        description="Latest user message. Empty string starts / continues the guide.",
+    )
+    awaiting_field: Optional[str] = Field(
+        default=None,
+        description="Field the assistant last asked for (title, problem, …).",
+    )
+
+
+class HelpLinkOut(BaseModel):
+    label: str
+    href: str = Field(..., description="In-app path, e.g. /submit")
+
+
+class SubmitAssistTurnOut(BaseModel):
+    simulated: bool = True
+    engine: str
+    mode: str = Field(description="simulate | kompass-pending")
+    reply: str
+    patches: dict[str, Any] = Field(default_factory=dict)
+    awaiting_field: Optional[str] = None
+    field_prompt: Optional[str] = None
+    done: bool = False
+    notice: str = "Simulated — Kompass soon"
+
+
+class HelpTurnIn(BaseModel):
+    message: str = Field(
+        ...,
+        min_length=1,
+        max_length=2000,
+        description="User question about Idea Hub (no secrets).",
+    )
+
+
+class HelpTurnOut(BaseModel):
+    simulated: bool = True
+    engine: str
+    mode: str
+    topic: str
+    reply: str
+    links: list[HelpLinkOut] = Field(default_factory=list)
+    notice: str = "Simulated — Kompass soon"
+
+
+class IdeaOptimizeTurnIn(BaseModel):
+    """One conversational turn for the author Idea Optimizer (simulated)."""
+
+    idea_id: Optional[uuid.UUID] = Field(
+        default=None,
+        description="Optional idea UUID for client correlation (not loaded here).",
+    )
+    idea: dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "Current idea fields: title, problem, solution, beneficiaries, "
+            "success_metrics, tags, effort, category_id/slug."
+        ),
+        examples=[
+            {
+                "title": "Automate expense receipts",
+                "problem": "Finance chases missing receipts.",
+                "solution": "Capture at submit time.",
+                "tags": ["finance"],
+            }
+        ],
+    )
+    message: str = Field(
+        default="",
+        max_length=4000,
+        description="Latest author message. Empty string opens the optimizer.",
+    )
+    messages: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Optional prior chat turns for future Kompass context.",
+    )
+
+
+class IdeaOptimizeTurnOut(BaseModel):
+    """Author optimizer reply with optional field patches (human applies)."""
+
+    simulated: bool = True
+    engine: str
+    mode: str = Field(description="simulate | kompass-pending")
+    reply: str
+    field_patches: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Proposed field updates; never persisted by this endpoint.",
+    )
+    focus_fields: list[str] = Field(
+        default_factory=list,
+        description="Heuristic weak-field names (problem, success_metrics, …).",
+    )
+    notice: str = "Simulated — Kompass soon"

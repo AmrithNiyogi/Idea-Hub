@@ -89,6 +89,27 @@ export const adminApi = {
       body: JSON.stringify({ role }),
     }),
 
+  disableUser: (userId: string) =>
+    apiFetch<AdminUser>(`/admin/users/${userId}/disable`, {
+      method: 'POST',
+    }),
+
+  enableUser: (userId: string) =>
+    apiFetch<AdminUser>(`/admin/users/${userId}/enable`, {
+      method: 'POST',
+    }),
+
+  deleteUser: (userId: string, confirm = false) =>
+    apiFetch<{
+      id: string;
+      email: string;
+      name: string;
+      panels_left: number;
+    }>(
+      `/admin/users/${userId}${confirm ? '?confirm=true' : ''}`,
+      { method: 'DELETE' },
+    ),
+
   saveTimelines: (body: Record<string, number>) =>
     apiFetch<Record<string, number>>('/admin/timelines', {
       method: 'PUT',

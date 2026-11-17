@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants.admin_defaults import (
@@ -24,13 +24,30 @@ from app.constants.admin_defaults import (
 from app.constants.lifecycle import ROLE_ORDER, VALID_ROLES
 from app.dependencies.phase23_auth import Actor
 from app.models.admin import AdminAudit, PlatformSetting, ReviewPanel
+from app.models.agent import KompassAnswer, ProposalDecision
 from app.models.category import Category
-from app.models.idea import Idea
-from app.models.user import User
+from app.models.collab import CollabRequest, TrackerCheckin, TrackerMilestone
+from app.models.delivery import (
+    DeliveryContributor,
+    DeliveryTask,
+    DeliveryUpdate,
+    ImpactEntry,
+    TimeGrantRequest,
+    TimeLog,
+)
+from app.models.engagement import Comment, Follow, Vote
+from app.models.idea import Idea, StatusHistory
+from app.models.ideathon import Ideathon, IdeathonEntry, IdeathonHandoff
+from app.models.problem import ProblemMeta
+from app.models.recognition import RecognitionAward
+from app.models.reopen import ReopenConditionSet
+from app.models.review import Decision, Review
+from app.models.user import Team, User
 from app.schemas.admin import (
     AdminConfigOut,
     AdminPrimaryRoleIn,
     AdminRoleMutationOut,
+    AdminUserDeleteOut,
     AdminUserOut,
     AuditOut,
     CategoryCreateIn,
@@ -117,6 +134,22 @@ def _user_admin_out(user: User) -> AdminUserOut:
         status=status,
         is_active=status == "active",
     )
+
+
+def _user_holds_admin(user: User) -> bool:
+    return "admin" in [str(r).lower() for r in (user.roles or [])]
+
+
+def _clear_login_otp_keys(user_id: uuid.UUID) -> None:
+    """Drop Redis OTP / cooldown keys so a disabled or deleted user cannot verify."""
+    try:
+        from app.db.session import get_redis
+        from app.services.login_otp_service import _cooldown_key, _otp_key
+
+        uid = str(user_id)
+        get_redis().delete(_otp_key(uid), _cooldown_key(uid))
+    except Exception:  # noqa: BLE001 — Redis optional in unit tests
+        pass
 
 
 class AdminService:
@@ -995,6 +1028,395 @@ class AdminService:
         await self.session.commit()
         await self.session.refresh(user)
         return AdminRoleMutationOut(user=_user_admin_out(user))
+
+    async def _admin_counts(self) -> tuple[int, int]:
+        """Return ``(all_admins, active_admins)`` across the directory."""
+        rows = (await self.session.execute(select(User))).scalars().all()
+        all_admins = 0
+        active_admins = 0
+        for u in rows:
+            if not _user_holds_admin(u):
+                continue
+            all_admins += 1
+            if str(u.status or "active") == "active":
+                active_admins += 1
+        return all_admins, active_admins
+
+    async def _panels_for_user(
+        self, user_id: uuid.UUID
+    ) -> tuple[list[ReviewPanel], list[str]]:
+        uid = str(user_id)
+        all_panels = (
+            await self.session.execute(select(ReviewPanel))
+        ).scalars().all()
+        panels = [
+            p
+            for p in all_panels
+            if uid in [str(x) for x in (p.member_ids or [])]
+        ]
+        return panels, [p.name for p in panels]
+
+    async def set_user_active(
+        self, user_id: uuid.UUID, *, active: bool, actor: Actor
+    ) -> AdminUserOut:
+        """Enable or disable a user account (soft; reversible via ``status``).
+
+        Disabled accounts keep all rows but cannot authenticate (password OTP
+        or Microsoft SSO). Disabling clears any outstanding login OTP keys.
+
+        Args:
+            user_id: Target account.
+            active: True to set ``status=active``, False for ``inactive``.
+            actor: Caller; must hold Administrator.
+
+        Returns:
+            Updated admin directory row.
+
+        Raises:
+            HTTPException: 403 not admin; 404 missing; 400 self-target or
+                last active administrator when disabling.
+        """
+        _require_admin(actor)
+        if actor.id == user_id:
+            raise HTTPException(
+                status_code=400,
+                detail="You cannot disable or enable your own account.",
+            )
+        user = await self.session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        target_active = str(user.status or "active") == "active"
+        if active and target_active:
+            return _user_admin_out(user)
+        if not active and not target_active:
+            return _user_admin_out(user)
+
+        if not active and _user_holds_admin(user):
+            _all, active_admins = await self._admin_counts()
+            if active_admins <= 1:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "There must always be at least one active administrator, "
+                        "so the last active one cannot be disabled."
+                    ),
+                )
+
+        before = user.status
+        user.status = "active" if active else "inactive"
+        if not active:
+            _clear_login_otp_keys(user_id)
+
+        verb = "Enabled" if active else "Disabled"
+        self.session.add(
+            AdminAudit(
+                actor_id=actor.id,
+                section="People and roles",
+                summary=f"{verb} account {user.name} ({user.email})",
+                changes=[
+                    {
+                        "field": f"{user.name} status",
+                        "from": before,
+                        "to": user.status,
+                    }
+                ],
+            )
+        )
+        await self.session.commit()
+        await self.session.refresh(user)
+        return _user_admin_out(user)
+
+    async def _detach_user_fks(
+        self, user_id: uuid.UUID, *, reassign_to: uuid.UUID
+    ) -> None:
+        """Nullify, delete, or reassign rows that block hard-deleting ``user_id``.
+
+        CASCADE FKs are left to the database. Nullable refs are SET NULL.
+        Personal engagement rows are deleted. Content ownership that is NOT
+        NULL is reassigned to ``reassign_to`` (the deleting administrator).
+        """
+        uid = user_id
+        rid = reassign_to
+
+        # Nullable → SET NULL
+        await self.session.execute(
+            update(AdminAudit).where(AdminAudit.actor_id == uid).values(actor_id=None)
+        )
+        await self.session.execute(
+            update(CollabRequest)
+            .where(CollabRequest.decided_by == uid)
+            .values(decided_by=None)
+        )
+        await self.session.execute(
+            update(Decision).where(Decision.owner_id == uid).values(owner_id=None)
+        )
+        await self.session.execute(
+            update(DeliveryTask)
+            .where(DeliveryTask.assignee_id == uid)
+            .values(assignee_id=None)
+        )
+        await self.session.execute(
+            update(DeliveryTask)
+            .where(DeliveryTask.updated_by == uid)
+            .values(updated_by=None)
+        )
+        await self.session.execute(
+            update(Idea).where(Idea.owner_id == uid).values(owner_id=None)
+        )
+        await self.session.execute(
+            update(Idea).where(Idea.reviewer_id == uid).values(reviewer_id=None)
+        )
+        await self.session.execute(
+            update(Ideathon)
+            .where(Ideathon.confirmed_by == uid)
+            .values(confirmed_by=None)
+        )
+        await self.session.execute(
+            update(ImpactEntry)
+            .where(ImpactEntry.verified_by == uid)
+            .values(verified_by=None)
+        )
+        await self.session.execute(
+            update(KompassAnswer)
+            .where(KompassAnswer.answered_by == uid)
+            .values(answered_by=None)
+        )
+        await self.session.execute(
+            update(PlatformSetting)
+            .where(PlatformSetting.updated_by == uid)
+            .values(updated_by=None)
+        )
+        await self.session.execute(
+            update(ProblemMeta)
+            .where(ProblemMeta.acknowledged_by == uid)
+            .values(acknowledged_by=None)
+        )
+        await self.session.execute(
+            update(ProblemMeta)
+            .where(ProblemMeta.sponsor_id == uid)
+            .values(sponsor_id=None)
+        )
+        await self.session.execute(
+            update(ReopenConditionSet)
+            .where(ReopenConditionSet.closed_by == uid)
+            .values(closed_by=None)
+        )
+        await self.session.execute(
+            update(ReopenConditionSet)
+            .where(ReopenConditionSet.created_by == uid)
+            .values(created_by=None)
+        )
+        await self.session.execute(
+            update(ReviewPanel)
+            .where(ReviewPanel.chair_id == uid)
+            .values(chair_id=None)
+        )
+        await self.session.execute(
+            update(StatusHistory)
+            .where(StatusHistory.actor_id == uid)
+            .values(actor_id=None)
+        )
+        await self.session.execute(
+            update(Team).where(Team.lead_id == uid).values(lead_id=None)
+        )
+        await self.session.execute(
+            update(TimeGrantRequest)
+            .where(TimeGrantRequest.decided_by == uid)
+            .values(decided_by=None)
+        )
+        await self.session.execute(
+            update(TrackerMilestone)
+            .where(TrackerMilestone.owner_id == uid)
+            .values(owner_id=None)
+        )
+
+        # Personal / RESTRICT rows → DELETE
+        await self.session.execute(delete(Comment).where(Comment.author_id == uid))
+        await self.session.execute(delete(Follow).where(Follow.user_id == uid))
+        await self.session.execute(delete(Vote).where(Vote.user_id == uid))
+        await self.session.execute(delete(Review).where(Review.reviewer_id == uid))
+        await self.session.execute(
+            delete(DeliveryUpdate).where(DeliveryUpdate.user_id == uid)
+        )
+        await self.session.execute(delete(TimeLog).where(TimeLog.user_id == uid))
+        await self.session.execute(
+            delete(TimeGrantRequest).where(TimeGrantRequest.requested_by == uid)
+        )
+        await self.session.execute(
+            delete(TrackerCheckin).where(TrackerCheckin.author_id == uid)
+        )
+
+        # Required ownership → reassign to deleting admin
+        await self.session.execute(
+            update(Idea).where(Idea.author_id == uid).values(author_id=rid)
+        )
+        await self.session.execute(
+            update(TrackerMilestone)
+            .where(TrackerMilestone.created_by == uid)
+            .values(created_by=rid)
+        )
+        await self.session.execute(
+            update(Decision).where(Decision.decider_id == uid).values(decider_id=rid)
+        )
+        await self.session.execute(
+            update(DeliveryTask)
+            .where(DeliveryTask.created_by == uid)
+            .values(created_by=rid)
+        )
+        await self.session.execute(
+            update(DeliveryContributor)
+            .where(DeliveryContributor.added_by == uid)
+            .values(added_by=rid)
+        )
+        await self.session.execute(
+            update(IdeathonEntry)
+            .where(IdeathonEntry.linked_by == uid)
+            .values(linked_by=rid)
+        )
+        await self.session.execute(
+            update(IdeathonHandoff)
+            .where(IdeathonHandoff.sent_by == uid)
+            .values(sent_by=rid)
+        )
+        await self.session.execute(
+            update(Ideathon)
+            .where(Ideathon.organiser_id == uid)
+            .values(organiser_id=rid)
+        )
+        await self.session.execute(
+            update(Ideathon).where(Ideathon.sponsor_id == uid).values(sponsor_id=rid)
+        )
+        await self.session.execute(
+            update(ImpactEntry)
+            .where(ImpactEntry.created_by == uid)
+            .values(created_by=rid)
+        )
+        await self.session.execute(
+            update(ProposalDecision)
+            .where(ProposalDecision.decided_by == uid)
+            .values(decided_by=rid)
+        )
+        await self.session.execute(
+            update(RecognitionAward)
+            .where(RecognitionAward.confirmed_by == uid)
+            .values(confirmed_by=rid)
+        )
+
+    async def delete_user(
+        self,
+        user_id: uuid.UUID,
+        actor: Actor,
+        *,
+        confirm: bool = False,
+    ) -> AdminUserDeleteOut:
+        """Hard-delete a user after FK-safe cleanup and guard checks.
+
+        Guards mirror role-remove: cannot delete yourself, cannot delete the
+        last administrator (any status), cannot leave a review panel empty.
+        Sitting on panels requires ``confirm=True`` (409 ``needs_confirm``).
+
+        Side Effects:
+            Removes panel seats, detaches/reassigns FKs, deletes the user row,
+            writes an audit row, clears Redis OTP keys, commits.
+        """
+        _require_admin(actor)
+        if actor.id == user_id:
+            raise HTTPException(
+                status_code=400,
+                detail="You cannot delete your own account.",
+            )
+        user = await self.session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if _user_holds_admin(user):
+            all_admins, _active = await self._admin_counts()
+            if all_admins <= 1:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "There must always be at least one administrator, "
+                        "so the last one cannot be deleted."
+                    ),
+                )
+
+        panels, panel_names = await self._panels_for_user(user_id)
+        sole = [p for p in panels if len(p.member_ids or []) <= 1]
+        if sole:
+            names = " and the ".join(p.name for p in sole)
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"{user.name} is the only member of the {names}. "
+                    f"Add another reviewer to "
+                    f"{'those panels' if len(sole) > 1 else 'that panel'} "
+                    "first."
+                ),
+            )
+        if panels and not confirm:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": (
+                        f"Deleting {user.name} also removes them from: "
+                        + ", ".join(panel_names)
+                        + ". Confirm to continue."
+                    ),
+                    "needs_confirm": True,
+                    "panels": panel_names,
+                },
+            )
+
+        email = user.email
+        name = user.name
+        changes: list[dict[str, Any]] = [
+            {"field": "account", "from": email, "to": "(deleted)"}
+        ]
+
+        for panel in panels:
+            members = [str(x) for x in (panel.member_ids or [])]
+            before_n = len(members)
+            members = [m for m in members if m != str(user_id)]
+            panel.member_ids = members
+            changes.append(
+                {
+                    "field": f"{panel.name} members",
+                    "from": before_n,
+                    "to": len(members),
+                }
+            )
+            if panel.chair_id == user_id and members:
+                panel.chair_id = uuid.UUID(members[0])
+                changes.append(
+                    {
+                        "field": f"{panel.name} chair",
+                        "from": name,
+                        "to": members[0],
+                    }
+                )
+
+        self.session.add(
+            AdminAudit(
+                actor_id=actor.id,
+                section="People and roles",
+                summary=f"Deleted account {name} ({email})",
+                changes=changes,
+            )
+        )
+        await self.session.flush()
+
+        await self._detach_user_fks(user_id, reassign_to=actor.id)
+        await self.session.delete(user)
+        _clear_login_otp_keys(user_id)
+        await self.session.commit()
+
+        return AdminUserDeleteOut(
+            id=user_id,
+            email=email,
+            name=name,
+            panels_left=len(panels),
+        )
 
     async def export_inventory(self) -> ExportOut:
         counts: dict[str, int] = {}

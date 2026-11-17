@@ -34,19 +34,20 @@ All AI in this file is SIMULATED (deterministic JavaScript over demo data). No l
   --font-sans:'Geist',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
   --font-mono:'Geist Mono',ui-monospace,'SF Mono','JetBrains Mono',monospace;
 
-  --bg:#FAF9F6; --surface:#FFFFFF; --surface-2:#F4F2EC; --surface-3:#EAE7DF;
-  --border:rgba(30,27,75,.1); --border-strong:rgba(30,27,75,.2);
+  /* Cool blue-gray canvas — subtle tint, not strong blue / not purple */
+  --bg:#F5F7FA; --surface:#FFFFFF; --surface-2:#EEF1F5; --surface-3:#E4E8EF;
+  --border:rgba(30,41,59,.1); --border-strong:rgba(30,41,59,.2);
   --text:#1E1B4B; --text-2:rgba(30,27,75,.78); --text-3:rgba(30,27,75,.62);
   --overlay:rgba(10,10,11,.45);
 
-  --brand:#6B3DC9; --brand-hover:#522A6F; --brand-ink:#6B3DC9; --brand-soft:#F4ECFF; --brand-line:#E6D5FF; --on-brand:#FFFFFF;
+  --brand:#6B3DC9; --brand-hover:#522A6F; --brand-ink:#6B3DC9; --brand-soft:#F2EFFC; --brand-line:#E4DCFA; --on-brand:#FFFFFF;
   --accent:#8B5CF6; --btn-bg:#0A0A0B; --btn-fg:#FFFFFF;
   --gold:#E5B423; --gold-ink:#8A6300; --gold-soft:#FFF9E5;
   --success:#15803D; --success-soft:#E7F6EC;
   --warning:#8A6300; --warning-soft:#FEF1C2;
   --danger:#DC2626;  --danger-soft:#FDECEC;
   --info:#6B3DC9;    --info-soft:#F4ECFF;
-  --neutral-soft:#EFEDE7;
+  --neutral-soft:#E8ECF2;
   --cat-tech:#4F46E5; --cat-business:#D9A514; --cat-process:#6B6B70; --cat-innovation:#8B5CF6;
   --av-1:#6B3DC9; --av-2:#4F46E5; --av-3:#522A6F; --av-4:#8A6300; --av-5:#2A2A2C; --av-6:#8B5CF6; --av-7:#2D1640; --av-8:#6B6B70;
   /* Derived for modules added after the design file (extra category colours, chart series); same official ramps. */
@@ -54,12 +55,12 @@ All AI in this file is SIMULATED (deterministic JavaScript over demo data). No l
   --chart-1:#8B5CF6; --chart-2:#E5B423; --chart-3:#4F46E5; --chart-4:#522A6F; --chart-5:#8A6300; --chart-6:#6B6B70;
 
   --agent-bg:linear-gradient(rgba(139,92,246,.06),rgba(139,92,246,.06));
-  --agent-border:#E6D5FF; --agent-glow:0 0 0 3px rgba(139,92,246,.14);
+  --agent-border:#E4DCFA; --agent-glow:0 0 0 3px rgba(139,92,246,.14);
 
   --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
   --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px; --space-7:48px; --space-8:64px;
-  --shadow-1:0 2px 6px rgba(10,10,11,.06);
-  --shadow-2:0 18px 40px rgba(10,10,11,.12);
+  --shadow-1:0 2px 6px rgba(15,23,42,.06);
+  --shadow-2:0 18px 40px rgba(15,23,42,.12);
   --focus:0 0 0 2px #8B5CF6;
   --ease-out:cubic-bezier(0.16,1,0.3,1);
 
@@ -68,27 +69,28 @@ All AI in this file is SIMULATED (deterministic JavaScript over demo data). No l
   color-scheme:light;
 }
 [data-theme="dark"]{
-  --bg:#0A0A0B; --surface:#151516; --surface-2:#1E1E1F; --surface-3:#2A2A2C;
-  --border:rgba(255,255,255,.1); --border-strong:rgba(255,255,255,.2);
-  --text:#FFFFFF; --text-2:rgba(255,255,255,.78); --text-3:rgba(255,255,255,.6);
-  --overlay:rgba(0,0,0,.6);
-  --brand:#8B5CF6; --brand-hover:#6B3DC9; --brand-ink:#B794F6; --brand-soft:#2D1640; --brand-line:#522A6F; --on-brand:#FFFFFF;
-  --accent:#8B5CF6; --btn-bg:#FFFFFF; --btn-fg:#0A0A0B;
-  --gold:#FBCF4F; --gold-ink:#FBCF4F; --gold-soft:rgba(251,207,79,.12);
-  --success:#4ADE80; --success-soft:rgba(22,163,74,.18);
-  --warning:#FBCF4F; --warning-soft:rgba(251,207,79,.12);
-  --danger:#F87171;  --danger-soft:rgba(220,38,38,.2);
-  --info:#B794F6;    --info-soft:#2D1640;
-  --neutral-soft:#2A2A2C;
-  --cat-tech:#818CF8; --cat-business:#FBCF4F; --cat-process:#A8A8AE; --cat-innovation:#B794F6;
+  /* Cool violet-slate stack — layered canvas / elevated / tertiary (not flat black) */
+  --bg:#0B0A10; --surface:#14131B; --surface-2:#1C1B25; --surface-3:#2A2834;
+  --border:rgba(220,214,255,.12); --border-strong:rgba(220,214,255,.22);
+  --text:#F3F1FA; --text-2:rgba(243,241,250,.84); --text-3:rgba(243,241,250,.68);
+  --overlay:rgba(5,4,10,.65);
+  --brand:#8B5CF6; --brand-hover:#7C4DE8; --brand-ink:#C4B0F8; --brand-soft:rgba(139,92,246,.2); --brand-line:rgba(167,139,250,.42); --on-brand:#FFFFFF;
+  --accent:#A78BFA; --btn-bg:#F3F1FA; --btn-fg:#0B0A10;
+  --gold:#F0C84A; --gold-ink:#F0C84A; --gold-soft:rgba(240,200,74,.14);
+  --success:#4ADE80; --success-soft:rgba(22,163,74,.2);
+  --warning:#F0C84A; --warning-soft:rgba(240,200,74,.14);
+  --danger:#F87171;  --danger-soft:rgba(220,38,38,.22);
+  --info:#818CF8;    --info-soft:rgba(79,70,229,.24);
+  --neutral-soft:#2A2834;
+  --cat-tech:#818CF8; --cat-business:#F0C84A; --cat-process:#A8A8AE; --cat-innovation:#B794F6;
   --av-1:#6B3DC9; --av-2:#4F46E5; --av-3:#522A6F; --av-4:#8A6300; --av-5:#2A2A2C; --av-6:#8B5CF6; --av-7:#6B6B70; --av-8:#3F3F46;
   --cat-amber:#E5B423; --cat-green:#4ADE80; --cat-violet:#E6D5FF; --cat-coral:#F87171;
-  --chart-1:#8B5CF6; --chart-2:#FBCF4F; --chart-3:#818CF8; --chart-4:#B794F6; --chart-5:#D9A514; --chart-6:#A8A8AE;
-  --agent-bg:linear-gradient(rgba(139,92,246,.12),rgba(139,92,246,.12));
-  --agent-border:#522A6F; --agent-glow:0 0 0 3px rgba(139,92,246,.22);
-  --shadow-1:0 2px 6px rgba(0,0,0,.4);
-  --shadow-2:0 18px 40px rgba(0,0,0,.55);
-  --focus:0 0 0 2px #B794F6;
+  --chart-1:#8B5CF6; --chart-2:#F0C84A; --chart-3:#818CF8; --chart-4:#B794F6; --chart-5:#D9A514; --chart-6:#A8A8AE;
+  --agent-bg:linear-gradient(rgba(139,92,246,.1),rgba(139,92,246,.1));
+  --agent-border:rgba(167,139,250,.35); --agent-glow:0 0 0 3px rgba(139,92,246,.16);
+  --shadow-1:0 1px 2px rgba(0,0,0,.45),0 0 0 1px rgba(220,214,255,.05);
+  --shadow-2:0 16px 40px rgba(0,0,0,.5);
+  --focus:0 0 0 2px #A78BFA;
   color-scheme:dark;
 }
 /* ==== END SECTION C1 ==== */
@@ -160,6 +162,9 @@ img,svg{max-width:100%}
 #search-btn{display:none}
 .search__item:hover,.search__item:focus{background:var(--surface-2);text-decoration:none}
 .topbar__actions{display:flex;align-items:center;gap:8px;flex:none}
+.topbar__cta{height:34px;padding:0 14px 0 12px;gap:7px;font-weight:600;letter-spacing:.01em;box-shadow:0 1px 0 color-mix(in srgb,var(--btn-bg) 35%,transparent)}
+.topbar__cta:hover{box-shadow:none}
+.topbar__cta-label{line-height:1}
 .role-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--radius-pill);background:var(--gold-soft);color:var(--gold-ink);font-size:12px;font-weight:600;white-space:nowrap;border:1px solid color-mix(in srgb,var(--gold) 45%,transparent)}
 .popover{position:fixed;top:calc(var(--topbar-h) - 2px);right:var(--space-5);width:min(380px,calc(100vw - 24px));max-height:calc(100vh - var(--topbar-h) - 20px);overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);z-index:60}
 .popover__head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface)}
@@ -767,10 +772,11 @@ a.kpi:hover{border-color:var(--brand-line);text-decoration:none;box-shadow:0 0 0
 @media (max-width:1100px){
   .app,.app.is-collapsed{grid-template-columns:var(--sidebar-w-collapsed) minmax(0,1fr)}
   .sidebar{padding:var(--space-4) 10px;align-items:stretch}
-  .brand__text,.nav-item__text,.nav__label,.sidebar__note,.sidebar .btn__text{display:none}
-  .nav-item{justify-content:center;padding:9px 0}
-  .nav-item__badge{position:absolute;top:2px;right:4px;margin:0;padding:0 5px;font-size:10px}
-  .brand{justify-content:center;padding:0}
+  /* Scope to sidebar so Login / signin brand text stays visible */
+  .sidebar .brand__text,.sidebar .nav-item__text,.sidebar .nav__label,.sidebar__note,.sidebar .btn__text{display:none}
+  .sidebar .nav-item{justify-content:center;padding:9px 0}
+  .sidebar .nav-item__badge{position:absolute;top:2px;right:4px;margin:0;padding:0 5px;font-size:10px}
+  .sidebar .brand{justify-content:center;padding:0}
   .sidebar .btn{padding:0;width:100%}
   .layout-rail,.layout-rail--wide{grid-template-columns:minmax(0,1fr)}
   .layout-rail>aside.sticky{position:static}
@@ -793,6 +799,8 @@ a.kpi:hover{border-color:var(--brand-line);text-decoration:none;box-shadow:0 0 0
   .topbar{padding:0 12px;gap:8px}
   .search{flex:1 1 auto}
   .search__kbd,.role-chip__text-long{display:none}
+  .topbar__cta{width:34px;padding:0;gap:0}
+  .topbar__cta-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   .view{padding:var(--space-4) 14px var(--space-7)}
   .grid-2,.grid-3,.grid-5{grid-template-columns:minmax(0,1fr)}
   .grid-5.kpi-row,.kpi-row--4{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -4694,7 +4702,6 @@ function renderSidebar(){
   });
   $('#sidebar').innerHTML = String(html`
     <a class="brand" href="#/home" aria-label="IdeaKonnekt, Idea Hub. Home"><span class="brand__glyph">${icon('logo', 18)}</span><span class="brand__text"><span class="brand__name">IdeaKonnekt</span><span class="brand__sub">Idea Hub</span></span></a>
-    ${CAN_SUBMIT.includes(ar(me)) ? html`<a class="btn btn--primary" href="#/submit">${icon('plus', 18)}<span class="btn__text">Submit an idea</span></a>` : ''}
     <nav class="nav" aria-label="Main">${out}</nav>
     <div class="sidebar__foot"><div class="dk-logo" role="img" aria-label="dotkonnekt">${raw('<svg class="dk-logo__mark" viewBox="52 46 162 62" fill="currentColor" aria-hidden="true" focusable="false">' + LOGO_MARK + '</svg>')}${raw('<svg class="dk-logo__word" viewBox="17 119 232 34" fill="currentColor" aria-hidden="true" focusable="false">' + LOGO_WORD + '</svg>')}</div><button class="btn btn--ghost btn--sm" id="collapse-btn" data-action="ui.toggleSidebar" aria-pressed="${!!S().meta.sidebarCollapsed}">${icon('sidebar', 18)}<span class="btn__text">${S().meta.sidebarCollapsed ? 'Expand' : 'Collapse'}</span></button><p class="sidebar__note">Prototype build on demo data. Agents are simulated. Icons are not the official set.</p></div>`);
 }
@@ -4705,6 +4712,7 @@ function renderTopbar(){
   $('#tb-title').innerHTML = String(html`${crumbs.map((c, n) => html`${n ? icon('chevronR', 14) : ''}${c.href && n < crumbs.length - 1 ? html`<a href="${c.href}">${c.label}</a>` : html`<span ${n === crumbs.length - 1 ? raw('aria-current="page"') : ''}>${c.label}</span>`}`)}`);
   const fa = document.activeElement, keepId = fa && fa.id && $('#tb-actions') && $('#tb-actions').contains(fa) ? fa.id : null;
   $('#tb-actions').innerHTML = String(html`
+    ${CAN_SUBMIT.includes(ar(me)) ? html`<a class="btn btn--primary topbar__cta" href="#/submit" title="Submit a new idea" aria-label="New idea">${icon('spark', 16)}<span class="topbar__cta-label">New idea</span></a>` : ''}
     <span class="role-chip" title="${me.name}, working as ${roleLabel(ar(me))}">${icon('user', 14)}<span><span class="role-chip__text-long">${me.name} · </span><button class="role-chip__btn" id="role-btn" data-action="ui.togglePopover" data-id="account" aria-haspopup="true" aria-expanded="${Store.ui.popover === 'account'}" aria-label="Active role: ${roleLabel(ar(me))}. Open the account menu">${roleLabel(ar(me))}${icon('chevronD', 12)}</button></span></span>
     <button class="btn btn--ghost btn--icon" id="search-btn" data-action="ui.openSearch" aria-label="Search ideas, ideathons, teams and people">${icon('search', 20)}</button>
     <button class="btn btn--ghost btn--icon" id="bell-btn" data-action="ui.togglePopover" data-id="notif" aria-label="Notifications${unread ? ', ' + unread + ' unread' : ''}" aria-haspopup="true" aria-expanded="${Store.ui.popover === 'notif'}" style="position:relative">${icon('bell', 20)}${unread ? html`<span class="nav-item__badge" style="position:absolute;top:0;right:0;margin:0" aria-hidden="true">${unread}</span>` : ''}</button>
@@ -4935,10 +4943,10 @@ function viewHome(){
     band = html`<div class="card"><div class="card__head"><h2>My delivery items</h2><a class="btn btn--sm" href="#/pipeline">Open pipeline</a></div>${mineD.length ? mineD.map(i => { const d = i.delivery, rq = SEL.pendingRequest(i.id); return html`<div class="listrow"><div class="listrow__main"><a class="listrow__title" href="#/ideas/${i.id}?tab=delivery">${i.title}</a><div class="muted small">${d ? fmtNum(SEL.hoursLogged(d)) + ' of ' + d.hoursGranted + ' hours used · ' + SEL.progress(i.id).done + ' of ' + SEL.progress(i.id).n + ' tasks · last update ' + relTime(SEL.lastUpdate(i)) : rq ? 'Waiting for leadership: ' + rq.hours + ' hours requested' : 'Accepted. Request innovation hours to start.'}</div></div>${SEL.isStale(i) ? pill('Stale ' + SEL.staleDays(i) + 'd', 'danger', 'clock') : ''}${d && SEL.hoursLogged(d) > d.hoursGranted ? pill('Over hours', 'danger') : ''}${statusPill(i.status)}</div>`; }) : emptyState('layers', 'Nothing assigned', 'Accepted ideas without an owner appear under attention.')}</div>`;
   } else {
     const m = SEL.mine(me.id).submitted.slice(0, 4);
-    band = html`<div class="card"><div class="card__head"><h2>Your ideas</h2><a class="btn btn--sm" href="#/my">All my ideas</a></div>${m.length ? m.map(i => html`<div class="listrow"><div class="listrow__main"><a class="listrow__title" href="#/ideas/${i.id}">${i.title}</a><div class="muted small">${trunc(SEL.nextStep(i).text, 110)}</div></div>${statusPill(i.status)}</div>`) : emptyState('plus', 'No ideas yet', 'Share the first one. It takes about five minutes.', html`<a class="btn btn--primary" href="#/submit">Submit an idea</a>`)}</div>`;
+    band = html`<div class="card"><div class="card__head"><h2>Your ideas</h2><a class="btn btn--sm" href="#/my">All my ideas</a></div>${m.length ? m.map(i => html`<div class="listrow"><div class="listrow__main"><a class="listrow__title" href="#/ideas/${i.id}">${i.title}</a><div class="muted small">${trunc(SEL.nextStep(i).text, 110)}</div></div>${statusPill(i.status)}</div>`) : emptyState('plus', 'No ideas yet', 'Use New idea in the top bar — it takes about five minutes.')}</div>`;
   }
   return html`
-    <div class="page-head"><div><div class="eyebrow eyebrow--plain">${greet}</div><h1>Welcome back, ${me.name.split(' ')[0]}</h1><p>${ROLES[ar(me)].blurb}</p></div>${CAN_SUBMIT.includes(ar(me)) ? html`<a class="btn btn--primary" href="#/submit">${icon('plus', 16)} Submit an idea</a>` : ''}</div>
+    <div class="page-head"><div><div class="eyebrow eyebrow--plain">${greet}</div><h1>Welcome back, ${me.name.split(' ')[0]}</h1><p>${ROLES[ar(me)].blurb}</p></div></div>
     ${homeOtherRoles(me)}
     <div class="grid grid-5 kpi-row">${tiles.map(t => kpi(t[0], t[1], t[2], t[3], true))}</div>
     <p class="muted small kpi-also" id="kpi-also">Also: ${also.map((a, n) => html`${n ? ' · ' : ''}<a href="#/explore?status=${a[0]}">${a[1]} ${a[2]}</a>`)}. The four tiles after Total plus parked, declined and merged add up to the ${st.total} total. Withdrawn ideas are not in the total.</p>

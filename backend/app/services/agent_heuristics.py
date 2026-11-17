@@ -238,12 +238,45 @@ def enhancement(draft: Idea | dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# Statuses allowed as merge targets (mirrors review_service.decide validation).
+_MERGE_TARGET_STATUSES = frozenset(
+    {"under_review", "needs_info", "accepted", "prototype", "parked"}
+)
+
+
+def _merge_eligible_peer(
+    similar: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """
+    Return the top Jaccard peer that review_service would accept as a merge target.
+
+    Peers already ranked by similarity; skip self-excluded entries whose status is
+    not in the decide() allow-list (e.g. submitted, declined, merged).
+    """
+    for peer in similar:
+        status = str(peer.get("status") or "")
+        idea_id = peer.get("idea_id")
+        if idea_id and status in _MERGE_TARGET_STATUSES:
+            return peer
+    return None
+
+
 def review_brief(
     idea: Idea,
     comments: Sequence[Any],
     votes: int,
     similar: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    """
+    Build a simulated reviewer brief (scores + decision lean) for Review UI.
+
+    When the top similar peer scores ≥ 0.4 and is merge-eligible, lean is merge
+    and ``suggested_decision.target_id`` is set so the React Merge-into picker
+    can prefill. Includes ``similar_ideas`` for picker ordering / Kompass parity.
+
+    Side Effects:
+        None — pure proposal; never writes scores or decisions of record.
+    """
     pros, concerns, questions = [], [], []
     for c in comments[:12]:
         body = getattr(c, "body", None) or getattr(c, "text", "") or ""
@@ -262,11 +295,89 @@ def review_brief(
                 "source": "template",
             }
         )
+    # Deterministic stub scores (1–5). Not Kompass — labelled Simulated upstream.
+    problem_len = len((idea.problem or "").strip())
+    metrics = (idea.success_metrics or "").strip()
+    has_number = bool(re.search(r"\d", metrics))
+    impact_v = 2
+    impact_ev = ["Short problem statement"]
+    if problem_len >= 120 and has_number:
+        impact_v = 4
+        impact_ev = ["Quantified success metrics + detailed problem"]
+    elif problem_len >= 80 or has_number:
+        impact_v = 3
+        impact_ev = ["Partial quantification or problem depth"]
+    if votes >= 5:
+        impact_v = min(5, impact_v + 1)
+        impact_ev.append(f"{votes} upvote(s)")
+
+    effort_map = {"S": 2, "M": 3, "L": 4, "XL": 5}
+    effort_v = effort_map.get(str(idea.effort or "M").upper(), 3)
+    align_v = 4 if similar and similar[0].get("similarity", 0) >= 0.25 else 3
+    align_ev = (
+        ["Overlaps strategic themes via similar corpus"]
+        if align_v >= 4
+        else ["Category routing heuristic"]
+    )
+
+    merge_peer = _merge_eligible_peer(similar)
+    merge_sim = float(merge_peer.get("similarity", 0) or 0) if merge_peer else 0.0
+
+    # Decision proposal maps to Review UI kinds: accept|park|merge|decline|info
     lean = "accept"
-    if similar and similar[0].get("similarity", 0) >= 0.4:
+    decision = "accept"
+    target_id: str | None = None
+    reason = (
+        f"Simulated proposal: accept “{idea.title}” based on problem clarity "
+        f"and engagement ({votes} upvote(s), {len(comments)} comment(s)). "
+        "Edit this reason before recording."
+    )
+    if merge_peer and merge_sim >= 0.4:
         lean = "merge"
-    elif len(concerns) >= 3:
+        decision = "merge"
+        target_id = str(merge_peer["idea_id"])
+        peer = merge_peer.get("title") or "a closely related idea"
+        reason = (
+            f"Simulated proposal: merge into “{peer}” — similarity "
+            f"{merge_sim:.0%} with shared themes. "
+            "Confirm the target and edit this reason before recording."
+        )
+    elif len(concerns) >= 3 or len(questions) >= 2:
         lean = "needs_info"
+        decision = "info"
+        reason = (
+            "Simulated proposal: request info — discussion raised open "
+            "questions or concerns that block a confident decision. "
+            "Ask the author one clear question before recording."
+        )
+    elif not metrics or len(metrics) < 10:
+        lean = "park"
+        decision = "park"
+        reason = (
+            f"Simulated proposal: park “{idea.title}” until success metrics "
+            "are measurable. Set a revisit date and edit this reason "
+            "before recording."
+        )
+    elif impact_v <= 2 and effort_v >= 4:
+        lean = "decline"
+        decision = "decline"
+        reason = (
+            f"Simulated proposal: decline “{idea.title}” — estimated impact "
+            "looks low relative to effort. Say what would change our mind "
+            "before recording."
+        )
+
+    if len(reason) < 20:
+        reason = reason + " Reviewer must confirm."
+
+    suggested_decision: dict[str, Any] = {
+        "decision": decision,
+        "reason": reason,
+        "confidence": 0.35,
+        "simulated": True,
+    }
+    if target_id:
+        suggested_decision["target_id"] = target_id
 
     return {
         "summary": (
@@ -281,20 +392,30 @@ def review_brief(
         },
         "risks": risks,
         "dependencies": [],
+        "similar_ideas": similar,
         "suggested_scores": {
-            "impact": {"value": 3, "confidence": 0.4, "evidence": ["Heuristic default"]},
-            "effort": {"value": 3, "confidence": 0.35, "evidence": [f"Effort field: {idea.effort}"]},
+            "impact": {
+                "value": impact_v,
+                "confidence": 0.4,
+                "evidence": impact_ev,
+            },
+            "effort": {
+                "value": effort_v,
+                "confidence": 0.45,
+                "evidence": [f"Author effort band: {idea.effort}"],
+            },
             "alignment": {
-                "value": 3,
+                "value": align_v,
                 "confidence": 0.35,
-                "evidence": ["Category routing"],
+                "evidence": align_ev,
             },
         },
         "decision_lean": {
             "option": lean,
             "rationale": "Heuristic lean only — reviewer must decide.",
-            "caveats": ["Simulated; anchoring mitigation applies"],
+            "caveats": ["Simulated stub; not Kompass"],
         },
+        "suggested_decision": suggested_decision,
         "integrity_flags": [],
         "simulated": True,
     }

@@ -274,3 +274,29 @@ class AdminRoleMutationOut(BaseModel):
         default_factory=list,
         description="Panel names involved when removing Reviewer (409 or success).",
     )
+
+
+class AdminUserDeleteOut(BaseModel):
+    """Confirmation payload after an administrator hard-deletes a user account."""
+
+    id: uuid.UUID = Field(
+        ...,
+        description="Deleted user id.",
+        examples=["550e8400-e29b-41d4-a716-446655440000"],
+    )
+    email: str = Field(
+        ...,
+        description="Email of the deleted account (for UI confirmation toasts).",
+        examples=["alex@example.com"],
+    )
+    name: str = Field(
+        ...,
+        description="Display name of the deleted account.",
+        examples=["Alex Rivera"],
+    )
+    panels_left: int = Field(
+        0,
+        description="Number of review panels the user was removed from before delete.",
+        examples=[1],
+        ge=0,
+    )

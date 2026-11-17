@@ -27,6 +27,18 @@ const CAT_HELP: Record<string, string> = {
     'New products, features and agent capabilities for Kompass or internal use.',
 };
 
+const FIELD_CHIP: Record<string, string> = {
+  title: 'title',
+  problem: 'problem',
+  solution: 'solution',
+  beneficiaries: 'beneficiaries',
+  success_metrics: 'success metrics',
+  tags: 'tags',
+  effort: 'effort',
+  category_slug: 'category',
+  category_id: 'category',
+};
+
 type SimilarHit = {
   idea_id?: string;
   id?: string;
@@ -36,6 +48,36 @@ type SimilarHit = {
   shared_terms?: string[];
   sharedTerms?: string[];
 };
+
+type ChatMsg = {
+  role: 'user' | 'assistant';
+  text: string;
+  updated?: string[];
+};
+
+type UndoToast = {
+  snapshot: IdeaWrite;
+  labels: string[];
+};
+
+function draftPayload(form: IdeaWrite): Record<string, unknown> {
+  return {
+    title: form.title,
+    problem: form.problem,
+    solution: form.solution,
+    beneficiaries: form.beneficiaries,
+    success_metrics: form.success_metrics,
+    tags: form.tags,
+    effort: form.effort,
+    category_id: form.category_id,
+  };
+}
+
+function patchLabels(patches: Record<string, unknown>): string[] {
+  return Object.keys(patches)
+    .map((k) => FIELD_CHIP[k] || k.replace(/_/g, ' '))
+    .filter((v, i, a) => a.indexOf(v) === i);
+}
 
 export function SubmitPage() {
   const navigate = useNavigate();
@@ -51,10 +93,122 @@ export function SubmitPage() {
   const [similar, setSimilar] = useState<SimilarHit[]>([]);
   const [assistNote, setAssistNote] = useState<string | null>(null);
   const assistTimer = useRef<number | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const formRef = useRef(form);
+  const categoriesRef = useRef(categories);
+  const undoTimer = useRef<number | null>(null);
+  const [chat, setChat] = useState<ChatMsg[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
+  const [awaitingField, setAwaitingField] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(true);
+  const [undoToast, setUndoToast] = useState<UndoToast | null>(null);
+  const [flashFields, setFlashFields] = useState<Set<string>>(new Set());
+  const guideStarted = useRef(false);
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  useEffect(() => {
+    categoriesRef.current = categories;
+  }, [categories]);
 
   useEffect(() => {
     ideasApi.categories().then(setCategories).catch(() => setCategories([]));
   }, []);
+
+  const applyPatches = (
+    patches: Record<string, unknown>,
+    opts?: { skipUndo?: boolean },
+  ): string[] => {
+    if (!patches || !Object.keys(patches).length) return [];
+    const labels = patchLabels(patches);
+    const prev = formRef.current;
+
+    setForm((f) => {
+      const next = { ...f };
+      if (typeof patches.title === 'string') next.title = patches.title;
+      if (typeof patches.problem === 'string') next.problem = patches.problem;
+      if (typeof patches.solution === 'string') next.solution = patches.solution;
+      if (typeof patches.beneficiaries === 'string') {
+        next.beneficiaries = patches.beneficiaries;
+      }
+      if (typeof patches.success_metrics === 'string') {
+        next.success_metrics = patches.success_metrics;
+      }
+      if (Array.isArray(patches.tags)) {
+        next.tags = patches.tags.map(String).slice(0, 8);
+      }
+      if (
+        typeof patches.effort === 'string' &&
+        ['S', 'M', 'L', 'XL'].includes(patches.effort)
+      ) {
+        next.effort = patches.effort as Effort;
+      }
+      if (typeof patches.category_slug === 'string') {
+        const slug = patches.category_slug.toLowerCase();
+        const match = categoriesRef.current.find(
+          (c) => c.slug.toLowerCase() === slug,
+        );
+        if (match) next.category_id = match.id;
+      }
+      if (typeof patches.category_id === 'string') {
+        next.category_id = patches.category_id;
+      }
+      return next;
+    });
+
+    if (!opts?.skipUndo) {
+      if (undoTimer.current) window.clearTimeout(undoTimer.current);
+      setUndoToast({ snapshot: prev, labels });
+      undoTimer.current = window.setTimeout(() => setUndoToast(null), 8000);
+    }
+
+    const flashKeys = new Set(
+      Object.keys(patches).flatMap((k) => {
+        if (k === 'category_slug') return ['category_id'];
+        return [k];
+      }),
+    );
+    setFlashFields(flashKeys);
+    window.setTimeout(() => setFlashFields(new Set()), 1200);
+
+    return labels;
+  };
+
+  const undoLastApply = () => {
+    if (!undoToast) return;
+    setForm(undoToast.snapshot);
+    setUndoToast(null);
+    if (undoTimer.current) window.clearTimeout(undoTimer.current);
+  };
+
+  // Open the simulated Submit chat once on mount (blank form OK).
+  useEffect(() => {
+    if (guideStarted.current) return;
+    guideStarted.current = true;
+    setChatBusy(true);
+    agentsApi
+      .submitAssist({ draft: draftPayload(empty), message: '' })
+      .then((turn) => {
+        setChat([{ role: 'assistant', text: turn.reply }]);
+        setAwaitingField(turn.awaiting_field);
+      })
+      .catch(() => {
+        setChat([
+          {
+            role: 'assistant',
+            text: 'Simulated guide unavailable. You can still fill the draft form.',
+          },
+        ]);
+      })
+      .finally(() => setChatBusy(false));
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chat, chatBusy]);
 
   useEffect(() => {
     if (!draftParam) return;
@@ -132,11 +286,70 @@ export function SubmitPage() {
     form.category_id,
   ]);
 
+  useEffect(() => {
+    return () => {
+      if (undoTimer.current) window.clearTimeout(undoTimer.current);
+    };
+  }, []);
+
   const set = <K extends keyof IdeaWrite>(key: K, value: IdeaWrite[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  const fieldClass = (key: string) =>
+    flashFields.has(key) ? 'field field--flash' : 'field';
+
+  const sendChatText = async (raw: string) => {
+    const text = raw.trim();
+    if (!text || chatBusy) return;
+    setChatInput('');
+    setChat((c) => [...c, { role: 'user', text }]);
+    setChatBusy(true);
+    try {
+      const turn = await agentsApi.submitAssist({
+        draft: draftPayload(formRef.current),
+        message: text,
+        awaiting_field: awaitingField,
+      });
+      const labels =
+        turn.patches && Object.keys(turn.patches).length
+          ? applyPatches(turn.patches)
+          : [];
+      setChat((c) => [
+        ...c,
+        {
+          role: 'assistant',
+          text: turn.reply,
+          updated: labels.length ? labels : undefined,
+        },
+      ]);
+      setAwaitingField(turn.awaiting_field);
+    } catch (err) {
+      setChat((c) => [
+        ...c,
+        {
+          role: 'assistant',
+          text:
+            err instanceof Error
+              ? err.message
+              : 'Could not reach the simulated assistant.',
+        },
+      ]);
+    } finally {
+      setChatBusy(false);
+    }
+  };
+
+  const sendChat = async (e?: FormEvent) => {
+    e?.preventDefault();
+    await sendChatText(chatInput);
+  };
+
   const addTag = (t: string) => {
-    const tag = t.trim().toLowerCase().replace(/[^a-z0-9\- ]/g, '').replace(/\s+/g, '-');
+    const tag = t
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\- ]/g, '')
+      .replace(/\s+/g, '-');
     if (!tag || (form.tags ?? []).includes(tag)) return;
     if ((form.tags ?? []).length >= 8) {
       setError('You can add up to 8 tags.');
@@ -200,6 +413,12 @@ export function SubmitPage() {
   };
 
   const titleLen = form.title.length;
+  const quickPrompts = [
+    'brainstorm',
+    'make the title shorter',
+    'add metrics',
+    'change category to tech',
+  ];
 
   return (
     <div className="stack stack--lg">
@@ -208,8 +427,8 @@ export function SubmitPage() {
           <div className="eyebrow eyebrow--plain">New idea</div>
           <h1>{draftId ? 'Continue your draft' : 'Submit an idea'}</h1>
           <p>
-            Five short fields. Idea Hub will check for similar ideas as you type,
-            and you keep full control of what you apply.
+            Chat to discover or refine an idea — the draft form updates live.
+            You can also type on the form yourself anytime.
           </p>
         </div>
         <div className="row">
@@ -243,8 +462,176 @@ export function SubmitPage() {
       ) : null}
 
       <div className="layout-rail layout-rail--submit">
+        <section className="card sf-chat-panel">
+          <div className="row row--between" style={{ marginBottom: 8 }}>
+            <div className="row" style={{ gap: 8 }}>
+              <Icon name="spark" size={16} />
+              <strong>Submit assistant</strong>
+              <span className="pill pill--agent">Simulated — Kompass soon</span>
+            </div>
+            <button
+              type="button"
+              className="btn btn--sm btn--ghost"
+              onClick={() => setChatOpen((o) => !o)}
+              aria-expanded={chatOpen}
+            >
+              {chatOpen ? 'Hide chat' : 'Show chat'}
+            </button>
+          </div>
+
+          {chatOpen ? (
+            <div className="agent sf-chat">
+              <div className="agent__head">
+                <Icon name="message" size={16} />
+                <span className="agent__name">Idea chat</span>
+                <span className="agent__kind">Simulated</span>
+              </div>
+              <div className="agent__body">
+                <div className="sf-chat__log" role="log" aria-live="polite">
+                  {chat.map((m, i) => (
+                    <div key={`${m.role}-${i}`}>
+                      <div
+                        className={`sf-chat__bubble sf-chat__bubble--${m.role}`}
+                      >
+                        {m.text.split('\n').map((line, j) => (
+                          <p key={j} style={{ margin: j ? '6px 0 0' : 0 }}>
+                            {line.replace(/\*\*/g, '')}
+                          </p>
+                        ))}
+                      </div>
+                      {m.updated?.length ? (
+                        <div
+                          className="sf-chat__chips"
+                          aria-label="Fields updated"
+                        >
+                          {m.updated.map((lab) => (
+                            <span key={lab} className="sf-chat__chip">
+                              Updated {lab}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                  {chatBusy ? (
+                    <p className="muted small">Thinking…</p>
+                  ) : null}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {!chatBusy && chat.length <= 2 ? (
+                  <div className="chip-row sf-chat__prompts">
+                    {quickPrompts.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        className="chip-link"
+                        disabled={chatBusy}
+                        onClick={() => {
+                          void sendChatText(p);
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+
+                <form className="sf-chat__compose" onSubmit={sendChat}>
+                  <input
+                    className="input"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Describe a problem, or ask to refine the draft…"
+                    disabled={chatBusy}
+                    aria-label="Message the submit assistant"
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn--sm btn--primary"
+                    disabled={chatBusy || !chatInput.trim()}
+                  >
+                    <Icon name="send" size={14} />
+                  </button>
+                </form>
+              </div>
+              <div className="agent__foot">
+                Patches apply to the draft automatically. Undo from the toast.
+                Manual form edits always work.
+              </div>
+            </div>
+          ) : (
+            <p className="muted small" style={{ margin: 0 }}>
+              Chat hidden — fill the draft on the right (manual-only).
+            </p>
+          )}
+
+          {assistNote ? (
+            <p className="muted small" style={{ marginTop: 12 }}>
+              {assistNote}
+            </p>
+          ) : null}
+
+          {similar.length ? (
+            <div className="stack stack--sm" style={{ marginTop: 12 }}>
+              <h4 style={{ margin: 0 }}>Similar ideas</h4>
+              {similar.map((s, idx) => {
+                const sid = String(s.idea_id || s.id || idx);
+                const shared = s.shared_terms || s.sharedTerms || [];
+                const pct = Math.round((s.similarity ?? 0) * 100);
+                return (
+                  <div key={sid} className="similar">
+                    <div className="row row--between">
+                      <Link className="listrow__title" to={`/ideas/${sid}`}>
+                        {s.title || sid}
+                      </Link>
+                      {pct ? (
+                        <span className="similar__pct">{pct}%</span>
+                      ) : null}
+                    </div>
+                    <div className="row" style={{ gap: 6 }}>
+                      {s.status ? <StatusPill status={s.status} /> : null}
+                      {shared.slice(0, 3).map((t) => (
+                        <span key={t} className="tag">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
+          <div className="card card--tight" style={{ marginTop: 12 }}>
+            <h4 style={{ marginTop: 0 }}>Checklist</h4>
+            <ul className="bullets" style={{ paddingLeft: 18 }}>
+              {(
+                [
+                  ['Title', !!form.title.trim()],
+                  ['Category', !!form.category_id],
+                  ['Problem', !!(form.problem ?? '').trim()],
+                  ['Solution', !!(form.solution ?? '').trim()],
+                  ['Beneficiaries', !!(form.beneficiaries ?? '').trim()],
+                  ['Success', !!(form.success_metrics ?? '').trim()],
+                  ['Effort', !!form.effort],
+                ] as const
+              ).map(([lab, ok]) => (
+                <li key={lab}>
+                  {ok ? '✓' : '○'} {lab}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
         <form className="card sf-section" onSubmit={submit}>
-          <div className="field">
+          <div className="row row--between" style={{ marginBottom: 4 }}>
+            <h4 style={{ margin: 0 }}>Your draft</h4>
+            <span className="muted small">Live mirror of the chat</span>
+          </div>
+
+          <div className={fieldClass('category_id')}>
             <span className="label" id="sf-cat-label">
               Category
             </span>
@@ -283,7 +670,7 @@ export function SubmitPage() {
             </div>
           </div>
 
-          <div className="field">
+          <div className={fieldClass('title')}>
             <label htmlFor="sf-title">Title</label>
             <input
               className="input"
@@ -300,7 +687,7 @@ export function SubmitPage() {
             </span>
           </div>
 
-          <div className="field">
+          <div className={fieldClass('problem')}>
             <label htmlFor="sf-problem">Problem statement</label>
             <textarea
               className="textarea"
@@ -317,7 +704,7 @@ export function SubmitPage() {
             </span>
           </div>
 
-          <div className="field">
+          <div className={fieldClass('solution')}>
             <label htmlFor="sf-solution">Proposed solution</label>
             <textarea
               className="textarea"
@@ -330,7 +717,7 @@ export function SubmitPage() {
           </div>
 
           <div className="sf-grid2">
-            <div className="field">
+            <div className={fieldClass('beneficiaries')}>
               <label htmlFor="sf-beneficiaries">Who benefits</label>
               <textarea
                 className="textarea"
@@ -341,7 +728,7 @@ export function SubmitPage() {
                 placeholder="Teams, roles or customers, with rough numbers"
               />
             </div>
-            <div className="field">
+            <div className={fieldClass('effort')}>
               <span className="label" id="sf-effort-label">
                 Rough effort
               </span>
@@ -369,7 +756,7 @@ export function SubmitPage() {
             </div>
           </div>
 
-          <div className="field">
+          <div className={fieldClass('success_metrics')}>
             <label htmlFor="sf-success">What success looks like</label>
             <textarea
               className="textarea"
@@ -381,7 +768,7 @@ export function SubmitPage() {
             />
           </div>
 
-          <div className="field">
+          <div className={fieldClass('tags')}>
             <span className="label">Tags</span>
             <div className="chip-row" style={{ marginBottom: 8 }}>
               {(form.tags ?? []).map((t) => (
@@ -449,11 +836,7 @@ export function SubmitPage() {
             >
               Save draft
             </button>
-            <button
-              type="submit"
-              className="btn btn--primary"
-              disabled={busy}
-            >
+            <button type="submit" className="btn btn--primary" disabled={busy}>
               {busy ? 'Working…' : 'Submit idea'}
             </button>
           </div>
@@ -461,89 +844,24 @@ export function SubmitPage() {
             <p className="muted small">Draft saved at {savedAt}</p>
           ) : null}
         </form>
-
-        <aside className="stack sticky">
-          <details className="card card--tight sf-details" open>
-            <summary>
-              <Icon name="spark" size={16} /> Idea Hub assistants{' '}
-              <span className="pill pill--agent">Simulated</span>
-            </summary>
-            <div className="stack">
-              {assistNote ? (
-                <div className="agent">
-                  <div className="agent__head">
-                    <span className="agent__name">Idea Intelligence</span>
-                    <span className="agent__kind">Computed</span>
-                  </div>
-                  <div className="agent__body">
-                    <p className="muted small">{assistNote}</p>
-                  </div>
-                </div>
-              ) : (
-                <p className="muted small">
-                  Keep typing. Similar ideas and completeness tips appear here.
-                </p>
-              )}
-
-              {similar.length ? (
-                <div className="stack stack--sm">
-                  <h4 style={{ margin: 0 }}>Similar ideas</h4>
-                  {similar.map((s, idx) => {
-                    const sid = String(s.idea_id || s.id || idx);
-                    const shared =
-                      s.shared_terms || s.sharedTerms || [];
-                    const pct = Math.round((s.similarity ?? 0) * 100);
-                    return (
-                      <div key={sid} className="similar">
-                        <div className="row row--between">
-                          <Link
-                            className="listrow__title"
-                            to={`/ideas/${sid}`}
-                          >
-                            {s.title || sid}
-                          </Link>
-                          {pct ? (
-                            <span className="similar__pct">{pct}%</span>
-                          ) : null}
-                        </div>
-                        <div className="row" style={{ gap: 6 }}>
-                          {s.status ? <StatusPill status={s.status} /> : null}
-                          {shared.slice(0, 3).map((t) => (
-                            <span key={t} className="tag">
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : null}
-
-              <div className="card card--tight">
-                <h4 style={{ marginTop: 0 }}>Checklist</h4>
-                <ul className="bullets" style={{ paddingLeft: 18 }}>
-                  {(
-                    [
-                      ['Title', !!form.title.trim()],
-                      ['Category', !!form.category_id],
-                      ['Problem', !!(form.problem ?? '').trim()],
-                      ['Solution', !!(form.solution ?? '').trim()],
-                      ['Beneficiaries', !!(form.beneficiaries ?? '').trim()],
-                      ['Success', !!(form.success_metrics ?? '').trim()],
-                      ['Effort', !!form.effort],
-                    ] as const
-                  ).map(([lab, ok]) => (
-                    <li key={lab}>
-                      {ok ? '✓' : '○'} {lab}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </details>
-        </aside>
       </div>
+
+      {undoToast ? (
+        <div className="toasts" role="status">
+          <div className="toast toast--ok">
+            <span className="grow">
+              Updated {undoToast.labels.join(', ')}
+            </span>
+            <button
+              type="button"
+              className="btn btn--sm"
+              onClick={undoLastApply}
+            >
+              Undo
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

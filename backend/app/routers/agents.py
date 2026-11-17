@@ -12,13 +12,20 @@ from app.schemas.agents import (
     AgentInfoOut,
     AgentRunOut,
     AgentRunRequest,
+    HelpTurnIn,
+    HelpTurnOut,
+    IdeaOptimizeTurnIn,
+    IdeaOptimizeTurnOut,
     KompassAnswerIn,
     KompassMapOut,
     PendingProposalOut,
     ProposalDecideIn,
     ProposalDecisionOut,
+    SubmitAssistTurnIn,
+    SubmitAssistTurnOut,
 )
 from app.services.agent_gateway import AgentGateway
+from app.services import agent_simulate_service as simulate
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -109,3 +116,73 @@ async def answer_question(
     return await AgentGateway(session).answer_kompass(
         question_id, body.answered, body.note, actor
     )
+
+
+@router.post(
+    "/simulate/submit-assist",
+    response_model=SubmitAssistTurnOut,
+    summary="Simulated Submit ideation co-pilot turn",
+    description=(
+        "Freeform brainstorm / refine chat that returns optional form patches "
+        "(title, problem, solution, tags, category_slug, effort, …). "
+        "Local heuristic while SIMULATE_AGENTS=true. Never persists the draft."
+    ),
+    responses={401: {"description": "Not authenticated"}},
+)
+async def submit_assist_turn(
+    body: SubmitAssistTurnIn,
+    actor: RequireActor,
+) -> SubmitAssistTurnOut:
+    """Run one simulated Submit assist turn for the authenticated author."""
+    _ = actor
+    out = simulate.submit_assist_turn(
+        draft=body.draft,
+        message=body.message,
+        awaiting_field=body.awaiting_field,
+    )
+    return SubmitAssistTurnOut.model_validate(out)
+
+
+@router.post(
+    "/simulate/help",
+    response_model=HelpTurnOut,
+    summary="Simulated in-app help chatbot turn",
+    description=(
+        "Canned FAQ / intent map for Idea Hub navigation and roles. "
+        "No external LLM. Does not accept or store secrets."
+    ),
+    responses={401: {"description": "Not authenticated"}},
+)
+async def help_turn(body: HelpTurnIn, actor: RequireActor) -> HelpTurnOut:
+    """Answer a basic product FAQ question from the local help map."""
+    _ = actor
+    out = simulate.help_turn(message=body.message)
+    return HelpTurnOut.model_validate(out)
+
+
+@router.post(
+    "/simulate/idea-optimize",
+    response_model=IdeaOptimizeTurnOut,
+    summary="Simulated author Idea Optimizer turn",
+    description=(
+        "Post-submit author co-pilot: clarity, metrics, tags, problem framing. "
+        "Returns reply + field_patches for the human to apply. Distinct from "
+        "Review Intelligence (scores / decision lean). Never persists changes."
+    ),
+    responses={401: {"description": "Not authenticated"}},
+)
+async def idea_optimize_turn(
+    body: IdeaOptimizeTurnIn,
+    actor: RequireActor,
+) -> IdeaOptimizeTurnOut:
+    """Run one simulated author-optimizer turn for the authenticated user."""
+    _ = actor
+    idea = dict(body.idea or {})
+    if body.idea_id and "id" not in idea:
+        idea["id"] = str(body.idea_id)
+    out = simulate.idea_optimize_turn(
+        idea=idea,
+        message=body.message,
+        messages=body.messages,
+    )
+    return IdeaOptimizeTurnOut.model_validate(out)

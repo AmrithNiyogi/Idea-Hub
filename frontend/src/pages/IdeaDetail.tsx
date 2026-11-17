@@ -10,6 +10,7 @@ import { collabApi } from '../api/collab';
 import { ideasApi } from '../api/ideas';
 import { usersApi } from '../api/users';
 import { AgentHandoffBar } from '../components/AgentHandoffBar';
+import { IdeaOptimizePanel } from '../components/IdeaOptimizePanel';
 import { Avatar, Icon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
 import { useAuth } from '../auth/AuthProvider';
@@ -18,7 +19,7 @@ import { DeliveryTab } from './DeliveryTab';
 import { CollabTrackerPanel } from '../components/CollabTrackerPanel';
 import { fmtDate, nextStep, relTime } from '../utils/format';
 import type { User } from '../types/auth';
-import type { Category, Comment, Idea } from '../types/idea';
+import type { Category, Comment, Effort, Idea } from '../types/idea';
 import type { CollabRequest } from '../types/phase456';
 
 type Tab =
@@ -70,6 +71,16 @@ export function IdeaDetailPage() {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Author-optimizer staged field overrides (local preview). */
+  const [optPreview, setOptPreview] = useState<{
+    title?: string;
+    problem?: string;
+    solution?: string;
+    beneficiaries?: string;
+    success_metrics?: string;
+    tags?: string[];
+    effort?: Effort;
+  }>({});
 
   const category = useMemo(
     () => categories.find((c) => c.id === idea?.category_id) ?? null,
@@ -89,6 +100,7 @@ export function IdeaDetailPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setOptPreview({});
     (async () => {
       try {
         const [i, cats, us] = await Promise.all([
@@ -321,7 +333,9 @@ export function IdeaDetailPage() {
             </span>
           ) : null}
         </div>
-        <h1 className="idea-title">{idea.title}</h1>
+        <h1 className="idea-title">
+          {optPreview.title ?? idea.title}
+        </h1>
 
         {idea.anonymous && isAuthor ? (
           <div className="notice notice--brand" style={{ marginBottom: 12 }}>
@@ -451,7 +465,9 @@ export function IdeaDetailPage() {
             </>
           ) : null}
           <span className="muted">
-            Effort: {EFFORT_LABELS[idea.effort] ?? idea.effort}
+            Effort:{' '}
+            {EFFORT_LABELS[optPreview.effort ?? idea.effort] ??
+              (optPreview.effort ?? idea.effort)}
           </span>
           {idea.submitted_at ? (
             <span className="muted">
@@ -459,7 +475,7 @@ export function IdeaDetailPage() {
             </span>
           ) : null}
           <span className="chip-row">
-            {idea.tags.map((t) => (
+            {(optPreview.tags ?? idea.tags).map((t) => (
               <Link
                 key={t}
                 className="tag"
@@ -587,15 +603,23 @@ export function IdeaDetailPage() {
               <div className="card">
                 <dl className="dl">
                   <dt>Problem</dt>
-                  <dd>{idea.problem || '—'}</dd>
+                  <dd>{(optPreview.problem ?? idea.problem) || '—'}</dd>
                   <dt>Proposed solution</dt>
-                  <dd>{idea.solution || '—'}</dd>
+                  <dd>{(optPreview.solution ?? idea.solution) || '—'}</dd>
                   <dt>Who benefits</dt>
-                  <dd>{idea.beneficiaries || '—'}</dd>
+                  <dd>
+                    {(optPreview.beneficiaries ?? idea.beneficiaries) || '—'}
+                  </dd>
                   <dt>Rough effort</dt>
-                  <dd>{EFFORT_LABELS[idea.effort] ?? idea.effort}</dd>
+                  <dd>
+                    {EFFORT_LABELS[optPreview.effort ?? idea.effort] ??
+                      (optPreview.effort ?? idea.effort)}
+                  </dd>
                   <dt>What success looks like</dt>
-                  <dd>{idea.success_metrics || '—'}</dd>
+                  <dd>
+                    {(optPreview.success_metrics ?? idea.success_metrics) ||
+                      '—'}
+                  </dd>
                 </dl>
               </div>
             </>
@@ -782,6 +806,14 @@ export function IdeaDetailPage() {
         </div>
 
         <aside className="stack">
+          {own ? (
+            <IdeaOptimizePanel
+              idea={idea}
+              onApplyPatches={(patches) => {
+                setOptPreview((prev) => ({ ...prev, ...patches }));
+              }}
+            />
+          ) : null}
           <div className="card card--tight">
             <h3 style={{ marginBottom: 8 }}>Related ideas</h3>
             {related.length ? (

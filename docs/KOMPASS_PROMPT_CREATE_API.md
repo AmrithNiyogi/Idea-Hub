@@ -1,7 +1,8 @@
 # Create Idea Konnekt prompts via API Gateway
 
 Ready bodies: [`KOMPASS_PROMPT_CREATE_PAYLOADS.json`](KOMPASS_PROMPT_CREATE_PAYLOADS.json)  
-(9 prompts, `status: "active"`, labels `latest` + `production`, human-readable names).
+(12 prompts, `status: "active"`, labels `latest` + `production`, human-readable names).  
+See also simulation map: [`AGENT_SIMULATION.md`](AGENT_SIMULATION.md).
 
 ## Staging targets
 
@@ -20,7 +21,10 @@ Display `name` (what you see in Prompt Engine):
 ```text
 IdeaKonnekt - WF Idea Intelligence
 IdeaKonnekt - WF Idea Enhancement
+IdeaKonnekt - WF Submit Assist
+IdeaKonnekt - WF Idea Optimizer
 IdeaKonnekt - WF Review Intelligence
+IdeaKonnekt - WF Help Guide
 IdeaKonnekt - WF Innovation Workflow
 IdeaKonnekt - WF Recognition
 IdeaKonnekt - WF Innovation Analytics
@@ -70,8 +74,11 @@ Needs permission `PROMPT_CREATE`.
 |-------------|-----------|
 | IdeaKonnekt - WF Innovation Workflow | `claude_4_5_haiku` |
 | IdeaKonnekt - WF Recognition | `claude_4_5_haiku` |
+| IdeaKonnekt - WF Help Guide | `claude_4_5_haiku` |
 | IdeaKonnekt - WF Idea Intelligence | `claude_4_6_sonnet` |
 | IdeaKonnekt - WF Idea Enhancement | `claude_4_6_sonnet` |
+| IdeaKonnekt - WF Submit Assist | `claude_4_6_sonnet` |
+| IdeaKonnekt - WF Idea Optimizer | `claude_4_6_sonnet` |
 | IdeaKonnekt - WF Review Intelligence | `claude_4_6_sonnet` |
 | IdeaKonnekt - WF Innovation Analytics | `claude_4_6_sonnet` |
 | IdeaKonnekt - Ideathon * | `claude_4_6_sonnet` |
@@ -95,7 +102,7 @@ curl -sS -X POST "$GW/api/v1/prompts" \
   -d @-
 ```
 
-## Curl all 9
+## Curl all
 
 ```bash
 export GW="https://aistudio-apigateway-v2-staging.dotkonnekt.com"
@@ -151,14 +158,17 @@ curl -sS "$GW/api/v1/prompts?q=IdeaKonnekt&limit=20" \
 
 ## Inventory
 
-| name (UI) | slug (auto) | type | temp | model |
-|-----------|-------------|------|------|-------|
-| IdeaKonnekt - WF Idea Intelligence | `ideakonnekt-wf-idea-intelligence` | text | 0.20 | `claude_4_6_sonnet` |
-| IdeaKonnekt - WF Idea Enhancement | `ideakonnekt-wf-idea-enhancement` | text | 0.30 | `claude_4_6_sonnet` |
-| IdeaKonnekt - WF Review Intelligence | `ideakonnekt-wf-review-intelligence` | text | 0.10 | `claude_4_6_sonnet` |
-| IdeaKonnekt - WF Innovation Workflow | `ideakonnekt-wf-innovation-workflow` | text | 0.25 | `claude_4_5_haiku` |
-| IdeaKonnekt - WF Recognition | `ideakonnekt-wf-recognition` | text | 0.20 | `claude_4_5_haiku` |
-| IdeaKonnekt - WF Innovation Analytics | `ideakonnekt-wf-innovation-analytics` | text | 0.25 | `claude_4_6_sonnet` |
-| IdeaKonnekt - Ideathon Cluster | `ideakonnekt-ideathon-cluster` | agent | 0.20 | `claude_4_6_sonnet` |
-| IdeaKonnekt - Ideathon Rank | `ideakonnekt-ideathon-rank` | agent | 0.15 | `claude_4_6_sonnet` |
-| IdeaKonnekt - Ideathon Pitch | `ideakonnekt-ideathon-pitch` | agent | 0.35 | `claude_4_6_sonnet` |
+| name (UI) | slug (auto) | type | temp | model | Local sim |
+|-----------|-------------|------|------|-------|-----------|
+| IdeaKonnekt - WF Idea Intelligence | `ideakonnekt-wf-idea-intelligence` | text | 0.20 | `claude_4_6_sonnet` | `/agents/run` |
+| IdeaKonnekt - WF Idea Enhancement | `ideakonnekt-wf-idea-enhancement` | text | 0.30 | `claude_4_6_sonnet` | `/agents/run` |
+| IdeaKonnekt - WF Submit Assist | `ideakonnekt-wf-submit-assist` | text | 0.40 | `claude_4_6_sonnet` | `/simulate/submit-assist` |
+| IdeaKonnekt - WF Idea Optimizer | `ideakonnekt-wf-idea-optimizer` | text | 0.35 | `claude_4_6_sonnet` | `/simulate/idea-optimize` |
+| IdeaKonnekt - WF Review Intelligence | `ideakonnekt-wf-review-intelligence` | text | 0.10 | `claude_4_6_sonnet` | `/agents/run` |
+| IdeaKonnekt - WF Help Guide | `ideakonnekt-wf-help-guide` | text | 0.20 | `claude_4_5_haiku` | `/simulate/help` |
+| IdeaKonnekt - WF Innovation Workflow | `ideakonnekt-wf-innovation-workflow` | text | 0.25 | `claude_4_5_haiku` | `/agents/run` |
+| IdeaKonnekt - WF Recognition | `ideakonnekt-wf-recognition` | text | 0.20 | `claude_4_5_haiku` | `/agents/run` |
+| IdeaKonnekt - WF Innovation Analytics | `ideakonnekt-wf-innovation-analytics` | text | 0.25 | `claude_4_6_sonnet` | `/agents/run` |
+| IdeaKonnekt - Ideathon Cluster | `ideakonnekt-ideathon-cluster` | agent | 0.20 | `claude_4_6_sonnet` | planned |
+| IdeaKonnekt - Ideathon Rank | `ideakonnekt-ideathon-rank` | agent | 0.15 | `claude_4_6_sonnet` | planned |
+| IdeaKonnekt - Ideathon Pitch | `ideakonnekt-ideathon-pitch` | agent | 0.35 | `claude_4_6_sonnet` | planned |

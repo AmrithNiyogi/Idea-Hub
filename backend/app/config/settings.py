@@ -113,6 +113,11 @@ class Settings(BaseSettings):
     )
     MICROSOFT_SSO_STATE_TTL_SECONDS: int = 600
 
+    # Agent seam: when True (default), submit-assist / help / review briefs use
+    # local heuristics only. Set False later once Kompass HTTP adapter is wired
+    # in AgentGateway (see docs/AGENT_SIMULATION.md).
+    SIMULATE_AGENTS: bool = True
+
     def allowed_cors_origins(self) -> list[str]:
         """Build the CORS allowlist for credentialed browser calls.
 

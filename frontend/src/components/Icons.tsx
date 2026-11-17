@@ -33,7 +33,8 @@ const paths: Record<string, string> = {
   check: '<path d="M5 12l5 5L20 7"/>',
   arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   arrowLeft: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
-  logo: '<path d="M8 7h3.2c2.1 0 3.4 1.2 3.4 3s-1.2 2.9-3.2 2.9H10.2V17H8V7zm2.2 4.3h.9c.9 0 1.4-.4 1.4-1.2s-.5-1.2-1.4-1.2h-.9v2.4z"/>',
+  /* IdeaKonnekt mark — 4-point spark geometry from idea-hub.html; filled for crisp sidebar glyph */
+  logo: '<path d="M12 3.5 14.2 9.8 20.5 12 14.2 14.2 12 20.5 9.8 14.2 3.5 12 9.8 9.8z" fill="currentColor" stroke="none"/>',
   flag: '<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
   award:
     '<circle cx="12" cy="9" r="6"/><path d="M8.5 14.5L7 22l5-3 5 3-1.5-7.5"/>',

@@ -2,7 +2,8 @@
 
 Exposes platform settings (timelines, scoring, points), category CRUD
 (soft-disable), review-panel membership, and People and roles (list users,
-grant/remove roles, set primary). Mutate endpoints require Administrator.
+grant/remove roles, set primary, disable/enable, hard-delete). Mutate
+endpoints require Administrator.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from app.schemas.admin import (
     AdminPrimaryRoleIn,
     AdminRoleIn,
     AdminRoleMutationOut,
+    AdminUserDeleteOut,
     AdminUserOut,
     AuditOut,
     CategoryCreateIn,
@@ -320,6 +322,91 @@ async def set_user_primary_role(
     actor: RequireActor,
 ) -> AdminRoleMutationOut:
     return await AdminService(session).set_primary_role(user_id, body, actor)
+
+
+@router.post(
+    "/users/{user_id}/disable",
+    response_model=AdminUserOut,
+    summary="Disable a user account (soft)",
+    description=(
+        "Sets ``status`` to ``inactive``. The account remains in the directory "
+        "but cannot sign in via email+password OTP or Microsoft SSO. "
+        "Guards: cannot disable yourself; cannot disable the last active "
+        "administrator. Reversible via ``POST .../enable``."
+    ),
+    responses={
+        400: {"description": "Self-disable or last active administrator"},
+        403: {"description": "Administrator role required"},
+        404: {"description": "User not found"},
+    },
+)
+async def disable_user(
+    user_id: uuid.UUID,
+    session: DbSession,
+    actor: RequireActor,
+) -> AdminUserOut:
+    return await AdminService(session).set_user_active(
+        user_id, active=False, actor=actor
+    )
+
+
+@router.post(
+    "/users/{user_id}/enable",
+    response_model=AdminUserOut,
+    summary="Re-enable a disabled user account",
+    description=(
+        "Sets ``status`` to ``active`` so the user can sign in again. "
+        "Cannot target your own account (admins manage others)."
+    ),
+    responses={
+        400: {"description": "Self-enable not allowed"},
+        403: {"description": "Administrator role required"},
+        404: {"description": "User not found"},
+    },
+)
+async def enable_user(
+    user_id: uuid.UUID,
+    session: DbSession,
+    actor: RequireActor,
+) -> AdminUserOut:
+    return await AdminService(session).set_user_active(
+        user_id, active=True, actor=actor
+    )
+
+
+@router.delete(
+    "/users/{user_id}",
+    response_model=AdminUserDeleteOut,
+    summary="Hard-delete a user account",
+    description=(
+        "Permanently removes the user after FK-safe cleanup (nullify optional "
+        "refs, delete personal engagement, reassign required ownership to the "
+        "deleting admin). Guards: cannot delete yourself; cannot delete the "
+        "last administrator; cannot leave a review panel with zero members. "
+        "If the user sits on panels, pass ``confirm=true`` after a 409 "
+        "``needs_confirm`` response (same pattern as remove Reviewer)."
+    ),
+    responses={
+        400: {
+            "description": "Self-delete / last admin / sole panel member",
+        },
+        403: {"description": "Administrator role required"},
+        404: {"description": "User not found"},
+        409: {"description": "Confirm required to drop review panel seats"},
+    },
+)
+async def delete_user(
+    user_id: uuid.UUID,
+    session: DbSession,
+    actor: RequireActor,
+    confirm: bool = Query(
+        False,
+        description="Confirm removing the user from review panels.",
+    ),
+) -> AdminUserDeleteOut:
+    return await AdminService(session).delete_user(
+        user_id, actor, confirm=confirm
+    )
 
 
 @router.get(

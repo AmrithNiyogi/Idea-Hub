@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, Icon } from '../Icons';
 import { useAuth } from '../../auth/AuthProvider';
-import { roleLabel, sortRoles } from '../../constants/roles';
+import { CAN_SUBMIT, roleLabel, sortRoles } from '../../constants/roles';
 import type { Role } from '../../types/auth';
 import { GlobalSearch } from './GlobalSearch';
 import {
@@ -83,6 +83,7 @@ export function Topbar({
   const others = sortRoles(user.roles).filter((r) => r !== user.active_role);
   const trail = crumbs && crumbs.length ? crumbs : [{ label: title }];
   const unread = inbox.filter((n) => !n.read).length;
+  const canSubmit = CAN_SUBMIT.includes(user.active_role as Role);
 
   return (
     <header className="topbar">
@@ -116,6 +117,18 @@ export function Topbar({
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
       <div className="topbar__actions" id="tb-actions">
+        {canSubmit ? (
+          <Link
+            className="btn btn--primary topbar__cta"
+            to="/submit"
+            title="Submit a new idea"
+            aria-label="New idea"
+          >
+            <Icon name="spark" size={16} />
+            <span className="topbar__cta-label">New idea</span>
+          </Link>
+        ) : null}
+
         <span
           className="role-chip"
           title={`${user.name}, working as ${roleLabel(user.active_role)}`}
