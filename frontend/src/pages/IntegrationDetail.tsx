@@ -1,6 +1,7 @@
 /**
  * Provider detail — connect / disconnect personal (and org default for admins).
  * Coming-soon providers show planned note only (no fake connect form).
+ * Notion (docs) adds setup + Delivery deep-link guidance.
  */
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
@@ -349,7 +350,7 @@ export function IntegrationDetailPage() {
           ) : null}
 
           {canShowForm ? (
-            <section className="card">
+            <section className="card integ-connect-card">
               <div className="card__head">
                 <h2>
                   {editingOrg ? 'Organization default' : 'Connect'} —{' '}
@@ -364,35 +365,73 @@ export function IntegrationDetailPage() {
                 </button>
               </div>
               <form
-                className="stack"
-                style={{ gap: 10, marginTop: 8 }}
+                className="integ-connect"
                 onSubmit={(e) => void onConnect(e)}
               >
-                {formFields.map((f) => (
-                  <label key={f.key} className="field">
-                    <span className="field__label">
-                      {f.label}
-                      {f.required ? '' : ' (optional)'}
-                    </span>
-                    <input
-                      type={f.secret ? 'password' : 'text'}
-                      value={credValues[f.key] ?? ''}
-                      placeholder={f.placeholder}
-                      required={f.required}
-                      autoComplete="off"
-                      onChange={(e) =>
-                        setCredValues((prev) => ({
-                          ...prev,
-                          [f.key]: e.target.value,
-                        }))
-                      }
-                    />
-                    {f.help_text ? (
-                      <span className="muted small">{f.help_text}</span>
-                    ) : null}
-                  </label>
-                ))}
-                <div className="row">
+                {formFields
+                  .filter((f) => !f.advanced)
+                  .map((f) => (
+                    <label key={f.key} className="field integ-connect__field">
+                      <span className="label">
+                        {f.label}
+                        {f.required ? '' : ' (optional)'}
+                      </span>
+                      <input
+                        className="input"
+                        type={f.secret ? 'password' : 'text'}
+                        value={credValues[f.key] ?? ''}
+                        placeholder={f.placeholder}
+                        required={f.required}
+                        autoComplete="off"
+                        spellCheck={false}
+                        onChange={(e) =>
+                          setCredValues((prev) => ({
+                            ...prev,
+                            [f.key]: e.target.value,
+                          }))
+                        }
+                      />
+                      {f.help_text ? (
+                        <span className="hint">{f.help_text}</span>
+                      ) : null}
+                    </label>
+                  ))}
+                {formFields.some((f) => f.advanced) ? (
+                  <details className="integ-connect__advanced">
+                    <summary>Advanced (optional)</summary>
+                    <div className="integ-connect__advanced-body">
+                      {formFields
+                        .filter((f) => f.advanced)
+                        .map((f) => (
+                          <label
+                            key={f.key}
+                            className="field integ-connect__field"
+                          >
+                            <span className="label">{f.label}</span>
+                            <input
+                              className="input"
+                              type={f.secret ? 'password' : 'text'}
+                              value={credValues[f.key] ?? ''}
+                              placeholder={f.placeholder}
+                              required={false}
+                              autoComplete="off"
+                              spellCheck={false}
+                              onChange={(e) =>
+                                setCredValues((prev) => ({
+                                  ...prev,
+                                  [f.key]: e.target.value,
+                                }))
+                              }
+                            />
+                            {f.help_text ? (
+                              <span className="hint">{f.help_text}</span>
+                            ) : null}
+                          </label>
+                        ))}
+                    </div>
+                  </details>
+                ) : null}
+                <div className="integ-connect__actions">
                   <button
                     type="submit"
                     className="btn btn--sm btn--primary"
@@ -402,6 +441,43 @@ export function IntegrationDetailPage() {
                   </button>
                 </div>
               </form>
+            </section>
+          ) : null}
+
+          {provider.id === 'notion' && provider.category === 'docs' ? (
+            <section className="card integ-doc-help">
+              <div className="card__head">
+                <h2>Docs actions</h2>
+                <span className="muted small">From an idea</span>
+              </div>
+              <ol className="integ-doc-steps muted small">
+                <li>
+                  Create an{' '}
+                  <a
+                    href="https://www.notion.so/my-integrations"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    internal integration
+                  </a>{' '}
+                  in Notion and copy the secret into Connect above.
+                </li>
+                <li>
+                  Open the <strong>parent page</strong> where idea documents
+                  should live → ••• → Connections → invite your integration.
+                  Paste that page ID as Parent page ID.
+                </li>
+                <li>
+                  On an accepted idea → Delivery → <strong>Notion docs</strong>{' '}
+                  → Create Notion page (problem + solution become page blocks)
+                  or Link existing. Open the page URL anytime from the link
+                  row.
+                </li>
+              </ol>
+              <p className="muted small" style={{ marginBottom: 0 }}>
+                Database IDs are optional (Advanced). Secrets stay encrypted;
+                never commit them to git.
+              </p>
             </section>
           ) : null}
         </>

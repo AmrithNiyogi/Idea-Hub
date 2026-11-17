@@ -36,6 +36,13 @@ from app.models.reopen import ReopenConditionSet
 from app.models.collab import CollabRequest, TrackerCheckin, TrackerMilestone
 from app.models.notification import Notification
 from app.models.tracker import IdeaTrackerLink, TrackerConnection
+from app.models.team_space import (
+    IdeaMcpConnection,
+    TeamChannel,
+    TeamMeeting,
+    TeamMessage,
+    TeamSpace,
+)
 
 __all__ = [
     "AdminAudit",
@@ -57,6 +64,7 @@ __all__ = [
     "Ideathon",
     "IdeathonEntry",
     "IdeathonHandoff",
+    "IdeaMcpConnection",
     "IdeaTrackerLink",
     "ImpactEntry",
     "InnovationTimePool",
@@ -74,6 +82,10 @@ __all__ = [
     "ReviewPanel",
     "StatusHistory",
     "Team",
+    "TeamChannel",
+    "TeamMeeting",
+    "TeamMessage",
+    "TeamSpace",
     "TimeGrantRequest",
     "TimeLog",
     "TrackerCheckin",

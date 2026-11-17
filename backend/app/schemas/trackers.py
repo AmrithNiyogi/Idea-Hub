@@ -16,6 +16,7 @@ class ConnectFieldOut(BaseModel):
     required: bool = True
     placeholder: str = ""
     help_text: str = ""
+    advanced: bool = False
 
 
 class TrackerProviderOut(BaseModel):
@@ -196,6 +197,14 @@ class IdeaTrackerRemoteUpdate(BaseModel):
             "empty list unassigns."
         ),
     )
+    append_content: Optional[str] = Field(
+        default=None,
+        max_length=20000,
+        description=(
+            "Notion docs: append markdown/plain text as new blocks on the "
+            "linked page. Ignored by trackers that do not support it."
+        ),
+    )
 
     @model_validator(mode="after")
     def _require_field(self) -> "IdeaTrackerRemoteUpdate":
@@ -205,8 +214,10 @@ class IdeaTrackerRemoteUpdate(BaseModel):
             and self.priority is None
             and self.due_date is None
             and self.assignee_ids is None
+            and self.append_content is None
         ):
             raise ValueError(
-                "Provide status, title, priority, due_date, and/or assignee_ids."
+                "Provide status, title, priority, due_date, assignee_ids, "
+                "and/or append_content."
             )
         return self

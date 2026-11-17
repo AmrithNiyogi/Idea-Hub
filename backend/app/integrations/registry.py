@@ -1,7 +1,7 @@
-"""Unified Integrations catalog: live trackers + docs adapters + stubs.
+"""Unified Integrations catalog: live trackers + docs/chat adapters + stubs.
 
 Adding a new *tracker* still goes through ``app.trackers.registry``.
-Adding a non-tracker (Notion today; Sheets/Teams later):
+Adding a non-tracker (Notion docs, Teams chat; Sheets later):
 
 1. Implement its adapter (same connect/create/link surface as TrackerProvider).
 2. Register it in ``app.integrations.adapters``.
@@ -56,6 +56,7 @@ def list_integrations(
                 required=bool(f.get("required", True)),
                 placeholder=str(f.get("placeholder") or ""),
                 help_text=str(f.get("help_text") or ""),
+                advanced=bool(f.get("advanced")),
             )
             for f in pub.get("connect_fields") or []
         ]
@@ -79,6 +80,7 @@ def list_integrations(
                 required=bool(f.get("required", True)),
                 placeholder=str(f.get("placeholder") or ""),
                 help_text=str(f.get("help_text") or ""),
+                advanced=bool(f.get("advanced")),
             )
             for f in pub.get("connect_fields") or []
         ]

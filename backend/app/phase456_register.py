@@ -19,16 +19,24 @@ if TYPE_CHECKING:
 
 
 def include_phase456_routers(app: "FastAPI", *, prefix: str = "/api/v1") -> None:
-    """Mount Insights, Admin, Agents, Problems, Reopen, and Collab routers.
+    """Mount Insights, Admin, Agents, Problems, Reopen, Collab, Team-space routers.
 
     Args:
         app: FastAPI application instance owned by spine.
         prefix: API version prefix (default ``/api/v1``).
 
     Side Effects:
-        Registers six routers on ``app``. Safe to call once at startup.
+        Registers routers on ``app``. Safe to call once at startup.
     """
-    from app.routers import admin, agents, collab, insights, problems, reopen
+    from app.routers import (
+        admin,
+        agents,
+        collab,
+        insights,
+        problems,
+        reopen,
+        team_space,
+    )
 
     app.include_router(insights.router, prefix=prefix)
     app.include_router(admin.router, prefix=prefix)
@@ -36,6 +44,7 @@ def include_phase456_routers(app: "FastAPI", *, prefix: str = "/api/v1") -> None
     app.include_router(problems.router, prefix=prefix)
     app.include_router(reopen.router, prefix=prefix)
     app.include_router(collab.router, prefix=prefix)
+    app.include_router(team_space.router, prefix=prefix)
 
 
 PHASE456_MODEL_MODULES = (
@@ -44,6 +53,7 @@ PHASE456_MODEL_MODULES = (
     "app.models.problem",
     "app.models.reopen",
     "app.models.collab",
+    "app.models.team_space",
 )
 
 

@@ -1,9 +1,15 @@
 """Notion docs provider — internal integration token (MVP).
 
+Primary path: create / update **pages (documents)** under a parent page,
+with title + body blocks from the idea (problem / solution / markdown).
+
+Database row create remains an optional advanced path when only a database
+is shared with the integration.
+
 Auth: ``Authorization: Bearer <integration_secret>`` plus ``Notion-Version``.
 Create a Notion internal integration at https://www.notion.so/my-integrations,
-share the target page/database with that integration, then paste the secret
-under Integrations → Notion.
+share the target page (or database) with that integration, then paste the
+secret under Integrations → Notion.
 
 Optional OAuth app env (``NOTION_CLIENT_ID`` / ``NOTION_CLIENT_SECRET``) is
 reserved for a later authorization-code flow; MVP uses the internal secret.
@@ -32,6 +38,8 @@ _UUID_RE = re.compile(
     r"[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?"
     r"[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}"
 )
+_MAX_RICH = 1900
+_MAX_CHILDREN = 100
 
 
 class NotionProvider:
@@ -40,8 +48,10 @@ class NotionProvider:
     id = "notion"
     display_name = "Notion"
     description = (
-        "Create or link Notion pages (or database rows) from accepted ideas. "
-        "Use an internal integration secret from Notion → My integrations."
+        "Create Notion pages (documents) from ideas — title, problem, and "
+        "solution as page content under a parent page. Database rows are "
+        "optional. Use an internal integration secret from Notion → My "
+        "integrations."
     )
     auth_mode = "api_token"
     integration_category = "docs"
@@ -53,36 +63,42 @@ class NotionProvider:
             placeholder="secret_…",
             help_text=(
                 "Notion → Settings → Connections → Develop or manage "
-                "integrations → New integration → copy Internal Integration Secret."
+                "integrations → New integration → copy Internal Integration "
+                "Secret."
             ),
         ),
         ConnectField(
             key="parent_page_id",
-            label="Default parent page ID",
+            label="Parent page ID",
             required=False,
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
             help_text=(
-                "Page where new idea pages are created. Share the page with "
-                "your integration first. Leave empty if you only use a database."
+                "Primary: new idea documents are created as child pages under "
+                "this page. Share the page with your integration (••• → "
+                "Connections), then paste the page ID from the URL."
             ),
         ),
         ConnectField(
             key="database_id",
-            label="Default database ID",
+            label="Database ID",
             required=False,
+            advanced=True,
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
             help_text=(
-                "Optional. When set, new items are rows in this database "
-                "(share the database with the integration)."
+                "Advanced / optional. Only needed if you want new items as "
+                "database rows instead of (or in addition to) pages. Share "
+                "the database with the integration first."
             ),
         ),
         ConnectField(
             key="title_property",
             label="Database title property",
             required=False,
+            advanced=True,
             placeholder="Name",
             help_text=(
-                "Title column name when creating database rows (default: Name)."
+                "Advanced: title column name when creating database rows "
+                "(default: Name)."
             ),
         ),
     ]
@@ -99,8 +115,8 @@ class NotionProvider:
         database_id = _normalize_uuid(credentials.get("database_id") or "")
         if not parent_page_id and not database_id:
             raise ValueError(
-                "Provide a default parent page ID and/or database ID "
-                "(share it with the integration in Notion)."
+                "Provide a parent page ID (recommended for documents) "
+                "and/or a database ID — share it with the integration in Notion."
             )
 
         headers = _headers(token)
@@ -126,21 +142,7 @@ class NotionProvider:
                 bot_name = str(user.get("name") or "Notion integration").strip()
 
             target_label = ""
-            if database_id:
-                db = await client.get(
-                    f"{_API}/databases/{database_id}", headers=headers
-                )
-                if db.status_code == 404:
-                    raise ValueError(
-                        "Notion database not found — share it with the "
-                        "integration and check the ID."
-                    )
-                if db.status_code >= 400:
-                    raise ValueError(
-                        f"Notion database probe failed: {_safe_detail(db)}"
-                    )
-                db_data = db.json() or {}
-                target_label = _plain_title(db_data.get("title")) or database_id
+            # Probe parent page first (document-centric).
             if parent_page_id:
                 page = await client.get(
                     f"{_API}/pages/{parent_page_id}", headers=headers
@@ -158,10 +160,26 @@ class NotionProvider:
                 page_title = _page_title_from_properties(
                     page_data.get("properties") or {}
                 ) or parent_page_id
+                target_label = page_title
+            if database_id:
+                db = await client.get(
+                    f"{_API}/databases/{database_id}", headers=headers
+                )
+                if db.status_code == 404:
+                    raise ValueError(
+                        "Notion database not found — share it with the "
+                        "integration and check the ID."
+                    )
+                if db.status_code >= 400:
+                    raise ValueError(
+                        f"Notion database probe failed: {_safe_detail(db)}"
+                    )
+                db_data = db.json() or {}
+                db_title = _plain_title(db_data.get("title")) or database_id
                 if target_label:
-                    target_label = f"{target_label} · {page_title}"
+                    target_label = f"{target_label} · db:{db_title}"
                 else:
-                    target_label = page_title
+                    target_label = f"db:{db_title}"
 
         label = f"{bot_name} · {target_label}" if target_label else str(bot_name)
         return ConnectionProbe(
@@ -176,6 +194,7 @@ class NotionProvider:
                     (credentials.get("title_property") or "Name").strip()
                     or "Name"
                 ),
+                "mode": "page" if parent_page_id else "database",
             },
         )
 
@@ -188,14 +207,14 @@ class NotionProvider:
         if not token:
             raise ValueError("Notion requires an internal integration secret.")
 
-        database_id = _normalize_uuid(
-            payload.extra.get("database_id")
-            or credentials.get("database_id")
-            or ""
-        )
         parent_page_id = _normalize_uuid(
             payload.extra.get("parent_page_id")
             or credentials.get("parent_page_id")
+            or ""
+        )
+        database_id = _normalize_uuid(
+            payload.extra.get("database_id")
+            or credentials.get("database_id")
             or ""
         )
         title_property = (
@@ -208,24 +227,12 @@ class NotionProvider:
             or "Name"
         )
         title = (payload.title or "Idea").strip()[:2000]
-        description = (payload.description or "").strip()
-        if payload.idea_url:
-            if description:
-                description = f"{description}\n\n{payload.idea_url}"
-            else:
-                description = payload.idea_url
+        force_database = bool(payload.extra.get("as_database_row"))
 
-        if database_id:
+        # Document-first: prefer child page under parent unless explicitly
+        # requested as a database row, or only a database is configured.
+        if parent_page_id and not force_database:
             body: dict[str, Any] = {
-                "parent": {"database_id": database_id},
-                "properties": {
-                    title_property: {
-                        "title": [{"type": "text", "text": {"content": title}}]
-                    }
-                },
-            }
-        elif parent_page_id:
-            body = {
                 "parent": {"page_id": parent_page_id},
                 "properties": {
                     "title": {
@@ -233,28 +240,24 @@ class NotionProvider:
                     }
                 },
             }
+        elif database_id:
+            body = {
+                "parent": {"database_id": database_id},
+                "properties": {
+                    title_property: {
+                        "title": [{"type": "text", "text": {"content": title}}]
+                    }
+                },
+            }
         else:
             raise ValueError(
-                "Notion create needs a parent_page_id or database_id on the "
-                "connection."
+                "Notion create needs a parent_page_id (for documents) or "
+                "database_id on the connection."
             )
 
-        if description:
-            # Keep first block short — Notion rich_text content max 2000 chars.
-            body["children"] = [
-                {
-                    "object": "block",
-                    "type": "paragraph",
-                    "paragraph": {
-                        "rich_text": [
-                            {
-                                "type": "text",
-                                "text": {"content": description[:1900]},
-                            }
-                        ]
-                    },
-                }
-            ]
+        children = _build_idea_blocks(payload)
+        if children:
+            body["children"] = children[:_MAX_CHILDREN]
 
         headers = _headers(token)
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -320,7 +323,7 @@ class NotionProvider:
             status_id="archived" if archived else "open",
             url=url,
             key=page_id,
-            editable_fields=["title"],
+            editable_fields=["title", "append_content"],
             raw=data if isinstance(data, dict) else {},
         )
 
@@ -334,43 +337,77 @@ class NotionProvider:
         page_id = _parse_notion_page_id(external_id)
         if not token or not page_id:
             raise ValueError("Provide a Notion page id or Notion page URL.")
-        if payload.title is None:
-            raise ValueError("Notion update supports title only for MVP.")
-        title = (payload.title or "").strip()
-        if not title:
-            raise ValueError("Notion title cannot be empty.")
 
-        # Resolve which property holds the title (page vs database row).
+        append_raw = ""
+        if payload.extra:
+            append_raw = str(
+                payload.extra.get("append_content")
+                or payload.extra.get("content")
+                or ""
+            ).strip()
+
         headers = _headers(token)
         async with httpx.AsyncClient(timeout=30.0) as client:
-            current = await client.get(
-                f"{_API}/pages/{page_id}", headers=headers
-            )
-            if current.status_code >= 400:
-                raise ValueError(
-                    f"Notion lookup failed: {_safe_detail(current)}"
+            if payload.title is not None:
+                title = (payload.title or "").strip()
+                if not title:
+                    raise ValueError("Notion title cannot be empty.")
+                current = await client.get(
+                    f"{_API}/pages/{page_id}", headers=headers
                 )
-            cur = current.json() or {}
-            prop_name = _title_property_name(cur.get("properties") or {})
-            if not prop_name:
-                prop_name = (
-                    (credentials.get("title_property") or "Name").strip()
-                    or "Name"
-                )
-            body = {
-                "properties": {
-                    prop_name: {
-                        "title": [
-                            {"type": "text", "text": {"content": title[:2000]}}
-                        ]
+                if current.status_code >= 400:
+                    raise ValueError(
+                        f"Notion lookup failed: {_safe_detail(current)}"
+                    )
+                cur = current.json() or {}
+                prop_name = _title_property_name(cur.get("properties") or {})
+                if not prop_name:
+                    prop_name = (
+                        (credentials.get("title_property") or "Name").strip()
+                        or "Name"
+                    )
+                body = {
+                    "properties": {
+                        prop_name: {
+                            "title": [
+                                {
+                                    "type": "text",
+                                    "text": {"content": title[:2000]},
+                                }
+                            ]
+                        }
                     }
                 }
-            }
-            resp = await client.patch(
-                f"{_API}/pages/{page_id}", headers=headers, json=body
-            )
-            if resp.status_code >= 400:
-                raise ValueError(f"Notion update failed: {_safe_detail(resp)}")
+                resp = await client.patch(
+                    f"{_API}/pages/{page_id}", headers=headers, json=body
+                )
+                if resp.status_code >= 400:
+                    raise ValueError(
+                        f"Notion update failed: {_safe_detail(resp)}"
+                    )
+
+            if append_raw:
+                blocks = _blocks_from_markdown(append_raw)[:_MAX_CHILDREN]
+                if not blocks:
+                    raise ValueError("Nothing to append to the Notion page.")
+                # Notion accepts at most 100 children per request.
+                for i in range(0, len(blocks), _MAX_CHILDREN):
+                    chunk = blocks[i : i + _MAX_CHILDREN]
+                    resp = await client.patch(
+                        f"{_API}/blocks/{page_id}/children",
+                        headers=headers,
+                        json={"children": chunk},
+                    )
+                    if resp.status_code >= 400:
+                        raise ValueError(
+                            f"Notion append failed: {_safe_detail(resp)}"
+                        )
+
+            if payload.title is None and not append_raw:
+                raise ValueError(
+                    "Notion update supports title and/or append_content."
+                )
+
         return await self.get_task(credentials, page_id)
 
 
@@ -379,6 +416,145 @@ def _headers(token: str) -> dict[str, str]:
         "Authorization": f"Bearer {token}",
         "Notion-Version": _NOTION_VERSION,
         "Content-Type": "application/json",
+    }
+
+
+def _build_idea_blocks(payload: CreateIssuePayload) -> list[dict[str, Any]]:
+    """Turn idea fields into Notion block children (page body)."""
+    extra = payload.extra or {}
+    problem = str(extra.get("problem") or "").strip()
+    solution = str(extra.get("solution") or "").strip()
+    description = (payload.description or "").strip()
+    idea_url = (payload.idea_url or "").strip()
+
+    blocks: list[dict[str, Any]] = []
+
+    if problem:
+        blocks.append(_heading_block("Problem"))
+        blocks.extend(_blocks_from_markdown(problem))
+    if solution:
+        blocks.append(_heading_block("Solution"))
+        blocks.extend(_blocks_from_markdown(solution))
+
+    # Fallback: unstructured description when problem/solution absent.
+    if not problem and not solution and description:
+        # Strip a trailing idea URL if we will add it separately.
+        body = description
+        if idea_url and body.endswith(idea_url):
+            body = body[: -len(idea_url)].rstrip()
+        blocks.extend(_blocks_from_markdown(body))
+
+    if idea_url:
+        blocks.append(_heading_block("Idea Hub"))
+        blocks.append(
+            _paragraph_block(
+                idea_url,
+                link_url=idea_url,
+            )
+        )
+
+    return blocks[:_MAX_CHILDREN]
+
+
+def _blocks_from_markdown(text: str) -> list[dict[str, Any]]:
+    """Lightweight markdown → Notion blocks (headings, bullets, paragraphs)."""
+    raw = (text or "").replace("\r\n", "\n").strip()
+    if not raw:
+        return []
+
+    blocks: list[dict[str, Any]] = []
+    for chunk in re.split(r"\n{2,}", raw):
+        line = chunk.strip()
+        if not line:
+            continue
+        lines = [ln.rstrip() for ln in line.split("\n") if ln.strip()]
+        if not lines:
+            continue
+
+        # Single-line heading
+        if len(lines) == 1:
+            m = re.match(r"^(#{1,3})\s+(.+)$", lines[0])
+            if m:
+                level = min(len(m.group(1)), 3)
+                blocks.append(_heading_block(m.group(2).strip(), level=level))
+                continue
+            if re.match(r"^[-*]\s+", lines[0]):
+                blocks.append(
+                    _bulleted_block(re.sub(r"^[-*]\s+", "", lines[0]).strip())
+                )
+                continue
+            blocks.extend(_paragraph_chunks(lines[0]))
+            continue
+
+        # Multi-line: if all bullets, emit list; else one paragraph per line.
+        if all(re.match(r"^[-*]\s+", ln) for ln in lines):
+            for ln in lines:
+                blocks.append(
+                    _bulleted_block(re.sub(r"^[-*]\s+", "", ln).strip())
+                )
+            continue
+
+        first = lines[0]
+        hm = re.match(r"^(#{1,3})\s+(.+)$", first)
+        if hm:
+            level = min(len(hm.group(1)), 3)
+            blocks.append(_heading_block(hm.group(2).strip(), level=level))
+            rest = "\n".join(lines[1:]).strip()
+            if rest:
+                blocks.extend(_paragraph_chunks(rest))
+            continue
+
+        blocks.extend(_paragraph_chunks("\n".join(lines)))
+
+    return blocks
+
+
+def _paragraph_chunks(text: str) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    remaining = (text or "").strip()
+    while remaining:
+        piece, remaining = remaining[:_MAX_RICH], remaining[_MAX_RICH:]
+        out.append(_paragraph_block(piece))
+    return out
+
+
+def _rich_text(content: str, *, link_url: str = "") -> list[dict[str, Any]]:
+    piece = (content or "")[:_MAX_RICH]
+    item: dict[str, Any] = {"type": "text", "text": {"content": piece}}
+    if link_url:
+        item["text"]["link"] = {"url": link_url[:2000]}
+    return [item]
+
+
+def _paragraph_block(
+    content: str, *, link_url: str = ""
+) -> dict[str, Any]:
+    return {
+        "object": "block",
+        "type": "paragraph",
+        "paragraph": {
+            "rich_text": _rich_text(content, link_url=link_url),
+        },
+    }
+
+
+def _heading_block(content: str, *, level: int = 2) -> dict[str, Any]:
+    level = 2 if level not in (1, 2, 3) else level
+    key = f"heading_{level}"
+    return {
+        "object": "block",
+        "type": key,
+        key: {"rich_text": _rich_text((content or "")[:_MAX_RICH])},
+    }
+
+
+def _bulleted_block(content: str) -> dict[str, Any]:
+    return {
+        "object": "block",
+        "type": "bulleted_list_item",
+        "bulleted_list_item": {
+            "rich_text": _rich_text((content or "")[:_MAX_RICH]),
+        },
     }
 
 

@@ -39,4 +39,8 @@ Demo users and shared password are documented in `backend/README.md` — do not 
 
 ## External trackers / Integrations
 
-ClickUp / Jira / custom webhook live under `backend/app/trackers/` (pluggable `TrackerProvider` registry). Broader catalog + org/user scopes: `backend/app/integrations/`. UI: `/integrations` (personal + admin org defaults). Delivery uses effective connections (user → org). Docs: `docs/INTEGRATIONS.md`, `docs/TRACKER_PROVIDERS.md`.
+ClickUp / Jira / custom webhook live under `backend/app/trackers/` (pluggable `TrackerProvider` registry). Broader catalog + org/user scopes: `backend/app/integrations/` (Notion docs, Teams Incoming Webhook). UI: `/integrations` (personal + admin org defaults). Delivery uses effective connections (user → org). Docs: `docs/INTEGRATIONS.md`, `docs/TRACKER_PROVIDERS.md`.
+
+## Team space / Channels
+
+Per-idea channels + meetings + custom MCP: idea **Channels** tab · API `/ideas/{id}/team-space/*` · docs `docs/TEAM_SPACE.md`.

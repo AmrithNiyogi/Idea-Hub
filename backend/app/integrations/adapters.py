@@ -57,8 +57,9 @@ def _ensure_builtins() -> None:
     if _BUILTINS_LOADED:
         return
     from app.integrations.notion import NotionProvider
+    from app.integrations.teams_webhook import TeamsWebhookProvider
 
-    for cls in (NotionProvider,):
+    for cls in (NotionProvider, TeamsWebhookProvider):
         inst = cls()
         if inst.id not in _ADAPTERS:
             _ADAPTERS[inst.id] = inst

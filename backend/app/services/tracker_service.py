@@ -236,6 +236,13 @@ class TrackerService:
         idea_url = self._idea_url(idea_id)
         is_docs = getattr(provider, "integration_category", None) == "docs"
         remote_noun = "pages" if is_docs else "tasks"
+        extra = dict(body.extra or {})
+        # Docs adapters (Notion) get structured idea body for page blocks.
+        if is_docs:
+            if "problem" not in extra:
+                extra["problem"] = str(getattr(idea, "problem", "") or "")
+            if "solution" not in extra:
+                extra["solution"] = str(getattr(idea, "solution", "") or "")
 
         try:
             if body.mode == "link":
@@ -262,7 +269,7 @@ class TrackerService:
                         idea_url=idea_url,
                         status_hint=str(getattr(idea, "status", "") or ""),
                         tags=[],
-                        extra=dict(body.extra or {}),
+                        extra=extra,
                     ),
                 )
         except HTTPException:
@@ -365,6 +372,9 @@ class TrackerService:
         )
         credentials = decrypt_credentials(conn.credentials_encrypted)
         try:
+            update_extra: dict[str, Any] = {}
+            if body.append_content is not None:
+                update_extra["append_content"] = body.append_content
             remote = await provider.update_task(
                 credentials,
                 link.external_id,
@@ -374,6 +384,7 @@ class TrackerService:
                     priority=body.priority,
                     due_date=body.due_date,
                     assignee_ids=body.assignee_ids,
+                    extra=update_extra,
                 ),
             )
         except ValueError as exc:
@@ -665,9 +676,16 @@ class TrackerService:
         return f"{origin}/ideas/{idea_id}"
 
     def _default_description(self, idea: Any) -> str:
-        return (
-            f"Created from Idea Hub.\n"
-            f"Title: {getattr(idea, 'title', '')}\n"
-            f"Status: {getattr(idea, 'status', '')}\n"
-            f"{self._idea_url(idea.id)}"
-        )
+        parts = [
+            f"Created from Idea Hub.",
+            f"Title: {getattr(idea, 'title', '')}",
+            f"Status: {getattr(idea, 'status', '')}",
+        ]
+        problem = str(getattr(idea, "problem", "") or "").strip()
+        solution = str(getattr(idea, "solution", "") or "").strip()
+        if problem:
+            parts.extend(["", "## Problem", problem])
+        if solution:
+            parts.extend(["", "## Solution", solution])
+        parts.append(self._idea_url(idea.id))
+        return "\n".join(parts)

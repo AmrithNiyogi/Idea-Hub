@@ -26,7 +26,7 @@ router = APIRouter(prefix="/integrations", tags=["integrations"])
 @router.get(
     "/providers",
     response_model=list[IntegrationProviderOut],
-    summary="List integration providers (trackers + coming-soon stubs)",
+    summary="List integration providers (trackers + Notion + stubs)",
 )
 async def list_providers(
     session: DbSession,

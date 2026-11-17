@@ -1,14 +1,14 @@
 """Integration catalog metadata — categories beyond trackers.
 
 Fully wired providers (ClickUp/Jira/custom) implement ``TrackerProvider`` and
-are mirrored here as ``available``. Notion is a docs adapter (see
-``app.integrations.notion``). Sheets / Teams remain ``coming_soon`` stubs.
+are mirrored here as ``available``. Notion (docs) and Teams (chat webhook)
+register via ``app.integrations.adapters``. Sheets remains ``coming_soon``.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from app.trackers.base import ConnectField
 
@@ -42,6 +42,7 @@ class IntegrationDescriptor:
                     "required": bool(getattr(f, "required", True)),
                     "placeholder": str(getattr(f, "placeholder", "") or ""),
                     "help_text": str(getattr(f, "help_text", "") or ""),
+                    "advanced": bool(getattr(f, "advanced", False)),
                 }
             )
         return {
@@ -68,17 +69,4 @@ STUB_SHEETS = IntegrationDescriptor(
     coming_soon_note="OAuth connect and sheet mapping ship in a later release.",
 )
 
-STUB_TEAMS = IntegrationDescriptor(
-    id="teams",
-    display_name="Microsoft Teams",
-    description="Post idea status updates to a Teams channel.",
-    category="chat",
-    status="coming_soon",
-    auth_mode="oauth",
-    coming_soon_note="Teams bot / webhook notifications are planned.",
-)
-
-FUTURE_STUBS: tuple[IntegrationDescriptor, ...] = (
-    STUB_SHEETS,
-    STUB_TEAMS,
-)
+FUTURE_STUBS: tuple[IntegrationDescriptor, ...] = (STUB_SHEETS,)

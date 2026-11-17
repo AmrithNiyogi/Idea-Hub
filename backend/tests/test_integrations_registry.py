@@ -36,8 +36,22 @@ def test_stubs_are_coming_soon() -> None:
     assert sheets.status == "coming_soon"
     assert sheets.category == "sheets"
     assert sheets.public_dict()["connectable"] is False
+
+
+def test_teams_is_available_chat() -> None:
     teams = get_integration("teams")
-    assert teams.status == "coming_soon"
+    assert teams.status == "available"
+    assert teams.category == "chat"
+    pub = teams.public_dict()
+    assert pub["connectable"] is True
+    assert any(f["key"] == "webhook_url" for f in pub["connect_fields"])
+    assert resolve_provider("teams").id == "teams"
+    assert get_adapter("teams").id == "teams"
+    try:
+        get_provider("teams")
+        raise AssertionError("teams must not be a tracker provider")
+    except KeyError:
+        pass
 
 
 def test_clickup_is_connectable() -> None:

@@ -21,6 +21,8 @@ class ConnectField:
     required: bool = True
     placeholder: str = ""
     help_text: str = ""
+    # When True, Integrations UI groups the field under an Advanced disclosure.
+    advanced: bool = False
 
 
 @dataclass

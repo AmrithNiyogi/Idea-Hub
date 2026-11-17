@@ -7,6 +7,8 @@ export type TrackerConnectField = {
   required: boolean;
   placeholder: string;
   help_text: string;
+  /** When true, Integrations UI nests the field under Advanced. */
+  advanced?: boolean;
 };
 
 export type TrackerProvider = {
@@ -137,4 +139,6 @@ export type IdeaTrackerRemoteUpdateBody = {
   priority?: string;
   due_date?: string;
   assignee_ids?: string[];
+  /** Notion: append markdown/plain text as new page blocks. */
+  append_content?: string;
 };

@@ -18,6 +18,7 @@ import { EFFORT_LABELS, STAGE_LABELS } from '../constants/status';
 import { DeliveryTab } from './DeliveryTab';
 import { TrackerTab } from './TrackerTab';
 import { CollabTrackerPanel } from '../components/CollabTrackerPanel';
+import { TeamSpacePanel } from '../components/TeamSpacePanel';
 import { fmtDate, nextStep, relTime } from '../utils/format';
 import type { User } from '../types/auth';
 import type { Category, Comment, Effort, Idea } from '../types/idea';
@@ -28,6 +29,7 @@ type Tab =
   | 'discussion'
   | 'decision'
   | 'team'
+  | 'channels'
   | 'delivery'
   | 'tracker'
   | 'activity';
@@ -37,6 +39,7 @@ const TABS: Array<[Tab, string]> = [
   ['discussion', 'Discussion'],
   ['decision', 'Decision history'],
   ['team', 'Team & progress'],
+  ['channels', 'Channels'],
   ['delivery', 'Delivery'],
   ['tracker', 'Tracker'],
   ['activity', 'Activity'],
@@ -748,6 +751,7 @@ export function IdeaDetailPage() {
           )}
 
           {tab === 'team' && <CollabTrackerPanel idea={idea} />}
+          {tab === 'channels' && <TeamSpacePanel idea={idea} />}
           {tab === 'delivery' && <DeliveryTab idea={idea} />}
           {tab === 'tracker' && (
             <TrackerTab
@@ -893,14 +897,22 @@ export function IdeaDetailPage() {
               . {idea.follow_count}{' '}
               {idea.follow_count === 1 ? 'person' : 'people'} following.
             </p>
-            <button
-              type="button"
-              className="btn btn--sm"
-              style={{ marginTop: 6 }}
-              onClick={() => setTab('team')}
-            >
-              Team and progress
-            </button>
+            <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn--sm"
+                onClick={() => setTab('team')}
+              >
+                Team and progress
+              </button>
+              <button
+                type="button"
+                className="btn btn--sm btn--ghost"
+                onClick={() => setTab('channels')}
+              >
+                Channels
+              </button>
+            </div>
           </div>
           <div className="card card--tight">
             <h3 style={{ marginBottom: 8 }}>Engagement</h3>

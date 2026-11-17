@@ -3,8 +3,9 @@
 Idea Hub can push accepted / in-prototype ideas into external work trackers.
 Integrations are **pluggable**: core flow never hardcodes vendors.
 
-For **org default vs personal override**, the Integrations settings page, and
-coming-soon Sheets/Notion/Teams stubs, see [INTEGRATIONS.md](./INTEGRATIONS.md).
+For **org default vs personal override**, the Integrations settings page,
+**Notion docs**, and coming-soon Sheets/Teams stubs, see
+[INTEGRATIONS.md](./INTEGRATIONS.md).
 
 ## Post-approval flow
 
@@ -25,7 +26,8 @@ Creating a *new* remote task: `accepted` or `prototype` only.
 | `custom_webhook` | HTTPS create URL + optional auth header | Stub for a tracker you build later |
 
 List trackers at runtime: `GET /api/v1/trackers/providers`.  
-Full catalog (including coming-soon stubs): `GET /api/v1/integrations/providers`.
+Full catalog (including Notion docs + coming-soon stubs):
+`GET /api/v1/integrations/providers`.
 
 ## Configure locally
 
@@ -118,4 +120,5 @@ UI: idea detail **Tracker** tab (`?tab=tracker`) shows live tasks; **Delivery** 
 - OAuth authorization-code flows using `CLICKUP_*` / `JIRA_*` client settings
 - Sync status / webhooks from remote → Idea Hub delivery tasks
 - Dedicated credential encryption key independent of JWT
-- Promote Sheets / Notion / Teams stubs (see INTEGRATIONS.md)
+- Notion public OAuth using `NOTION_CLIENT_*` (MVP uses internal integration secret)
+- Promote Sheets / Teams stubs (see INTEGRATIONS.md)

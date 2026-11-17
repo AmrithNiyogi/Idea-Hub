@@ -32,6 +32,8 @@ class IdeaRef:
     co_author_ids: list[uuid.UUID] = field(default_factory=list)
     anonymous: bool = False
     ideathon_id: Optional[uuid.UUID] = None
+    problem: str = ""
+    solution: str = ""
 
 
 @dataclass
@@ -59,7 +61,9 @@ class SpineBridge:
                         SELECT id, title, status, author_id, owner_id,
                                COALESCE(co_author_ids, '[]'::jsonb) AS co_author_ids,
                                COALESCE(anonymous, false) AS anonymous,
-                               ideathon_id
+                               ideathon_id,
+                               COALESCE(problem, '') AS problem,
+                               COALESCE(solution, '') AS solution
                         FROM ideas WHERE id = :id
                         """
                     ),
@@ -110,6 +114,8 @@ class SpineBridge:
             co_author_ids=co_ids,
             anonymous=bool(row.get("anonymous")),
             ideathon_id=row.get("ideathon_id"),
+            problem=str(row.get("problem") or ""),
+            solution=str(row.get("solution") or ""),
         )
 
     async def set_idea_status(

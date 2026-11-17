@@ -1,6 +1,9 @@
 /**
  * Delivery / docs panel: create or link a Notion page for an accepted idea.
  * Credentials live under Integrations → Notion (personal or org default).
+ *
+ * Primary action creates a **document page** (problem + solution as blocks).
+ * Database rows remain an advanced connection option, not the default UX.
  */
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
@@ -24,10 +27,25 @@ type Props = {
   canManage: boolean;
 };
 
+function ideaBodyMarkdown(idea: Idea): string {
+  const parts: string[] = [];
+  const problem = (idea.problem || '').trim();
+  const solution = (idea.solution || '').trim();
+  if (problem) {
+    parts.push('## Problem', problem, '');
+  }
+  if (solution) {
+    parts.push('## Solution', solution, '');
+  }
+  parts.push(`Synced from Idea Hub · ${new Date().toISOString().slice(0, 10)}`);
+  return parts.join('\n').trim();
+}
+
 export function NotionDocsPanel({ idea, canManage }: Props) {
   const [effective, setEffective] = useState<EffectiveConnection | null>(null);
   const [links, setLinks] = useState<IdeaTrackerLink[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<'create' | 'link'>('create');
   const [externalRef, setExternalRef] = useState('');
@@ -76,18 +94,66 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
     }
     setBusy(true);
     setError(null);
+    setMsg(null);
     try {
       await trackersApi.createOrLink(idea.id, {
         connection_id: connection.id,
         provider_id: PROVIDER_ID,
         mode,
         title: idea.title,
+        description:
+          mode === 'create'
+            ? [
+                idea.problem?.trim()
+                  ? `## Problem\n${idea.problem.trim()}`
+                  : '',
+                idea.solution?.trim()
+                  ? `## Solution\n${idea.solution.trim()}`
+                  : '',
+              ]
+                .filter(Boolean)
+                .join('\n\n') || undefined
+            : undefined,
         external_id_or_url: mode === 'link' ? externalRef.trim() : undefined,
+        extra:
+          mode === 'create'
+            ? {
+                problem: idea.problem || '',
+                solution: idea.solution || '',
+              }
+            : undefined,
       });
       setExternalRef('');
+      setMsg(
+        mode === 'create'
+          ? 'Notion page created with idea content.'
+          : 'Notion page linked.',
+      );
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Create/link failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onAppendContent(linkId: string) {
+    if (!canManage) return;
+    const body = ideaBodyMarkdown(idea);
+    if (!body) {
+      setError('Nothing to append — add a problem or solution on the idea first.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setMsg(null);
+    try {
+      await trackersApi.updateRemote(idea.id, linkId, {
+        append_content: body,
+      });
+      setMsg('Appended latest idea content to the Notion page.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Append failed');
     } finally {
       setBusy(false);
     }
@@ -100,6 +166,7 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
     }
     setBusy(true);
     setError(null);
+    setMsg(null);
     try {
       await trackersApi.unlink(idea.id, linkId);
       await reload();
@@ -127,18 +194,28 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Open in Notion
+                      Open page
                     </a>
                   ) : null}
                   {canManage && eligible ? (
-                    <button
-                      type="button"
-                      className="btn btn--sm"
-                      disabled={busy}
-                      onClick={() => void onUnlink(link.id)}
-                    >
-                      Unlink
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn--sm"
+                        disabled={busy}
+                        onClick={() => void onAppendContent(link.id)}
+                      >
+                        Append content
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--sm"
+                        disabled={busy}
+                        onClick={() => void onUnlink(link.id)}
+                      >
+                        Unlink
+                      </button>
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -160,8 +237,9 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
       <div>
         <h2>Notion docs</h2>
         <p className="muted small">
-          Create a page (or database row) from this idea, or link an existing
-          Notion page. Connect once under{' '}
+          Create a Notion <strong>page</strong> (document) from this idea —
+          problem and solution become page blocks — or link an existing page.
+          Connect once under{' '}
           <Link to="/integrations/notion">Integrations → Notion</Link>.
         </p>
       </div>
@@ -200,6 +278,12 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
           <span>{error}</span>
         </div>
       ) : null}
+      {msg ? (
+        <div className="notice" role="status">
+          <Icon name="check" size={16} />
+          <span>{msg}</span>
+        </div>
+      ) : null}
 
       {linkList}
 
@@ -233,9 +317,14 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
                 <span>Link existing</span>
               </label>
             </div>
-            {mode === 'link' ? (
+            {mode === 'create' ? (
+              <p className="hint" style={{ margin: 0 }}>
+                Creates a child page under your connected parent page, with
+                title plus Problem / Solution content blocks.
+              </p>
+            ) : (
               <label className="field">
-                <span className="field__label">Notion page id or URL</span>
+                <span className="label">Notion page id or URL</span>
                 <input
                   className="input"
                   value={externalRef}
@@ -244,14 +333,14 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
                   required
                 />
               </label>
-            ) : null}
+            )}
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
               <button
                 type="submit"
                 className="btn btn--sm btn--primary"
                 disabled={busy}
               >
-                {mode === 'create' ? 'Create in Notion' : 'Link to idea'}
+                {mode === 'create' ? 'Create Notion page' : 'Link to idea'}
               </button>
             </div>
           </form>

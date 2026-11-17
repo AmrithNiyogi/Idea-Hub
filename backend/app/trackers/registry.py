@@ -58,6 +58,7 @@ def provider_public_dict(provider: TrackerProvider) -> dict[str, Any]:
                 "required": bool(getattr(f, "required", True)),
                 "placeholder": str(getattr(f, "placeholder", "") or ""),
                 "help_text": str(getattr(f, "help_text", "") or ""),
+                "advanced": bool(getattr(f, "advanced", False)),
             }
         )
     return {
