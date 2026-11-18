@@ -36,6 +36,7 @@ from app.models.reopen import ReopenConditionSet
 from app.models.collab import CollabRequest, TrackerCheckin, TrackerMilestone
 from app.models.notification import Notification
 from app.models.tracker import IdeaTrackerLink, TrackerConnection
+from app.models.news import NewsCategoryState, NewsItem
 from app.models.groups import (
     GroupChannel,
     GroupInvite,
@@ -71,6 +72,8 @@ __all__ = [
     "ImpactEntry",
     "InnovationTimePool",
     "KompassAnswer",
+    "NewsCategoryState",
+    "NewsItem",
     "Notification",
     "PitchScore",
     "PlatformSetting",

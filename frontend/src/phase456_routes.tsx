@@ -11,6 +11,7 @@ import { AdminPage } from './pages/Admin';
 import { AgentsPage } from './pages/Agents';
 import { ProblemsPage } from './pages/Problems';
 import { ProblemDetailPage } from './pages/ProblemDetail';
+import { NewsPage } from './pages/News';
 import { GroupsPage } from './pages/Groups';
 import { GroupDetailPage } from './pages/GroupDetail';
 import type { ExtraNavItem } from './routeModules';
@@ -26,6 +27,7 @@ export const phase456Routes = (
     <Route path="/agents" element={<AgentsPage />} />
     <Route path="/problems" element={<ProblemsPage />} />
     <Route path="/problems/:key" element={<ProblemDetailPage />} />
+    <Route path="/news" element={<NewsPage />} />
   </>
 );
 
@@ -49,6 +51,12 @@ export const extraNavItems: ExtraNavItem[] = [
     icon: 'flag',
     to: '/problems',
     sectionBefore: 'Insight',
+  },
+  {
+    id: 'news',
+    label: 'AI Newsletter',
+    icon: 'spark',
+    to: '/news',
   },
   {
     id: 'insights',
@@ -81,4 +89,5 @@ export {
   AgentsPage,
   ProblemsPage,
   ProblemDetailPage,
+  NewsPage,
 };
