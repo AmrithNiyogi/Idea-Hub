@@ -1,4 +1,4 @@
-"""Unit tests for team-space helpers (slug, meeting card, MCP stub catalog)."""
+"""Unit tests for group helpers (slug, meeting card, MCP stub catalog)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 
 from app.integrations.mcp_client import STUB_TOOL_CATALOG
 from app.integrations.teams_webhook import build_meeting_card, require_https_webhook
-from app.services.team_space_service import _slugify
+from app.constants.notification_kinds import EMAIL_KINDS
+from app.services.groups_service import _slugify, dm_pair_key
 
 
 def test_slugify() -> None:
@@ -42,3 +43,15 @@ def test_meeting_card_shape() -> None:
 def test_stub_tools_include_schedule_meeting() -> None:
     names = {t["name"] for t in STUB_TOOL_CATALOG}
     assert "schedule_meeting" in names
+
+
+def test_dm_pair_key_is_order_independent() -> None:
+    import uuid
+
+    a, b = uuid.uuid4(), uuid.uuid4()
+    assert dm_pair_key(a, b) == dm_pair_key(b, a)
+    assert dm_pair_key(a, b).count(":") == 1
+
+
+def test_group_invite_emails_by_default() -> None:
+    assert "group_invite" in EMAIL_KINDS

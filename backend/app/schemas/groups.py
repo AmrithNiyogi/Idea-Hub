@@ -1,4 +1,4 @@
-"""Pydantic I/O for team collaboration spaces."""
+"""Pydantic I/O for collaboration groups and DMs."""
 
 from __future__ import annotations
 
@@ -9,9 +9,40 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
-class TeamChannelOut(BaseModel):
+class GroupMemberOut(BaseModel):
+    user_id: uuid.UUID
+    role: str
+    joined_at: datetime
+    name: str = ""
+    email: str = ""
+    avatar: int = 1
+    avatar_url: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class GroupInviteOut(BaseModel):
     id: uuid.UUID
-    space_id: uuid.UUID
+    group_id: uuid.UUID
+    group_name: str = ""
+    invitee_id: uuid.UUID
+    invited_by: uuid.UUID
+    role: str
+    status: str
+    created_at: datetime
+    responded_at: Optional[datetime] = None
+    invitee_name: str = ""
+    invitee_email: str = ""
+    invitee_avatar: int = 1
+    invitee_avatar_url: Optional[str] = None
+    invited_by_name: str = ""
+
+    model_config = {"from_attributes": True}
+
+
+class GroupChannelOut(BaseModel):
+    id: uuid.UUID
+    group_id: uuid.UUID
     slug: str
     name: str
     description: str = ""
@@ -22,7 +53,7 @@ class TeamChannelOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class TeamMessageOut(BaseModel):
+class GroupMessageOut(BaseModel):
     id: uuid.UUID
     channel_id: uuid.UUID
     author_id: uuid.UUID
@@ -34,9 +65,9 @@ class TeamMessageOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class TeamMeetingOut(BaseModel):
+class GroupMeetingOut(BaseModel):
     id: uuid.UUID
-    space_id: uuid.UUID
+    group_id: uuid.UUID
     channel_id: Optional[uuid.UUID] = None
     title: str
     description: str = ""
@@ -53,10 +84,10 @@ class TeamMeetingOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class IdeaMcpConnectionOut(BaseModel):
+class GroupMcpConnectionOut(BaseModel):
     id: uuid.UUID
-    space_id: uuid.UUID
-    idea_id: uuid.UUID
+    group_id: uuid.UUID
+    idea_id: Optional[uuid.UUID] = None
     label: str
     endpoint_url: str
     auth_header_name: str = "Authorization"
@@ -71,20 +102,68 @@ class IdeaMcpConnectionOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class TeamSpaceOut(BaseModel):
+class GroupSummaryOut(BaseModel):
     id: uuid.UUID
-    idea_id: uuid.UUID
-    title: str
+    name: str
+    description: str = ""
+    kind: str = "group"
+    idea_id: Optional[uuid.UUID] = None
+    avatar_url: Optional[str] = None
     created_by: uuid.UUID
     created_at: datetime
-    channels: list[TeamChannelOut] = Field(default_factory=list)
+    member_count: int = 0
+    my_role: Optional[str] = None
+    # For DMs: the other participant (when known).
+    peer_user_id: Optional[uuid.UUID] = None
+    peer_avatar: int = 1
+    peer_avatar_url: Optional[str] = None
+
+
+class GroupOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: str = ""
+    kind: str = "group"
+    idea_id: Optional[uuid.UUID] = None
+    avatar_url: Optional[str] = None
+    created_by: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    channels: list[GroupChannelOut] = Field(default_factory=list)
+    members: list[GroupMemberOut] = Field(default_factory=list)
+    pending_invites: list[GroupInviteOut] = Field(default_factory=list)
     can_post: bool = False
     can_manage: bool = False
+    peer_user_id: Optional[uuid.UUID] = None
+    peer_avatar: int = 1
+    peer_avatar_url: Optional[str] = None
 
-    model_config = {"from_attributes": True}
+
+class GroupCreateIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=2000)
+    idea_id: Optional[uuid.UUID] = None
 
 
-class TeamMessageCreateIn(BaseModel):
+class GroupUpdateIn(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    idea_id: Optional[uuid.UUID] = None
+    clear_idea: bool = False
+    avatar_url: Optional[str] = None
+    clear_avatar: bool = False
+
+
+class DmCreateIn(BaseModel):
+    user_id: uuid.UUID
+
+
+class GroupInviteCreateIn(BaseModel):
+    user_id: uuid.UUID
+    role: Literal["admin", "member"] = "member"
+
+
+class GroupMessageCreateIn(BaseModel):
     body: str = Field(min_length=1, max_length=8000)
 
     @field_validator("body")
@@ -96,14 +175,14 @@ class TeamMessageCreateIn(BaseModel):
         return text
 
 
-class TeamChannelCreateIn(BaseModel):
+class GroupChannelCreateIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     slug: Optional[str] = Field(default=None, max_length=64)
     description: str = Field(default="", max_length=500)
     kind: Literal["text", "announcements"] = "text"
 
 
-class TeamMeetingCreateIn(BaseModel):
+class GroupMeetingCreateIn(BaseModel):
     title: str = Field(min_length=1, max_length=300)
     starts_at: datetime
     ends_at: Optional[datetime] = None
@@ -111,19 +190,16 @@ class TeamMeetingCreateIn(BaseModel):
     join_url: str = Field(default="", max_length=1024)
     channel_id: Optional[uuid.UUID] = None
     channel_slug: Optional[str] = Field(default=None, max_length=64)
-    # Post MessageCard to Teams Incoming Webhook (effective connection).
     notify_teams: bool = True
-    # Also post a meeting message into the idea channel.
     announce_in_channel: bool = True
 
 
-class IdeaMcpConnectionCreateIn(BaseModel):
+class GroupMcpConnectionCreateIn(BaseModel):
     label: str = Field(default="default", max_length=120)
     endpoint_url: str = Field(min_length=1, max_length=1024)
     auth_header_name: str = Field(default="Authorization", max_length=120)
     auth_header_value: str = Field(default="", max_length=4000)
     transport: Literal["http_jsonrpc", "stub"] = "http_jsonrpc"
-    # When true (or transport=stub), seed tools_cache with known team tools.
     seed_stub_tools: bool = False
 
 

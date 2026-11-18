@@ -19,6 +19,7 @@ const TITLE_MAP: Record<string, string> = {
   '/admin': 'Admin',
   '/agents': 'Agent hub',
   '/problems': 'Problem radar',
+  '/groups': 'Groups',
   '/profile': 'My profile',
   '/settings': 'Account settings',
   '/integrations': 'Integrations',
@@ -32,6 +33,7 @@ function pageTitle(pathname: string): string {
   if (pathname.startsWith('/ideathons/')) return 'Ideathon';
   if (pathname.startsWith('/people/')) return 'Profile';
   if (pathname.startsWith('/problems/')) return 'Problem';
+  if (pathname.startsWith('/groups/')) return 'Group';
   return 'Idea Hub';
 }
 

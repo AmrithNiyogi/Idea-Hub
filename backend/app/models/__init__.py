@@ -36,12 +36,14 @@ from app.models.reopen import ReopenConditionSet
 from app.models.collab import CollabRequest, TrackerCheckin, TrackerMilestone
 from app.models.notification import Notification
 from app.models.tracker import IdeaTrackerLink, TrackerConnection
-from app.models.team_space import (
-    IdeaMcpConnection,
-    TeamChannel,
-    TeamMeeting,
-    TeamMessage,
-    TeamSpace,
+from app.models.groups import (
+    GroupChannel,
+    GroupInvite,
+    GroupMeeting,
+    GroupMember,
+    GroupMessage,
+    GroupMcpConnection,
+    HubGroup,
 )
 
 __all__ = [
@@ -82,10 +84,13 @@ __all__ = [
     "ReviewPanel",
     "StatusHistory",
     "Team",
-    "TeamChannel",
-    "TeamMeeting",
-    "TeamMessage",
-    "TeamSpace",
+    "GroupChannel",
+    "GroupInvite",
+    "GroupMeeting",
+    "GroupMember",
+    "GroupMessage",
+    "GroupMcpConnection",
+    "HubGroup",
     "TimeGrantRequest",
     "TimeLog",
     "TrackerCheckin",

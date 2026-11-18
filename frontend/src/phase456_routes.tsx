@@ -2,8 +2,7 @@
  * Phase 4+5+6 routes + sidebar entries.
  * Discovered automatically via `routeModules.ts` (import.meta.glob `*_routes.tsx`).
  *
- * Routes: /insights, /admin, /agents, /problems, /problems/:key
- * IdeaDetail can also render CollabTrackerPanel when `?tab=collab`.
+ * Routes: /groups, /groups/:id, /insights, /admin, /agents, /problems, …
  */
 
 import { Route } from 'react-router-dom';
@@ -12,10 +11,14 @@ import { AdminPage } from './pages/Admin';
 import { AgentsPage } from './pages/Agents';
 import { ProblemsPage } from './pages/Problems';
 import { ProblemDetailPage } from './pages/ProblemDetail';
+import { GroupsPage } from './pages/Groups';
+import { GroupDetailPage } from './pages/GroupDetail';
 import type { ExtraNavItem } from './routeModules';
 
 export const phase456Routes = (
   <>
+    <Route path="/groups" element={<GroupsPage />} />
+    <Route path="/groups/:id" element={<GroupDetailPage />} />
     <Route path="/insights" element={<InsightsPage />} />
     <Route path="/admin" element={<AdminPage />} />
     <Route path="/agents" element={<AgentsPage />} />
@@ -25,6 +28,13 @@ export const phase456Routes = (
 );
 
 export const extraNavItems: ExtraNavItem[] = [
+  {
+    id: 'groups',
+    label: 'Groups',
+    icon: 'message',
+    to: '/groups',
+    sectionBefore: 'Collaborate',
+  },
   {
     id: 'problems',
     label: 'Problem radar',
@@ -56,6 +66,8 @@ export const extraNavItems: ExtraNavItem[] = [
 ];
 
 export {
+  GroupsPage,
+  GroupDetailPage,
   InsightsPage,
   AdminPage,
   AgentsPage,

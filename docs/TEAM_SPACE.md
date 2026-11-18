@@ -1,94 +1,82 @@
-# Team collaboration space
+# Groups & channels
 
-Per-idea **team space** with Discord-like channels, meeting scheduling
-(Microsoft Teams Incoming Webhook), and attachable **custom MCP** endpoints.
+First-class **Groups** with Discord-like channel navigation and a
+WhatsApp-like chat transcript. Groups are creatable **without an idea**;
+an idea can be linked later (at most one group per idea).
+
+## Product model
+
+| Concept | Notes |
+|---------|--------|
+| **Group** (`hub_groups`) | Name, description, members, optional `idea_id` |
+| **Channels** | `#general`, `#decisions`, `#blockers` by default |
+| **Messages** | Dense chat bubbles + sticky composer |
+| **Meetings / MCP** | Attached to the group (Teams webhook optional) |
+
+Idea-bound 1:1 `team_spaces` were replaced by this model (migration
+`groups_001`). Existing idea spaces (if any) are migrated into groups with
+the creator as owner.
 
 ## UI
 
 | Path | Purpose |
 |------|---------|
-| Idea → **Channels** tab | Channel list + message pane, Schedule, MCP drawer |
-| `/integrations/teams` | Connect Incoming Webhook (personal or org default) |
+| Sidebar → **Groups** (`/groups`) | List + create (no idea required) |
+| `/groups/:id` | Channel list (left) + chat (main) |
+| Idea detail → Team card | **Open group** if linked, or **Create group** |
 
-Default channels on first open: `#general`, `#decisions`, `#blockers`.
+Chat UX mixes Discord (group + `#channel` switcher, topic) with WhatsApp
+(bubbles, timestamps, sticky bottom composer). Styling uses Idea Hub tokens
+(`.grp-*`, `.ts-*`) — not Discord/WhatsApp brand colors.
 
 ## Who can post
 
-Authors, co-authors, owner, accepted collaborators, delivery contributors,
-plus roles `lead` / `admin` / `leadership`. Others can view live idea spaces;
-drafts stay private to the team.
+Group **members** (and platform `lead` / `admin` / `leadership`) can post.
+Owners/admins manage channels, members, and MCP.
 
 ## API (`/api/v1`)
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/ideas/{id}/team-space` | Get or create space + channels |
-| POST | `/ideas/{id}/team-space/channels` | Create channel (manage) |
-| GET/POST | `/ideas/{id}/team-space/channels/{cid}/messages` | List / post |
-| GET/POST | `/ideas/{id}/team-space/meetings` | List / schedule |
-| GET/POST | `/ideas/{id}/team-space/mcp` | List / attach MCP |
-| POST | `/ideas/{id}/team-space/mcp/{mcp_id}/discover` | `tools/list` |
-| POST | `/ideas/{id}/team-space/mcp/{mcp_id}/call` | `tools/call` |
-| DELETE | `/ideas/{id}/team-space/mcp/{mcp_id}` | Remove MCP |
+| GET/POST | `/groups` | List mine / create |
+| GET/PATCH | `/groups/{id}` | Detail / update (incl. link idea) |
+| POST/DELETE | `/groups/{id}/members…` | Add / remove members |
+| POST | `/groups/{id}/channels` | Create channel |
+| GET/POST | `/groups/{id}/channels/{cid}/messages` | List / post |
+| GET/POST | `/groups/{id}/meetings` | List / schedule |
+| GET/POST/DELETE | `/groups/{id}/mcp…` | MCP attach / discover / call |
+| GET | `/ideas/{id}/group` | Linked group or `null` |
 
 ## Teams Incoming Webhook
 
-1. In Teams: channel → **Connectors** → **Incoming Webhook** → copy URL.
-2. Idea Hub → **Integrations** → **Microsoft Teams** → paste URL (personal
-   or admin org default).
-3. On an idea **Channels** tab → **Schedule** → leave “Notify Microsoft Teams”
-   checked. Hub posts a MessageCard and optionally announces in-channel.
+1. Integrations → Microsoft Teams → paste Incoming Webhook URL.
+2. In a group → **Schedule** → leave “Notify Microsoft Teams” checked.
 
-Credentials use the same encrypted `tracker_connections` table as ClickUp/Jira
-(`provider_id=teams`, scope user/org). Secrets are never returned by the API.
-
-## Custom MCP
-
-Attach a JSON-RPC HTTP endpoint to the idea space (or use the **stub** catalog).
-
-### Expected tools (Hub understands)
-
-| Tool | Purpose |
-|------|---------|
-| `schedule_meeting` | Hub schedules locally (Teams + channel announce). Args: `title`, `starts_at`, optional `ends_at`, `description`, `join_url`, `channel_slug`, `notify_teams`. |
-| `post_channel_message` | Documented for remote MCPs; stub echoes. |
-| `list_channels` | Documented for remote MCPs. |
-
-### HTTP contract (MVP)
-
-```http
-POST {endpoint_url}
-Content-Type: application/json
-Authorization: <optional>
-
-{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
-{"jsonrpc":"2.0","id":2,"method":"tools/call",
- "params":{"name":"schedule_meeting","arguments":{…}}}
-```
-
-SSE / stdio transports are out of scope; use `transport=stub` until you host
-an HTTP MCP. Align Kompass/ngrok agent tools with
-[KOMPASS_TOOLS_NGROK.md](./KOMPASS_TOOLS_NGROK.md) when exposing Hub APIs
-as agent tools.
-
-### Add your own later
-
-1. Run an MCP server that speaks JSON-RPC over HTTPS (or tunnel via ngrok).
-2. On Channels → MCP → uncheck stub → paste URL + auth header.
-3. **Discover** refreshes `tools/list`. Calling `schedule_meeting` is always
-   handled by Hub so Teams + channel announce stay consistent.
-
-## Migrate
+## Migrate & seed
 
 ```bash
 cd backend
-uv run alembic upgrade head   # includes team_space_001
+uv run alembic upgrade head          # includes groups_001
+uv run python -m app.seed.demo       # full demo (calls groups seed via phase456)
+# or groups only (idempotent):
+uv run python -m app.seed.groups
 # restart uvicorn
 ```
+
+Demo groups (after seed):
+
+| Group | Idea | Members |
+|-------|------|---------|
+| Parking lot — pre-build chat | none | priya (owner), marcus, elena, tomas, sam |
+| Runbook draft team | linked to runbook idea if present | marcus (owner), elena, tomas, priya |
+
+Shared demo password: see `backend/README.md` (do not invent credentials).
+
+If you previously applied a local `team_space_001` revision that is no longer
+in the tree, stamp/reset carefully or recreate the local DB.
 
 ## Follow-ups
 
 - Real-time websocket / SSE for channel messages
-- Graph API calendar create (beyond Incoming Webhook cards)
-- Full MCP Streamable HTTP + SSE host inside Idea Hub
-- Per-channel permissions / @mentions / reactions
+- Member picker (search users) instead of raw UUID
+- Graph API calendar create beyond Incoming Webhook cards

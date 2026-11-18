@@ -41,6 +41,8 @@ Demo users and shared password are documented in `backend/README.md` — do not 
 
 ClickUp / Jira / custom webhook live under `backend/app/trackers/` (pluggable `TrackerProvider` registry). Broader catalog + org/user scopes: `backend/app/integrations/` (Notion docs, Teams Incoming Webhook). UI: `/integrations` (personal + admin org defaults). Delivery uses effective connections (user → org). Docs: `docs/INTEGRATIONS.md`, `docs/TRACKER_PROVIDERS.md`.
 
-## Team space / Channels
+## Groups / Channels
 
-Per-idea channels + meetings + custom MCP: idea **Channels** tab · API `/ideas/{id}/team-space/*` · docs `docs/TEAM_SPACE.md`.
+First-class **Groups** (sidebar → Groups): create without an idea, Discord-like
+channels + WhatsApp-like chat. Optional idea link. API `/groups/*` ·
+`GET /ideas/{id}/group` · docs `docs/TEAM_SPACE.md`. Seed: `uv run python -m app.seed.groups`.

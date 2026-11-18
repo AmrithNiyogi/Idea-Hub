@@ -1,4 +1,8 @@
-"""Team collaboration space: channels, messages, meetings, MCP connections.
+"""Team collaboration space (superseded by groups_001).
+
+Kept so databases already stamped at team_space_001 can upgrade.
+Fresh installs: integrations_001 → team_space_001 → groups_001
+(groups_001 migrates these tables into hub_groups).
 
 Revision ID: team_space_001
 Revises: integrations_001
@@ -18,7 +22,14 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def _has_table(name: str) -> bool:
+    bind = op.get_bind()
+    return name in sa.inspect(bind).get_table_names()
+
+
 def upgrade() -> None:
+    if _has_table("team_spaces") or _has_table("hub_groups"):
+        return
     op.create_table(
         "team_spaces",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
@@ -236,8 +247,14 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table("idea_mcp_connections")
-    op.drop_table("team_meetings")
-    op.drop_table("team_messages")
-    op.drop_table("team_channels")
+    if not _has_table("team_spaces"):
+        return
+    if _has_table("idea_mcp_connections"):
+        op.drop_table("idea_mcp_connections")
+    if _has_table("team_meetings"):
+        op.drop_table("team_meetings")
+    if _has_table("team_messages"):
+        op.drop_table("team_messages")
+    if _has_table("team_channels"):
+        op.drop_table("team_channels")
     op.drop_table("team_spaces")

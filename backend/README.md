@@ -16,9 +16,13 @@ uv sync
 # optional: eval "$(./scripts/dev-services.sh env)"
 
 uv run alembic upgrade head
-uv run python -m app.seed.demo
+uv run python -m app.seed.demo          # users, ideas, groups/channels, …
+# groups only (idempotent): uv run python -m app.seed.groups
 uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+After seed, open **Groups** in the sidebar (`/groups`) for sample collaborate chat
+(Parking lot without an idea + optional runbook-linked group). See `docs/TEAM_SPACE.md`.
 
 | Script | Ports |
 |--------|-------|

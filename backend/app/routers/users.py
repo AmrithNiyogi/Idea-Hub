@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
-from sqlalchemy import select
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from sqlalchemy import or_, select
 
 from app.dependencies.auth import DbSession, RequireUser
 from app.models.category import Category
@@ -122,11 +122,32 @@ async def upload_my_avatar(
 
 
 @router.get("/users", response_model=list[UserPublic], summary="List users")
-async def list_users(session: DbSession, _: RequireUser) -> list[UserPublic]:
-    """Return active users (for co-author / owner pickers)."""
-    result = await session.execute(
-        select(User).where(User.status == "active").order_by(User.name.asc())
-    )
+async def list_users(
+    session: DbSession,
+    _: RequireUser,
+    q: str | None = Query(
+        default=None,
+        max_length=100,
+        description="Case-insensitive match on name or email (invite / DM pickers)",
+    ),
+    limit: int | None = Query(default=None, ge=1, le=200),
+) -> list[UserPublic]:
+    """Return active users (co-author pickers, invite + DM search)."""
+    stmt = select(User).where(User.status == "active")
+    needle = (q or "").strip()
+    if needle:
+        escaped = needle.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        like = f"%{escaped}%"
+        stmt = stmt.where(
+            or_(
+                User.name.ilike(like, escape="\\"),
+                User.email.ilike(like, escape="\\"),
+            )
+        )
+    stmt = stmt.order_by(User.name.asc())
+    if limit:
+        stmt = stmt.limit(limit)
+    result = await session.execute(stmt)
     return [user_to_public(u) for u in result.scalars().all()]
 
 

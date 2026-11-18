@@ -18,18 +18,18 @@ import { EFFORT_LABELS, STAGE_LABELS } from '../constants/status';
 import { DeliveryTab } from './DeliveryTab';
 import { TrackerTab } from './TrackerTab';
 import { CollabTrackerPanel } from '../components/CollabTrackerPanel';
-import { TeamSpacePanel } from '../components/TeamSpacePanel';
+import { groupsApi } from '../api/groups';
 import { fmtDate, nextStep, relTime } from '../utils/format';
 import type { User } from '../types/auth';
 import type { Category, Comment, Effort, Idea } from '../types/idea';
 import type { CollabRequest } from '../types/phase456';
+import type { Group } from '../types/groups';
 
 type Tab =
   | 'overview'
   | 'discussion'
   | 'decision'
   | 'team'
-  | 'channels'
   | 'delivery'
   | 'tracker'
   | 'activity';
@@ -39,7 +39,6 @@ const TABS: Array<[Tab, string]> = [
   ['discussion', 'Discussion'],
   ['decision', 'Decision history'],
   ['team', 'Team & progress'],
-  ['channels', 'Channels'],
   ['delivery', 'Delivery'],
   ['tracker', 'Tracker'],
   ['activity', 'Activity'],
@@ -73,6 +72,7 @@ export function IdeaDetailPage() {
   const [related, setRelated] = useState<Idea[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [collabReqs, setCollabReqs] = useState<CollabRequest[]>([]);
+  const [linkedGroup, setLinkedGroup] = useState<Group | null>(null);
   const [commentBody, setCommentBody] = useState('');
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -112,6 +112,7 @@ export function IdeaDetailPage() {
     setError(null);
     setRelated([]);
     setCollabReqs([]);
+    setLinkedGroup(null);
     setComments([]);
     setOptPreview({});
     (async () => {
@@ -132,6 +133,14 @@ export function IdeaDetailPage() {
           })
           .catch(() => {
             if (!cancelled) setCollabReqs([]);
+          });
+        groupsApi
+          .forIdea(id)
+          .then((g) => {
+            if (!cancelled) setLinkedGroup(g);
+          })
+          .catch(() => {
+            if (!cancelled) setLinkedGroup(null);
           });
         if (i.tags.length || i.category_id) {
           const rel = await ideasApi
@@ -751,7 +760,6 @@ export function IdeaDetailPage() {
           )}
 
           {tab === 'team' && <CollabTrackerPanel idea={idea} />}
-          {tab === 'channels' && <TeamSpacePanel idea={idea} />}
           {tab === 'delivery' && <DeliveryTab idea={idea} />}
           {tab === 'tracker' && (
             <TrackerTab
@@ -905,13 +913,43 @@ export function IdeaDetailPage() {
               >
                 Team and progress
               </button>
-              <button
-                type="button"
-                className="btn btn--sm btn--ghost"
-                onClick={() => setTab('channels')}
-              >
-                Channels
-              </button>
+              {linkedGroup ? (
+                <Link
+                  className="btn btn--sm btn--ghost"
+                  to={`/groups/${linkedGroup.id}`}
+                >
+                  Open group
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn--sm btn--ghost"
+                  disabled={busy}
+                  onClick={() => {
+                    void (async () => {
+                      setBusy(true);
+                      try {
+                        const g = await groupsApi.create({
+                          name: idea.title.slice(0, 200),
+                          description: 'Linked from idea detail',
+                          idea_id: idea.id,
+                        });
+                        setLinkedGroup(g);
+                        window.location.assign(`/groups/${g.id}`);
+                      } catch (e) {
+                        setError(
+                          e instanceof Error
+                            ? e.message
+                            : 'Could not create group',
+                        );
+                        setBusy(false);
+                      }
+                    })();
+                  }}
+                >
+                  Create group
+                </button>
+              )}
             </div>
           </div>
           <div className="card card--tight">

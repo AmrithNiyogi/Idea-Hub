@@ -136,6 +136,15 @@ async def seed_phase456() -> None:
                     )
                     logger.info("Collab request seeded on %s", idea.title[:40])
 
+        # Collaboration groups + sample channel messages
+        try:
+            from app.seed.groups import seed_groups
+
+            gmap = await seed_groups(session)
+            logger.info("Groups seed: %s", gmap or "unchanged")
+        except Exception as exc:  # noqa: BLE001 — table may be absent pre-migrate
+            logger.warning("Groups seed skipped: %s", exc)
+
         await session.commit()
         logger.info("Phase 4–6 seed complete")
 

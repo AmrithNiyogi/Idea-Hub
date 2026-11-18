@@ -1,10 +1,6 @@
-"""Per-idea team collaboration space: channels, messages, meetings, MCP links.
+"""First-class collaboration groups: channels, messages, meetings, MCP.
 
-Responsibilities:
-- One TeamSpace per idea (lazy-created).
-- Discord-like channels + messages for the build team.
-- Meeting records (Teams webhook / MCP schedule path).
-- Custom MCP connection configs attachable to a space.
+Groups are creatable without an idea; ``idea_id`` is an optional later link.
 """
 
 from __future__ import annotations
@@ -32,24 +28,47 @@ def _uuid() -> uuid.UUID:
     return uuid.uuid4()
 
 
-class TeamSpace(Base):
-    """Collaboration workspace for one idea's delivery team."""
+class HubGroup(Base):
+    """Discord-like server / WhatsApp-like chat home for a collaboration group.
 
-    __tablename__ = "team_spaces"
+    ``kind`` is ``group`` (invite-based multi-member) or ``dm`` (pairwise chat).
+    Soft-deleted rows set ``deleted_at`` and are hidden from member lists.
+    """
+
+    __tablename__ = "hub_groups"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=_uuid
     )
-    idea_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("ideas.id", ondelete="CASCADE"),
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # group | dm
+    kind: Mapped[str] = mapped_column(
+        String(16),
         nullable=False,
+        default="group",
+        server_default="group",
+        index=True,
+    )
+    idea_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ideas.id", ondelete="SET NULL"),
+        nullable=True,
         unique=True,
         index=True,
     )
-    title: Mapped[str] = mapped_column(String(200), nullable=False, default="")
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+    )
+    avatar_url: Mapped[Optional[str]] = mapped_column(
+        String(512), nullable=True, default=None
+    )
+    # Sorted "uuidA:uuidB" for idempotent 1:1 DM threads.
+    dm_pair_key: Mapped[Optional[str]] = mapped_column(
+        String(80), nullable=True, unique=True, index=True
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None, index=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -62,30 +81,96 @@ class TeamSpace(Base):
     )
 
 
-class TeamChannel(Base):
-    """Named channel inside a team space (general, decisions, blockers, …)."""
+class GroupInvite(Base):
+    """Invitation to join a multi-member group (not used for DMs)."""
 
-    __tablename__ = "team_channels"
+    __tablename__ = "group_invites"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("hub_groups.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    invitee_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    invited_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    # admin | member
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="member")
+    # pending | accepted | declined | cancelled
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending", index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    responded_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class GroupMember(Base):
+    """Membership + role inside a hub group."""
+
+    __tablename__ = "group_members"
     __table_args__ = (
-        UniqueConstraint("space_id", "slug", name="uq_team_channel_space_slug"),
+        UniqueConstraint("group_id", "user_id", name="uq_group_member_user"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=_uuid
     )
-    space_id: Mapped[uuid.UUID] = mapped_column(
+    group_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("team_spaces.id", ondelete="CASCADE"),
+        ForeignKey("hub_groups.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # owner | admin | member
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="member")
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class GroupChannel(Base):
+    """Named channel inside a group (#general, #decisions, …)."""
+
+    __tablename__ = "group_channels"
+    __table_args__ = (
+        UniqueConstraint("group_id", "slug", name="uq_group_channel_slug"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("hub_groups.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     slug: Mapped[str] = mapped_column(String(64), nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    kind: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="text"
-    )
-    # text | announcements
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, default="text")
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
@@ -95,17 +180,17 @@ class TeamChannel(Base):
     )
 
 
-class TeamMessage(Base):
-    """Chat message posted to a team channel."""
+class GroupMessage(Base):
+    """Chat message in a group channel (WhatsApp-like transcript)."""
 
-    __tablename__ = "team_messages"
+    __tablename__ = "group_messages"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=_uuid
     )
     channel_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("team_channels.id", ondelete="CASCADE"),
+        ForeignKey("group_channels.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -113,7 +198,6 @@ class TeamMessage(Base):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    # system | user | meeting | mcp
     message_type: Mapped[str] = mapped_column(
         String(32), nullable=False, default="user"
     )
@@ -125,23 +209,23 @@ class TeamMessage(Base):
     )
 
 
-class TeamMeeting(Base):
-    """Scheduled meeting announced to the team (and optionally Teams)."""
+class GroupMeeting(Base):
+    """Scheduled meeting announced in-channel and optionally to Teams."""
 
-    __tablename__ = "team_meetings"
+    __tablename__ = "group_meetings"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=_uuid
     )
-    space_id: Mapped[uuid.UUID] = mapped_column(
+    group_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("team_spaces.id", ondelete="CASCADE"),
+        ForeignKey("hub_groups.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     channel_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("team_channels.id", ondelete="SET NULL"),
+        ForeignKey("group_channels.id", ondelete="SET NULL"),
         nullable=True,
     )
     title: Mapped[str] = mapped_column(String(300), nullable=False)
@@ -156,14 +240,12 @@ class TeamMeeting(Base):
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
-    # none | teams_webhook | mcp
     notify_via: Mapped[str] = mapped_column(
         String(40), nullable=False, default="none"
     )
     notify_status: Mapped[str] = mapped_column(
         String(40), nullable=False, default="pending"
     )
-    # pending | posted | skipped | failed
     notify_detail: Mapped[str] = mapped_column(Text, nullable=False, default="")
     meta: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict, server_default="{}"
@@ -173,46 +255,37 @@ class TeamMeeting(Base):
     )
 
 
-class IdeaMcpConnection(Base):
-    """Custom MCP endpoint attached to an idea's team space.
+class GroupMcpConnection(Base):
+    """Custom MCP endpoint attached to a group (credentials encrypted)."""
 
-    Credentials (auth header value) are Fernet-encrypted JSON — never returned
-    by the API. Discovery caches tool names/descriptions in ``tools_cache``.
-    """
-
-    __tablename__ = "idea_mcp_connections"
+    __tablename__ = "group_mcp_connections"
     __table_args__ = (
-        UniqueConstraint(
-            "space_id", "label", name="uq_idea_mcp_space_label"
-        ),
+        UniqueConstraint("group_id", "label", name="uq_group_mcp_label"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=_uuid
     )
-    space_id: Mapped[uuid.UUID] = mapped_column(
+    group_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("team_spaces.id", ondelete="CASCADE"),
+        ForeignKey("hub_groups.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    idea_id: Mapped[uuid.UUID] = mapped_column(
+    idea_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("ideas.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
+        ForeignKey("ideas.id", ondelete="SET NULL"),
+        nullable=True,
     )
     label: Mapped[str] = mapped_column(String(120), nullable=False, default="default")
     endpoint_url: Mapped[str] = mapped_column(String(1024), nullable=False)
     auth_header_name: Mapped[str] = mapped_column(
         String(120), nullable=False, default="Authorization"
     )
-    # Fernet-encrypted {"auth_header_value": "…"} — empty string if none.
     credentials_encrypted: Mapped[str] = mapped_column(Text, nullable=False, default="")
     transport: Mapped[str] = mapped_column(
         String(40), nullable=False, default="http_jsonrpc"
     )
-    # http_jsonrpc | stub
     tools_cache: Mapped[list] = mapped_column(
         JSONB, nullable=False, default=list, server_default="[]"
     )

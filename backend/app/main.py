@@ -33,6 +33,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     import app.models.notification  # noqa: F401 — register notifications metadata
     uploads = uploads_root()
     (uploads / "avatars").mkdir(parents=True, exist_ok=True)
+    (uploads / "group-avatars").mkdir(parents=True, exist_ok=True)
     logger.info("Idea Hub API starting (env=%s)", settings.ENV)
     yield
     close_redis()

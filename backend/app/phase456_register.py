@@ -32,10 +32,10 @@ def include_phase456_routers(app: "FastAPI", *, prefix: str = "/api/v1") -> None
         admin,
         agents,
         collab,
+        groups,
         insights,
         problems,
         reopen,
-        team_space,
     )
 
     app.include_router(insights.router, prefix=prefix)
@@ -44,7 +44,7 @@ def include_phase456_routers(app: "FastAPI", *, prefix: str = "/api/v1") -> None
     app.include_router(problems.router, prefix=prefix)
     app.include_router(reopen.router, prefix=prefix)
     app.include_router(collab.router, prefix=prefix)
-    app.include_router(team_space.router, prefix=prefix)
+    app.include_router(groups.router, prefix=prefix)
 
 
 PHASE456_MODEL_MODULES = (
@@ -53,7 +53,7 @@ PHASE456_MODEL_MODULES = (
     "app.models.problem",
     "app.models.reopen",
     "app.models.collab",
-    "app.models.team_space",
+    "app.models.groups",
 )
 
 

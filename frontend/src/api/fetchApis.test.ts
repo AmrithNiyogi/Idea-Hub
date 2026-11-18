@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { adminApi } from './admin';
 import { agentsApi } from './agents';
 import { collabApi } from './collab';
-import { teamSpaceApi } from './teamSpace';
+import { groupsApi } from './groups';
 import { deliveryApi } from './delivery';
 import { ideathonsApi } from './ideathons';
 import { insightsApi } from './insights';
@@ -165,24 +165,27 @@ describe('apiFetch-backed clients', () => {
     await collabApi.updateMilestone('m1', { status: 'done' });
     await collabApi.addCheckin('i1', { body: 'ok' });
 
-    await teamSpaceApi.get('i1');
-    await teamSpaceApi.createChannel('i1', { name: 'ops' });
-    await teamSpaceApi.messages('i1', 'ch1');
-    await teamSpaceApi.postMessage('i1', 'ch1', 'hi');
-    await teamSpaceApi.meetings('i1');
-    await teamSpaceApi.scheduleMeeting('i1', {
+    await groupsApi.list();
+    await groupsApi.create({ name: 'Parking lot' });
+    await groupsApi.get('g1');
+    await groupsApi.forIdea('i1');
+    await groupsApi.createChannel('g1', { name: 'ops' });
+    await groupsApi.messages('g1', 'ch1');
+    await groupsApi.postMessage('g1', 'ch1', 'hi');
+    await groupsApi.meetings('g1');
+    await groupsApi.scheduleMeeting('g1', {
       title: 'Sync',
       starts_at: '2026-01-01T10:00:00Z',
     });
-    await teamSpaceApi.listMcp('i1');
-    await teamSpaceApi.connectMcp('i1', {
+    await groupsApi.listMcp('g1');
+    await groupsApi.connectMcp('g1', {
       endpoint_url: 'stub://local',
       transport: 'stub',
       seed_stub_tools: true,
     });
-    await teamSpaceApi.discoverMcp('i1', 'm1');
-    await teamSpaceApi.callMcp('i1', 'm1', { name: 'schedule_meeting' });
-    await teamSpaceApi.deleteMcp('i1', 'm1');
+    await groupsApi.discoverMcp('g1', 'm1');
+    await groupsApi.callMcp('g1', 'm1', { name: 'schedule_meeting' });
+    await groupsApi.deleteMcp('g1', 'm1');
 
     await agentsApi.roster();
     await agentsApi.run({ agent_id: 'a1', event: 'ping' });
