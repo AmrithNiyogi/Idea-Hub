@@ -133,40 +133,37 @@ export function GroupsPage({ defaultTab = 'groups' }: { defaultTab?: TabId }) {
         <button
           type="button"
           role="tab"
-          className={tab === 'groups' ? 'tab tab--active' : 'tab'}
-          aria-selected={tab === 'groups'}
+                    aria-selected={tab === 'groups'}
           onClick={() => setTab('groups')}
         >
           Groups
           {groups.length ? (
-            <span className="tab__count">{groups.length}</span>
+            <span className="count">{groups.length}</span>
           ) : null}
         </button>
         <button
           type="button"
           role="tab"
-          className={tab === 'dms' ? 'tab tab--active' : 'tab'}
           aria-selected={tab === 'dms'}
           onClick={() => setTab('dms')}
         >
           Messages
-          {dms.length ? <span className="tab__count">{dms.length}</span> : null}
+          {dms.length ? <span className="count">{dms.length}</span> : null}
         </button>
         <button
           type="button"
           role="tab"
-          className={tab === 'invites' ? 'tab tab--active' : 'tab'}
           aria-selected={tab === 'invites'}
           onClick={() => setTab('invites')}
         >
           Invites
           {invites.length ? (
-            <span className="tab__count">{invites.length}</span>
+            <span className="count">{invites.length}</span>
           ) : null}
         </button>
       </div>
 
-      {error ? <div className="error">{error}</div> : null}
+      {error ? <div className="notice notice--danger" role="alert">{error}</div> : null}
 
       {tab === 'groups' ? (
         <>

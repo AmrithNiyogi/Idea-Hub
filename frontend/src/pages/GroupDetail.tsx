@@ -392,6 +392,96 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
     );
   }
 
+  const chatPane = (isDm: boolean) => (
+    <section className="ts-pane" aria-label="Messages">
+      {isDm ? null : (
+        <div className="ts-pane__head">
+          <div>
+            <h2>
+              <span className="muted">#</span> {activeChannel?.name ?? '…'}
+            </h2>
+            {activeChannel?.description ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                {activeChannel.description}
+              </p>
+            ) : null}
+          </div>
+          <Link className="btn btn--sm btn--ghost" to="/integrations/teams">
+            Teams webhook
+          </Link>
+        </div>
+      )}
+
+      {error ? (
+        <div className="notice notice--danger" role="alert" style={{ margin: '8px 12px 0' }}>
+          {error}
+        </div>
+      ) : null}
+
+      <div className="ts-messages" ref={scroller}>
+        {messages.length === 0 ? (
+          <div className="empty" style={{ padding: 24 }}>
+            <Icon name="message" size={28} />
+            <h3>No messages yet</h3>
+            <p className="muted small">Say hi — the composer is below.</p>
+          </div>
+        ) : (
+          messages.map((msg) => {
+            const mine = msg.author_id === me?.id;
+            const system =
+              msg.message_type === 'system' ||
+              msg.message_type === 'meeting';
+            const cls = system
+              ? 'ts-bubble ts-bubble--system'
+              : mine
+                ? 'ts-bubble ts-bubble--mine'
+                : 'ts-bubble ts-bubble--theirs';
+            return (
+              <div key={msg.id} className={cls}>
+                {!system && !mine ? (
+                  <div className="ts-bubble__sender">
+                    {nameOf(msg.author_id)}
+                  </div>
+                ) : null}
+                <div className="ts-bubble__text">{msg.body}</div>
+                <div className="ts-bubble__time">
+                  {relTime(msg.created_at)}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <form className="ts-composer" onSubmit={onSend}>
+        <input
+          className="input"
+          placeholder={
+            group.can_post
+              ? isDm
+                ? `Message ${group.name}`
+                : `Message #${activeChannel?.slug ?? 'channel'}`
+              : 'Members only'
+          }
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          disabled={!group.can_post || busy || !channelId}
+          aria-label="Message"
+        />
+        <button
+          type="submit"
+          className="btn"
+          disabled={
+            !group.can_post || busy || !channelId || !draft.trim()
+          }
+          aria-label="Send"
+        >
+          <Icon name="send" size={16} />
+        </button>
+      </form>
+    </section>
+  );
+
   if (group.kind === 'dm' && !dmRoute) {
     return <Navigate to={`/dms/${group.id}`} replace />;
   }
@@ -424,7 +514,7 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
           ) : null}
         </div>
         <div className="ts-shell ts-shell--dm">
-          {chatPane(false)}
+          {chatPane(true)}
         </div>
       </div>
     );
@@ -433,17 +523,50 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   return (
     <div className="grp-page">
       <div className="row grp-head" style={{ justifyContent: 'space-between', gap: 12 }}>
-        <div>
-          <div className="crumbs">
-            <Link to="/groups">Groups</Link>
-            <span aria-hidden>/</span>
-            <span aria-current="page">{group.name}</span>
+        <div className="row" style={{ gap: 12, minWidth: 0 }}>
+          <GroupGlyph name={group.name} avatarUrl={group.avatar_url} size={48} />
+          <div style={{ minWidth: 0 }}>
+            <div className="crumbs">
+              <Link to="/groups">Groups</Link>
+              <span aria-hidden>/</span>
+              <span aria-current="page">{group.name}</span>
+            </div>
+            {group.description ? (
+              <p className="muted small" style={{ margin: '4px 0 0' }}>
+                {group.description}
+              </p>
+            ) : null}
+            {group.can_manage ? (
+              <div className="row" style={{ gap: 6, marginTop: 6 }}>
+                <input
+                  ref={avatarInput}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  hidden
+                  onChange={(e) => void onAvatarFile(e.target.files?.[0])}
+                />
+                <button
+                  type="button"
+                  className="btn btn--sm btn--ghost"
+                  disabled={busy}
+                  onClick={() => avatarInput.current?.click()}
+                >
+                  <Icon name="upload" size={14} />{' '}
+                  {group.avatar_url ? 'Change avatar' : 'Set avatar'}
+                </button>
+                {group.avatar_url ? (
+                  <button
+                    type="button"
+                    className="btn btn--sm btn--ghost"
+                    disabled={busy}
+                    onClick={() => void onClearAvatar()}
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-          {group.description ? (
-            <p className="muted small" style={{ margin: '4px 0 0' }}>
-              {group.description}
-            </p>
-          ) : null}
         </div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
           {group.idea_id ? (
@@ -459,9 +582,33 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
             onClick={() => setSide(side === 'members' ? 'none' : 'members')}
           >
             <Icon name="users" size={14} /> Members
+            {group.pending_invites.length ? (
+              <span className="count">{group.pending_invites.length}</span>
+            ) : null}
           </button>
+          {group.can_manage ? (
+            <button
+              type="button"
+              className="btn btn--sm btn--ghost grp-danger"
+              disabled={busy}
+              onClick={() => void onDeleteGroup()}
+            >
+              <Icon name="trash" size={14} /> Delete group
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn--sm btn--ghost"
+              disabled={busy}
+              onClick={() => void onLeave()}
+            >
+              Leave
+            </button>
+          )}
         </div>
       </div>
+
+      {notice ? <div className="notice">{notice}</div> : null}
 
       <div className={`ts-shell${side !== 'none' ? ' ts-shell--drawer' : ''}`}>
         <aside className="ts-channels" aria-label="Channels">
@@ -540,89 +687,7 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
           ) : null}
         </aside>
 
-        <section className="ts-pane" aria-label="Messages">
-          <div className="ts-pane__head">
-            <div>
-              <h2>
-                <span className="muted">#</span> {activeChannel?.name ?? '…'}
-              </h2>
-              {activeChannel?.description ? (
-                <p className="muted small" style={{ margin: 0 }}>
-                  {activeChannel.description}
-                </p>
-              ) : null}
-            </div>
-            <Link className="btn btn--sm btn--ghost" to="/integrations/teams">
-              Teams webhook
-            </Link>
-          </div>
-
-          {error ? (
-            <div className="error" style={{ margin: '8px 12px 0' }}>
-              {error}
-            </div>
-          ) : null}
-
-          <div className="ts-messages" ref={scroller}>
-            {messages.length === 0 ? (
-              <div className="empty" style={{ padding: 24 }}>
-                <Icon name="message" size={28} />
-                <h3>No messages yet</h3>
-                <p className="muted small">Say hi — the composer is below.</p>
-              </div>
-            ) : (
-              messages.map((msg) => {
-                const mine = msg.author_id === me?.id;
-                const system =
-                  msg.message_type === 'system' ||
-                  msg.message_type === 'meeting';
-                const cls = system
-                  ? 'ts-bubble ts-bubble--system'
-                  : mine
-                    ? 'ts-bubble ts-bubble--mine'
-                    : 'ts-bubble ts-bubble--theirs';
-                return (
-                  <div key={msg.id} className={cls}>
-                    {!system && !mine ? (
-                      <div className="ts-bubble__sender">
-                        {nameOf(msg.author_id)}
-                      </div>
-                    ) : null}
-                    <div className="ts-bubble__text">{msg.body}</div>
-                    <div className="ts-bubble__time">
-                      {relTime(msg.created_at)}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          <form className="ts-composer" onSubmit={onSend}>
-            <input
-              className="input"
-              placeholder={
-                group.can_post
-                  ? `Message #${activeChannel?.slug ?? 'channel'}`
-                  : 'Members only'
-              }
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              disabled={!group.can_post || busy || !channelId}
-              aria-label="Message"
-            />
-            <button
-              type="submit"
-              className="btn"
-              disabled={
-                !group.can_post || busy || !channelId || !draft.trim()
-              }
-              aria-label="Send"
-            >
-              <Icon name="send" size={16} />
-            </button>
-          </form>
-        </section>
+        {chatPane(false)}
 
         {side === 'meeting' ? (
           <aside className="ts-drawer card" aria-label="Schedule meeting">
@@ -775,46 +840,114 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
                 <Icon name="x" size={14} />
               </button>
             </div>
-            {group.members.map((m) => {
-              const u = userMap.get(m.user_id);
-              return (
-                <div
-                  key={m.user_id}
-                  className="listrow"
-                  style={{ alignItems: 'center' }}
-                >
-                  <Avatar name={nameOf(m.user_id)} avatar={u?.avatar ?? 1} />
-                  <div className="listrow__main">
-                    <span className="strong">{nameOf(m.user_id)}</span>
-                    <div className="muted small">{m.role}</div>
+            <div className="grp-list grp-list--flush" role="list">
+              {group.members.map((m) => {
+                const mine = m.user_id === me?.id;
+                const iAmOwner =
+                  group.created_by === me?.id ||
+                  memberMap.get(me?.id ?? '')?.role === 'owner';
+                const canRemove =
+                  group.can_manage &&
+                  !mine &&
+                  m.role !== 'owner' &&
+                  (m.role !== 'admin' || iAmOwner);
+                return (
+                  <div key={m.user_id} className="grp-row" role="listitem">
+                    <Avatar
+                      name={m.name || '?'}
+                      avatar={m.avatar}
+                      avatarUrl={m.avatar_url}
+                      size="sm"
+                    />
+                    <div className="grp-row__main">
+                      <Link className="grp-row__title" to={`/people/${m.user_id}`}>
+                        {mine ? `${m.name} (you)` : m.name}
+                      </Link>
+                      <div className="muted small">{m.role}</div>
+                    </div>
+                    {canRemove ? (
+                      <button
+                        type="button"
+                        className="btn btn--sm btn--ghost grp-danger"
+                        disabled={busy}
+                        onClick={() => void onRemoveMember(m.user_id, m.name)}
+                      >
+                        Remove
+                      </button>
+                    ) : null}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
             {group.can_manage ? (
-              <form
-                className="stack"
-                onSubmit={onAddMember}
-                style={{ gap: 8, marginTop: 12 }}
-              >
-                <label className="muted small" htmlFor="add-member">
-                  Add member by user id
-                </label>
-                <input
-                  id="add-member"
-                  className="input"
-                  placeholder="User UUID"
-                  value={memberUserId}
-                  onChange={(e) => setMemberUserId(e.target.value)}
+              <>
+                <h3 className="grp-sub">Pending invites</h3>
+                {group.pending_invites.length === 0 ? (
+                  <p className="muted small">No pending invites.</p>
+                ) : (
+                  <div className="grp-list grp-list--flush" role="list">
+                    {group.pending_invites.map((inv) => (
+                      <div key={inv.id} className="grp-row" role="listitem">
+                        <Avatar
+                          name={inv.invitee_name || '?'}
+                          avatar={inv.invitee_avatar}
+                          avatarUrl={inv.invitee_avatar_url}
+                          size="sm"
+                        />
+                        <div className="grp-row__main">
+                          <div className="grp-row__title">
+                            {inv.invitee_name}
+                          </div>
+                          <div className="muted small">
+                            Waiting to accept · {inv.role}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn--sm btn--ghost"
+                          disabled={busy}
+                          onClick={() => void onCancelInvite(inv.id)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <h3 className="grp-sub">Invite someone</h3>
+                <div className="grp-chips" role="radiogroup" aria-label="Invite as">
+                  {(['member', 'admin'] as const).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      role="radio"
+                      aria-checked={inviteRole === r}
+                      className={
+                        inviteRole === r ? 'grp-chip grp-chip--on' : 'grp-chip'
+                      }
+                      onClick={() => setInviteRole(r)}
+                    >
+                      {r === 'admin' ? 'Admin' : 'Member'}
+                    </button>
+                  ))}
+                </div>
+                <UserSearchPicker
+                  label="Search by name or email"
+                  actionLabel="Invite"
+                  disabled={busy}
+                  excludeIds={[
+                    ...group.members.map((m) => m.user_id),
+                    ...group.pending_invites.map((i) => i.invitee_id),
+                  ]}
+                  onPick={onInvite}
                 />
-                <button
-                  type="submit"
-                  className="btn btn--sm"
-                  disabled={busy || !memberUserId.trim()}
-                >
-                  Add
-                </button>
-              </form>
+                <p className="muted small">
+                  They get a bell notification and an email, and only join after
+                  they Accept.
+                </p>
+              </>
             ) : null}
           </aside>
         ) : null}

@@ -1,7 +1,8 @@
 /** Person profile — mirrors idea-hub.html `viewPerson()`. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { groupsApi } from '../api/groups';
 import { profilesApi } from '../api/profiles';
 import { recognitionApi } from '../api/recognition';
 import { usersApi, type Team } from '../api/users';
@@ -34,6 +35,9 @@ export function ProfilePage() {
   const { id = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const { user: me } = useAuth();
+  const navigate = useNavigate();
+  const [dmBusy, setDmBusy] = useState(false);
+  const [dmError, setDmError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [rules, setRules] = useState<RecognitionRules | null>(null);
   const [team, setTeam] = useState<Team | null>(null);
@@ -101,6 +105,19 @@ export function ProfilePage() {
   }
 
   const self = profile.is_self || profile.user_id === me?.id;
+
+  async function onMessage() {
+    if (!profile) return;
+    setDmBusy(true);
+    setDmError(null);
+    try {
+      const dm = await groupsApi.openDm(profile.user_id);
+      navigate(`/dms/${dm.id}`);
+    } catch (e) {
+      setDmError(e instanceof Error ? e.message : 'Could not open chat');
+      setDmBusy(false);
+    }
+  }
   const name = profile.name || `${profile.user_id.slice(0, 8)}…`;
   const escrow = self
     ? profile.ledger.filter((r) => r.escrow)
@@ -352,7 +369,22 @@ export function ProfilePage() {
                 <Icon name="award" size={14} />
                 {fmtNum(profile.points)}
               </span>
+              {self ? null : (
+                <button
+                  type="button"
+                  className="btn btn--sm"
+                  disabled={dmBusy}
+                  onClick={() => void onMessage()}
+                >
+                  <Icon name="message" size={14} /> Message
+                </button>
+              )}
             </div>
+            {dmError ? (
+              <div className="notice notice--danger" role="alert" style={{ marginTop: 8 }}>
+                {dmError}
+              </div>
+            ) : null}
           </div>
           <div style={{ minWidth: 220, flex: 1, maxWidth: 340 }}>
             <div className="row row--between small">

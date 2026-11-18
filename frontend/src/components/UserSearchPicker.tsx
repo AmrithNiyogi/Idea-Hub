@@ -79,7 +79,7 @@ export function UserSearchPicker({
         disabled={disabled}
         autoComplete="off"
       />
-      {failed ? <div className="error">{failed}</div> : null}
+      {failed ? <div className="notice notice--danger" role="alert">{failed}</div> : null}
       {results.length ? (
         <div className="grp-list usp__results" role="listbox" aria-label={label}>
           {results.map((u) => (

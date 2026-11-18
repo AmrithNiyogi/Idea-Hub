@@ -69,6 +69,8 @@ const paths: Record<string, string> = {
   trash:
     '<path d="M4 7h16M9 7V5h6v2M7 7l1 14h8l1-14"/>',
   copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/>',
+  upload:
+    '<path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 19h16"/>',
   download:
     '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/>',
   external:

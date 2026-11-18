@@ -2,7 +2,7 @@
  * Phase 4+5+6 routes + sidebar entries.
  * Discovered automatically via `routeModules.ts` (import.meta.glob `*_routes.tsx`).
  *
- * Routes: /groups, /groups/:id, /insights, /admin, /agents, /problems, …
+ * Routes: /groups, /groups/:id, /dms, /dms/:id, /insights, /admin, /agents, /problems, …
  */
 
 import { Route } from 'react-router-dom';
@@ -19,6 +19,8 @@ export const phase456Routes = (
   <>
     <Route path="/groups" element={<GroupsPage />} />
     <Route path="/groups/:id" element={<GroupDetailPage />} />
+    <Route path="/dms" element={<GroupsPage defaultTab="dms" />} />
+    <Route path="/dms/:id" element={<GroupDetailPage dmRoute />} />
     <Route path="/insights" element={<InsightsPage />} />
     <Route path="/admin" element={<AdminPage />} />
     <Route path="/agents" element={<AgentsPage />} />
@@ -34,6 +36,12 @@ export const extraNavItems: ExtraNavItem[] = [
     icon: 'message',
     to: '/groups',
     sectionBefore: 'Collaborate',
+  },
+  {
+    id: 'dms',
+    label: 'Messages',
+    icon: 'send',
+    to: '/dms',
   },
   {
     id: 'problems',
