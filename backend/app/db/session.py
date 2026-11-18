@@ -44,14 +44,22 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
     Side Effects:
         Opens a session from the shared pool; commits are the caller's
-        responsibility. Rolls back on unhandled exceptions.
+        responsibility. Rolls back on unhandled exceptions (including
+        ``HTTPException`` injected by FastAPI via ``athrow``), then closes.
+
+    Note:
+        Use ``try`` / ``yield`` / ``except`` / ``finally`` and always
+        re-raise after rollback so the generator completes cleanly after
+        ``athrow`` (otherwise clients can see 500 instead of 401).
     """
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        except Exception:
-            await session.rollback()
-            raise
+    session = AsyncSessionLocal()
+    try:
+        yield session
+    except Exception:
+        await session.rollback()
+        raise
+    finally:
+        await session.close()
 
 
 def get_redis() -> redis.Redis:
