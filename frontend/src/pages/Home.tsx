@@ -1,14 +1,18 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ideasApi } from '../api/ideas';
-import { Icon } from '../components/Icons';
+import { recognitionApi } from '../api/recognition';
+import { usersApi } from '../api/users';
+import { Avatar, Icon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
+import { fmtNum } from '../constants/ideathons';
 import { STAGE_KEYS, STAGE_LABELS, STATUS_META } from '../constants/status';
 import { useAuth } from '../auth/AuthProvider';
 import { CAN_SUBMIT, ROLE_BLURBS, roleLabel } from '../constants/roles';
 import { firstName, greeting, nextStep, relTime } from '../utils/format';
 import type { HomeAggregates, Idea } from '../types/idea';
-import type { Role } from '../types/auth';
+import type { LeaderboardRow } from '../types/recognition';
+import type { Role, User } from '../types/auth';
 
 export function HomePage() {
   const { user } = useAuth();
@@ -16,6 +20,8 @@ export function HomePage() {
   const [mine, setMine] = useState<Idea[]>([]);
   const [queue, setQueue] = useState<Idea[]>([]);
   const [recent, setRecent] = useState<Idea[]>([]);
+  const [board, setBoard] = useState<LeaderboardRow[]>([]);
+  const [people, setPeople] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,6 +44,13 @@ export function HomePage() {
         if (cancelled) return;
         setMine(mineRes.items.filter((i) => i.status !== 'draft'));
         setRecent(recentRes.items.filter((i) => i.status !== 'draft'));
+        const [boardRes, peopleRes] = await Promise.all([
+          recognitionApi.leaderboard(5).catch(() => [] as LeaderboardRow[]),
+          usersApi.list().catch(() => [] as User[]),
+        ]);
+        if (cancelled) return;
+        setBoard(boardRes);
+        setPeople(peopleRes);
         if (
           user &&
           (user.active_role === 'reviewer' || user.active_role === 'admin')
@@ -95,35 +108,35 @@ export function HomePage() {
       total,
       'submitted, excluding drafts and withdrawn',
       '/explore',
-      'kpi--accent',
+      '',
     ],
     [
       'Awaiting review',
       awaiting,
       'submitted, in review or waiting on the author',
       '/explore?status=under_review',
-      'kpi--warning',
+      'kpi--accent',
     ],
     [
       'Accepted',
       acceptedOnly,
       'accepted, not yet in prototype',
       '/explore?status=accepted',
-      'kpi--success',
+      '',
     ],
     [
       'In delivery',
       delivery,
       'in prototype',
       '/explore?status=prototype',
-      'kpi--info',
+      '',
     ],
     [
       'Implemented',
       implemented,
       'delivered',
       '/explore?status=implemented',
-      'kpi--gold',
+      '',
     ],
   ];
 
@@ -151,6 +164,8 @@ export function HomePage() {
   });
   const maxStage = Math.max(1, ...stageValues);
   const attention = data?.needs_attention ?? [];
+  const peopleMap = new Map(people.map((p) => [p.id, p]));
+  const maxPts = Math.max(1, ...board.map((b) => b.points));
   const maxBar = Math.max(1, ...stageValues);
 
   let band: ReactNode;
@@ -319,6 +334,53 @@ export function HomePage() {
         . The four tiles after Total plus parked, declined and merged add up to
         the {total} total. Withdrawn ideas are not in the total.
       </p>
+
+      {board.length ? (
+        <div className="card">
+          <div className="card__head">
+            <h2>Leaderboard</h2>
+            <Link className="lbh__more" to="/recognition">
+              See full status
+              <Icon name="chevronR" size={14} />
+            </Link>
+          </div>
+          <div className="lbh">
+            {board.slice(0, 5).map((r, n) => {
+              const u = peopleMap.get(r.user_id);
+              return (
+                <div
+                  key={r.user_id}
+                  className={`lbh__row${n === 0 ? ' lbh__row--top' : ''}`}
+                >
+                  <span className="lbh__rank mono">{n + 1}</span>
+                  <span className="lbh__who">
+                    <Avatar
+                      name={u?.name ?? r.user_id}
+                      avatar={u?.avatar ?? 1}
+                      size="sm"
+                    />
+                    <span className="truncate">
+                      {u?.name ?? `${r.user_id.slice(0, 8)}…`}
+                      {r.user_id === user?.id ? (
+                        <span className="muted"> (you)</span>
+                      ) : null}
+                    </span>
+                  </span>
+                  <span className="lbh__track">
+                    <i
+                      style={{
+                        width: `${Math.max(4, Math.round((r.points / maxPts) * 100))}%`,
+                      }}
+                    />
+                  </span>
+                  <span className="lbh__pts mono">{fmtNum(r.points)}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="muted small">Ranked by points, never by number of ideas</p>
+        </div>
+      ) : null}
 
       <div className="layout-rail layout-rail--wide" style={{ marginTop: 'var(--space-5)' }}>
         <div className="stack">

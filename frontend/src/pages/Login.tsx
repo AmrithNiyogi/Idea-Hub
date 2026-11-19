@@ -385,14 +385,13 @@ export function LoginPage() {
                     />
                   ) : null}
                   <span
-                    className="mono small"
+                    className="small"
                     style={{
-                      color: active ? 'var(--brand-ink)' : 'var(--text-3)',
+                      color: active ? 'var(--text)' : 'var(--text-3)',
+                      fontWeight: active ? 500 : 400,
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 8,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
                     }}
                   >
                     <span

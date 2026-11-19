@@ -96,7 +96,7 @@ export function Topbar({
         aria-label="Open menu"
         onClick={onOpenDrawer}
       >
-        <Icon name="menu" size={20} />
+        <Icon name="menu" size={18} />
       </button>
 
       <div className="topbar__title" id="tb-title-wrap">
@@ -172,7 +172,7 @@ export function Topbar({
           aria-label="Search ideas, ideathons, teams and people"
           onClick={() => setSearchOpen(true)}
         >
-          <Icon name="search" size={20} />
+          <Icon name="search" size={16} />
         </button>
 
         <button
@@ -207,7 +207,7 @@ export function Topbar({
           aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
           onClick={onToggleTheme}
         >
-          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={20} />
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
         </button>
 
         <button

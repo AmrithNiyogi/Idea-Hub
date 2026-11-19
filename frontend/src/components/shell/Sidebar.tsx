@@ -62,7 +62,7 @@ export function Sidebar({
               className="nav-item"
               title={n.label}
             >
-              <Icon name={n.icon} size={20} />
+              <Icon name={n.icon} size={16} />
               <span className="nav-item__text">{n.label}</span>
             </NavLink>
           </span>
@@ -91,7 +91,7 @@ export function Sidebar({
           onClick={onToggleCollapse}
           aria-pressed={collapsed}
         >
-          <Icon name="sidebar" size={18} />
+          <Icon name="sidebar" size={16} />
           <span className="btn__text">{collapsed ? 'Expand' : 'Collapse'}</span>
         </button>
         <p className="sidebar__note">
