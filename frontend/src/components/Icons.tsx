@@ -31,6 +31,9 @@ const paths: Record<string, string> = {
     '<path d="M3 3l18 18"/><path d="M10.6 10.6A3 3 0 0 0 13.4 13.4"/><path d="M9.9 5.2A10.5 10.5 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1"/><path d="M6.1 6.1A17 17 0 0 0 2 12s3.5 7 10 7a10 10 0 0 0 4.1-.9"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 7 9-7"/>',
   check: '<path d="M5 12l5 5L20 7"/>',
+  circle: '<circle cx="12" cy="12" r="8"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  star: '<path d="M12 3.8l2.5 5.1 5.6.8-4.1 4 1 5.6L12 16.5l-5 2.8 1-5.6-4.1-4 5.6-.8z"/>',
   arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   arrowLeft: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
   /* IdeaKonnekt mark — 4-point spark geometry from idea-hub.html; filled for crisp sidebar glyph */

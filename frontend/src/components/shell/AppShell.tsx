@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { HelpChatFab } from '../HelpChatFab';
+import { GuideTour } from '../onboarding/GuideTour';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
@@ -115,6 +116,7 @@ export function AppShell() {
         </main>
       </div>
       <HelpChatFab />
+      <GuideTour />
     </div>
   );
 }

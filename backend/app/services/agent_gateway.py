@@ -264,6 +264,9 @@ class AgentGateway:
                 True,
             )
 
+        if body.agent_id == "coding-agent-build":
+            return await self._execute_coding_build(body, idea, live)
+
         if body.agent_id == "innovation-workflow":
             tl = await self._timelines()
             ideas = (
@@ -353,16 +356,249 @@ class AgentGateway:
             True,
         )
 
+    async def _execute_coding_build(
+        self,
+        body: AgentRunRequest,
+        idea: Optional[Idea],
+        live: bool,
+    ) -> tuple[dict[str, Any], str, dict[str, Any], str, bool]:
+        """Generate handoff context and run (or simulate) a coding build.
+
+        Persists a real timeline in the AgentRun output. Never flips idea
+        status to Prototype — that requires a separate human proposal approve
+        plus the existing innovation-hours path.
+
+        Args:
+            body: Run request (must include ``idea_id``).
+            idea: Loaded idea row, or None when missing.
+            live: Whether AI Studio live execute is enabled globally.
+
+        Returns:
+            Tuple of (output, summary, approval_meta, engine, simulated).
+
+        Raises:
+            HTTPException: 400 when idea is missing or not Accepted.
+        """
+        from app.services import aistudio_execute_client as studio
+        from app.services.agent_context_service import build_agent_context
+
+        if not body.idea_id or idea is None:
+            raise HTTPException(status_code=400, detail="idea_id required")
+        if idea.status != "accepted":
+            raise HTTPException(
+                status_code=400,
+                detail="Agent build is only available for Accepted ideas.",
+            )
+
+        ctx = await build_agent_context(self.session, idea.id)
+        skill_name = ctx.skill.name
+        plan = H.coding_build_plan(
+            idea_id=str(idea.id),
+            title=idea.title,
+            status=idea.status,
+            problem=idea.problem or "",
+            solution=idea.solution or "",
+            tags=list(idea.tags or []),
+            effort=idea.effort,
+            skill_name=skill_name,
+            markdown_chars=len(ctx.markdown or ""),
+        )
+        plan["context"] = {
+            "idea_id": str(ctx.idea_id),
+            "title": ctx.title,
+            "status": ctx.status,
+            "api_base_url": ctx.api_base_url,
+            "skill_name": skill_name,
+            "skill_zip_url": ctx.skill.zip_url,
+            "markdown_excerpt": (ctx.markdown or "")[:1200],
+            "prompts": {
+                "cursor_chars": len(ctx.prompts.cursor or ""),
+                "claude_chars": len(ctx.prompts.claude or ""),
+            },
+        }
+
+        proposal_key = f"agent-build:{idea.id}"
+        approval = {
+            "required": True,
+            "role": "owner",
+            "proposal_key": proposal_key,
+        }
+
+        kompass_id = studio.resolve_kompass_agent_id("coding-agent-build")
+        if live and kompass_id:
+            import json
+
+            input_payload = json.dumps(
+                {
+                    "idea_id": str(idea.id),
+                    "title": idea.title,
+                    "status": idea.status,
+                    "markdown": ctx.markdown,
+                    "prompts": {
+                        "cursor": ctx.prompts.cursor,
+                        "claude": ctx.prompts.claude,
+                    },
+                    "skill": {
+                        "name": skill_name,
+                        "zip_url": ctx.skill.zip_url,
+                    },
+                    "plan_hint": plan.get("plan"),
+                },
+                ensure_ascii=False,
+            )
+            try:
+                result = await studio.execute_run(
+                    agent_id=kompass_id,
+                    input_payload=input_payload,
+                    conversation_id=(
+                        str(body.context.get("conversation_id"))
+                        if body.context.get("conversation_id")
+                        else None
+                    ),
+                )
+            except Exception as exc:  # noqa: BLE001 — fall back to simulated plan
+                plan["execute"] = {
+                    "mode": "live-failed",
+                    "error": type(exc).__name__,
+                    "note": "Fell back to simulated timeline; run still recorded.",
+                }
+                patched_timeline: list[dict[str, Any]] = []
+                for step in plan["timeline"]:
+                    if step.get("id") == "execute":
+                        patched_timeline.append(
+                            {
+                                "id": "execute",
+                                "label": "Live execute failed — simulated fallback",
+                                "status": "done",
+                                "detail": type(exc).__name__,
+                            }
+                        )
+                    else:
+                        patched_timeline.append(step)
+                plan["timeline"] = patched_timeline
+                return (
+                    plan,
+                    f"Agent build (fallback) for “{idea.title}” — awaiting human gate",
+                    approval,
+                    self.ENGINE,
+                    True,
+                )
+
+            if result.success:
+                for step in plan["timeline"]:
+                    if step.get("id") == "execute":
+                        step["label"] = "Live Kompass coding-agent execute"
+                        step["detail"] = (
+                            f"run_id={result.run_id or 'n/a'}; "
+                            f"conversation_id={result.conversation_id or 'n/a'}"
+                        )
+                plan["execute"] = {
+                    "mode": "live",
+                    "engine": studio.ENGINE,
+                    "run_id": result.run_id,
+                    "conversation_id": result.conversation_id,
+                    "result_text": (result.result_text or "")[:4000],
+                    "raw_keys": sorted(result.raw.keys()) if result.raw else [],
+                }
+                plan["simulated"] = False
+                return (
+                    plan,
+                    f"Live agent build for “{idea.title}” — awaiting human gate",
+                    approval,
+                    studio.ENGINE,
+                    False,
+                )
+
+            plan["execute"] = {
+                "mode": "live-error",
+                "error": result.error or "execute failed",
+                "note": "Persisted simulated timeline; human gate still required.",
+            }
+            return (
+                plan,
+                f"Agent build (live error) for “{idea.title}” — awaiting human gate",
+                approval,
+                self.ENGINE,
+                True,
+            )
+
+        plan["execute"] = {
+            "mode": "simulate",
+            "engine": self.ENGINE,
+            "note": (
+                "SIMULATE_AGENTS or missing AISTUDIO_AGENT_CODING_BUILD — "
+                "timeline persisted without remote execute."
+            ),
+        }
+        return (
+            plan,
+            f"Simulated agent build for “{idea.title}” — awaiting human gate",
+            approval,
+            self.ENGINE,
+            True,
+        )
+
+    async def launch_agent_build(
+        self, idea_id: uuid.UUID, actor: Actor
+    ) -> AgentRunOut:
+        """Start the Idea → Agent Build Loop for an Accepted idea.
+
+        Creates a recorded ``coding-agent-build`` AgentRun with a pending
+        human-approval proposal. Does not change idea status.
+
+        Args:
+            idea_id: Target idea primary key.
+            actor: Authenticated caller (owner, author, reviewer, or admin).
+
+        Returns:
+            AgentRunOut: Persisted run including timeline and proposal_key.
+
+        Raises:
+            HTTPException: 404 if idea missing; 403 if actor lacks access;
+                400 if idea is not Accepted.
+        """
+        idea = await self.session.get(Idea, idea_id)
+        if idea is None or idea.status == "draft":
+            raise HTTPException(status_code=404, detail="Idea not found")
+        if idea.status != "accepted":
+            raise HTTPException(
+                status_code=400,
+                detail="Agent build is only available for Accepted ideas.",
+            )
+        allowed = (
+            idea.owner_id == actor.id
+            or idea.author_id == actor.id
+            or actor.has_role("reviewer", "admin", "lead", "leadership")
+        )
+        if not allowed:
+            raise HTTPException(
+                status_code=403,
+                detail="Owner, author, or reviewer role required to launch.",
+            )
+        return await self.run(
+            AgentRunRequest(
+                agent_id="coding-agent-build",
+                event="idea.agent_build_requested",
+                idea_id=idea_id,
+                context={},
+                record=True,
+            ),
+            actor,
+        )
+
     async def list_runs(
         self,
         *,
         limit: int = 50,
         agent_id: Optional[str] = None,
+        idea_id: Optional[uuid.UUID] = None,
         pending_only: bool = False,
     ) -> list[AgentRunOut]:
         q = select(AgentRun).order_by(AgentRun.created_at.desc()).limit(limit)
         if agent_id:
             q = q.where(AgentRun.agent_id == agent_id)
+        if idea_id:
+            q = q.where(AgentRun.idea_id == idea_id)
         if pending_only:
             q = q.where(AgentRun.approval_state == "pending")
         rows = (await self.session.execute(q)).scalars().all()
@@ -438,6 +674,23 @@ class AgentGateway:
                         "admin"
                     ):
                         raise HTTPException(status_code=403, detail="Author approval required")
+            elif needed == "owner":
+                if run.idea_id:
+                    idea = await self.session.get(Idea, run.idea_id)
+                    is_owner = bool(
+                        idea
+                        and (
+                            idea.owner_id == actor.id
+                            or idea.author_id == actor.id
+                        )
+                    )
+                    if not is_owner and not actor.has_role(
+                        "reviewer", "admin", "leadership"
+                    ):
+                        raise HTTPException(
+                            status_code=403,
+                            detail="Owner or reviewer approval required",
+                        )
             elif needed == "leadership":
                 if not actor.has_role("leadership", "admin"):
                     raise HTTPException(status_code=403, detail="Leadership approval required")
@@ -477,6 +730,30 @@ class AgentGateway:
 
         if run:
             run.approval_state = state
+            # Coding build: record gate outcome on the run; never auto-flip status.
+            if run.agent_id == "coding-agent-build" and isinstance(run.output, dict):
+                out = dict(run.output)
+                gate = dict(out.get("prototype_gate") or {})
+                gate["approved"] = bool(body.approve)
+                gate["decided_at"] = _now().isoformat()
+                gate["auto_flip"] = False
+                if body.approve:
+                    gate["message"] = (
+                        "Build approved. Idea remains Accepted — request "
+                        "innovation hours on Delivery to enter Prototype."
+                    )
+                else:
+                    gate["message"] = (
+                        "Build proposal rejected. Launch again after revisions."
+                    )
+                out["prototype_gate"] = gate
+                timeline = list(out.get("timeline") or [])
+                for step in timeline:
+                    if isinstance(step, dict) and step.get("id") == "prototype_gate":
+                        step["status"] = "done" if body.approve else "rejected"
+                        step["detail"] = gate["message"]
+                out["timeline"] = timeline
+                run.output = out
         await self.session.commit()
         await self.session.refresh(dec)
         return ProposalDecisionOut.model_validate(dec)

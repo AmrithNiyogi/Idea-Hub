@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, Icon } from '../Icons';
 import { useAuth } from '../../auth/AuthProvider';
 import { useToast } from '../ToastProvider';
-import { CAN_SUBMIT, roleLabel, sortRoles } from '../../constants/roles';
+import { CAN_SUBMIT, ROLE_BLURBS, roleLabel, sortRoles } from '../../constants/roles';
 import type { Role } from '../../types/auth';
 import { GlobalSearch } from './GlobalSearch';
 import {
@@ -39,6 +39,7 @@ export function Topbar({
   onOpenDrawer: () => void;
 }) {
   const { user, logout, switchRole } = useAuth();
+  const [switching, setSwitching] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [popover, setPopover] = useState<Popover>(null);
@@ -82,7 +83,6 @@ export function Topbar({
 
   if (!user) return null;
 
-  const others = sortRoles(user.roles).filter((r) => r !== user.active_role);
   const trail = crumbs && crumbs.length ? crumbs : [{ label: title }];
   const unread = inbox.filter((n) => !n.read).length;
   const canSubmit = CAN_SUBMIT.includes(user.active_role as Role);
@@ -341,20 +341,6 @@ export function Topbar({
             <li>
               <Link
                 className="persona-item"
-                to="/integrations"
-                onClick={() => setPopover(null)}
-              >
-                <Icon name="layers" size={16} />
-                <span>
-                  <span className="strong">Integrations</span>
-                  <br />
-                  <span className="muted small">Trackers &amp; connections</span>
-                </span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="persona-item"
                 to={`/people/${user.id}`}
                 onClick={() => setPopover(null)}
               >
@@ -367,50 +353,71 @@ export function Topbar({
               </Link>
             </li>
           </ul>
-          {others.length ? (
-            <>
-              <div
-                className="eyebrow eyebrow--plain"
-                style={{ padding: '12px 16px 4px' }}
-              >
-                Switch role
-              </div>
-              <ul>
-                {others.map((r) => (
-                  <li key={r}>
-                    <button
-                      type="button"
-                      className="persona-item"
-                      onClick={async () => {
-                        try {
-                          await switchRole(r as Role);
-                          setPopover(null);
-                          toast(`Now working as ${roleLabel(r)}.`);
-                        } catch (err) {
-                          toast(
-                            err instanceof Error
-                              ? err.message
-                              : 'Could not switch role',
-                            'error',
-                          );
-                        }
-                      }}
-                    >
-                      <Icon name="refresh" size={16} />
-                      <span>
-                        <span className="strong">{roleLabel(r)}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="muted small" style={{ padding: '12px 16px' }}>
-              You hold one role: {roleLabel(user.active_role)}.
-            </p>
-          )}
+          <div className="eyebrow eyebrow--plain role-switch__head">
+            Working as
+          </div>
+          <div
+            className="role-switch"
+            role="radiogroup"
+            aria-label="Choose the role you work as"
+          >
+            {sortRoles(user.roles).map((r) => {
+              const current = r === user.active_role;
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  role="radio"
+                  aria-checked={current}
+                  className={`role-switch__opt${current ? ' is-current' : ''}`}
+                  disabled={current || switching}
+                  onClick={async () => {
+                    setSwitching(true);
+                    try {
+                      await switchRole(r as Role);
+                      setPopover(null);
+                      toast(`Now working as ${roleLabel(r)}.`);
+                    } catch (err) {
+                      toast(
+                        err instanceof Error ? err.message : 'Could not switch role',
+                        'error',
+                      );
+                    } finally {
+                      setSwitching(false);
+                    }
+                  }}
+                >
+                  <span className="role-switch__dot" aria-hidden="true" />
+                  <span className="role-switch__text">
+                    <span className="strong">{roleLabel(r)}</span>
+                    <span className="muted small">{ROLE_BLURBS[r]}</span>
+                  </span>
+                  {current ? <span className="role-switch__now">Current</span> : null}
+                </button>
+              );
+            })}
+          </div>
+          <p className="muted small role-switch__note">
+            Your ideas and points stay the same. What you can see and do changes.
+          </p>
           <ul>
+            <li>
+              <button
+                type="button"
+                className="persona-item"
+                onClick={() => {
+                  setPopover(null);
+                  window.dispatchEvent(new Event("ih:guide-replay"));
+                }}
+              >
+                <Icon name="info" size={16} />
+                <span>
+                  <span className="strong">Replay the guide</span>
+                  <br />
+                  <span className="muted small">A short tour of the app</span>
+                </span>
+              </button>
+            </li>
             <li>
               <button
                 type="button"

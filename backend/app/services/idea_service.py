@@ -579,7 +579,8 @@ async def home_aggregates(session: AsyncSession, user: CurrentUser) -> dict[str,
                 "href": f"/ideas/{idea.id}",
             }
         )
-    if user.acting_as("reviewer", "admin") or user.has_role("reviewer", "admin"):
+    # Only the role the viewer is working as: a reviewer working as contributor sees no review items.
+    if user.acting_as("reviewer", "admin"):
         queue = await session.execute(
             select(Idea)
             .where(Idea.status == "under_review")

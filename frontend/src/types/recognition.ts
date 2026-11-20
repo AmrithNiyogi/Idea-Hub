@@ -11,6 +11,8 @@ export interface LeaderboardRow {
   level_id: string;
   level_name: string;
   dims?: Record<string, number>;
+  week_points?: number;
+  rank_change?: number | null;
 }
 
 export interface LedgerEntry {
@@ -43,5 +45,13 @@ export interface Award {
   reason: string;
   points: number;
   confirmed_by: string;
+  created_at: string;
+}
+
+export interface ThanksItem {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  note: string;
   created_at: string;
 }

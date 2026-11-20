@@ -47,6 +47,7 @@ Source of truth in AI Studio:
 | Help FAB | `POST …/simulate/help` | `AISTUDIO_AGENT_HELP` | Plain user `message` string | Per Help FAB thread |
 | Idea optimizer | `POST …/simulate/idea-optimize` · `/agents/run` `idea-optimizer` | `AISTUDIO_AGENT_IDEA_OPTIMIZER` | JSON string `{"idea","message","messages"}` | Per optimizer session |
 | Review intelligence | `/agents/run` `review-intelligence` | `AISTUDIO_AGENT_REVIEW_INTELLIGENCE` | JSON string idea + comments/votes/similar | Usually one-shot |
+| Coding agent build | `POST …/agents/builds/{idea_id}` · `/agents/run` `coding-agent-build` | `AISTUDIO_AGENT_CODING_BUILD` | JSON string handoff markdown + prompts + skill refs | Optional one-shot |
 
 Prompt slugs (Prompt Engine / workflow LLM) remain `ideakonnekt-wf-*` — see
 `KOMPASS_AGENT_PROMPTS.md`. The **execute** `agent_id` is the **Kompass Smart
@@ -69,6 +70,7 @@ If the agent returns plain text, Idea Hub uses it as `reply` / wraps it.
 | Surface | Endpoint / path | Engine while simulating |
 |---------|-----------------|-------------------------|
 | Agent roster / run / proposals | `POST /api/v1/agents/run`, … | `AgentGateway` → heuristics (`mock-heuristic-v1`) |
+| Coding agent build | `POST /api/v1/agents/builds/{idea_id}` | `coding_build_plan` + context pack; live when configured |
 | Submit ideation co-pilot | `POST /api/v1/agents/simulate/submit-assist` | `agent_simulate_service` |
 | Help / app guide | `POST /api/v1/agents/simulate/help` | FAQ intent map |
 | Author idea optimizer | `POST …/simulate/idea-optimize` · `idea-optimizer` | `agent_simulate_service` |
@@ -90,10 +92,12 @@ AISTUDIO_AGENT_SUBMIT_ASSIST=
 AISTUDIO_AGENT_HELP=
 AISTUDIO_AGENT_IDEA_OPTIMIZER=
 AISTUDIO_AGENT_REVIEW_INTELLIGENCE=
+AISTUDIO_AGENT_CODING_BUILD=
 ```
 
 **Live gate:** `SIMULATE_AGENTS=false` **and** base URL + tenant + project-slug set.
-Per-route also requires the matching `AISTUDIO_AGENT_*` id (else 503).
+Per-route also requires the matching `AISTUDIO_AGENT_*` id (else 503 for chat
+surfaces; coding-agent-build falls back to a persisted simulated timeline).
 
 Implementation:
 

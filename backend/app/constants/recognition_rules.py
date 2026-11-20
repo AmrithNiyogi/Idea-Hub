@@ -105,6 +105,17 @@ REC_RULES: dict[str, dict[str, Any]] = {
     },
 }
 
+REC_RULES["thanks"] = {
+    "label": "A teammate says thank you",
+    "points": 4,
+    "dim": "collab",
+    "when": "A teammate writes what they valued in your work. Each person can send 3 a month, and only one to the same teammate.",
+}
+
+THANKS_PER_GIVER_MONTH: int = 3
+THANKS_MIN_LEN: int = 20
+THANKS_MAX_LEN: int = 280
+
 LEVELS: tuple[dict[str, Any], ...] = (
     {"id": "spark", "name": "Spark", "min": 0},
     {"id": "contributor", "name": "Contributor", "min": 50},

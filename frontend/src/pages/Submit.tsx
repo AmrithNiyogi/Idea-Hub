@@ -624,7 +624,7 @@ export function SubmitPage() {
                 ] as const
               ).map(([lab, ok]) => (
                 <li key={lab}>
-                  {ok ? '✓' : '○'} {lab}
+                  <Icon name={ok ? 'check' : 'circle'} size={14} /> {lab}
                 </li>
               ))}
             </ul>

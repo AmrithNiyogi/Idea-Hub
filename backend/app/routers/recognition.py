@@ -6,12 +6,15 @@ TODO: wire into main via ``include_phase23_routers(app)``.
 from __future__ import annotations
 
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, Query
 
 from app.db.session_deps import DbSession
 from app.dependencies.phase23_auth import RequireActor
 from app.schemas.recognition import (
+    ThanksIn,
+    ThanksOut,
     AwardOut,
     BadgeOut,
     ConfirmAnnualRequest,
@@ -44,8 +47,34 @@ async def leaderboard(
     session: DbSession,
     actor: RequireActor,
     limit: int = Query(50, ge=1, le=200),
+    period: Literal["all", "quarter", "year", "week"] = Query("all"),
 ) -> list[LeaderboardRowOut]:
-    return await RecognitionService(session).leaderboard(limit=limit)
+    return await RecognitionService(session).leaderboard(limit=limit, period=period)
+
+
+@router.post(
+    "/thanks",
+    response_model=ThanksOut,
+    status_code=201,
+    summary="Thank a teammate in writing",
+)
+async def send_thanks(
+    body: ThanksIn, session: DbSession, actor: RequireActor
+) -> ThanksOut:
+    return await RecognitionService(session).send_thanks(actor, body)
+
+
+@router.get(
+    "/thanks",
+    response_model=list[ThanksOut],
+    summary="Recent written thanks",
+)
+async def recent_thanks(
+    session: DbSession,
+    actor: RequireActor,
+    limit: int = Query(10, ge=1, le=50),
+) -> list[ThanksOut]:
+    return await RecognitionService(session).recent_thanks(limit)
 
 
 @router.get(

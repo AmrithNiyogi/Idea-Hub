@@ -7,6 +7,7 @@
 import { FormEvent, KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { agentsApi } from '../api/agents';
+import { Icon } from './Icons';
 
 type Msg = {
   id: string;
@@ -183,7 +184,7 @@ export function HelpChatFab() {
                 onClick={() => setOpen(false)}
                 aria-label="Close help chat"
               >
-                ✕
+                <Icon name="x" size={16} />
               </button>
             </div>
           </header>

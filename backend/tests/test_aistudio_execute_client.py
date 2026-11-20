@@ -40,6 +40,7 @@ def test_hub_agent_env_keys_cover_surfaces() -> None:
         "help",
         "idea-optimizer",
         "review-intelligence",
+        "coding-agent-build",
     }
 
 

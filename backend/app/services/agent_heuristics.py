@@ -524,3 +524,103 @@ def analytics_narrative(snapshot: dict[str, Any]) -> dict[str, Any]:
         ],
         "simulated": True,
     }
+
+
+def coding_build_plan(
+    *,
+    idea_id: str,
+    title: str,
+    status: str,
+    problem: str,
+    solution: str,
+    tags: Sequence[str] | None = None,
+    effort: str | None = None,
+    skill_name: str = "idea-hub-pull-idea",
+    markdown_chars: int = 0,
+) -> dict[str, Any]:
+    """Build a simulated coding-agent plan + run timeline for an accepted idea.
+
+    Deterministic heuristic used when ``SIMULATE_AGENTS`` is true or live
+    Kompass execute is unavailable. Does not mutate idea status.
+
+    Args:
+        idea_id: Idea UUID string.
+        title: Idea title.
+        status: Current lifecycle status (expected ``accepted``).
+        problem: Problem statement text.
+        solution: Proposed solution text.
+        tags: Optional tag list.
+        effort: Optional effort band (S/M/L/XL).
+        skill_name: Handoff skill id embedded in the plan.
+        markdown_chars: Length of the generated context markdown (telemetry).
+
+    Returns:
+        Dict with ``timeline``, ``plan``, ``prototype_gate``, and ``simulated``.
+    """
+    tag_list = [str(t) for t in (tags or []) if t]
+    problem_words = len(_words(problem))
+    solution_words = len(_words(solution))
+    steps = [
+        {
+            "id": "context",
+            "label": "Generated agent-context pack",
+            "status": "done",
+            "detail": f"{markdown_chars} chars of markdown context",
+        },
+        {
+            "id": "skill_pack",
+            "label": f"Attached skill pack ({skill_name})",
+            "status": "done",
+            "detail": "Cursor + Claude Code install paths included",
+        },
+        {
+            "id": "execute",
+            "label": "Simulated coding-agent execute",
+            "status": "done",
+            "detail": "mock-heuristic-v1 — no remote Kompass call",
+        },
+        {
+            "id": "prototype_gate",
+            "label": "Human gate before Prototype",
+            "status": "pending",
+            "detail": "Approve this proposal; status stays Accepted until hours",
+        },
+    ]
+    plan_items = [
+        f"Scaffold a vertical slice for “{title or 'untitled'}”",
+        "Wire auth-safe API reads using the idea UUID from the context pack",
+        "Add a smoke path that exercises the primary user journey",
+    ]
+    if effort in ("L", "XL"):
+        plan_items.append("Split delivery into milestones; keep first PR shippable")
+    if tag_list:
+        plan_items.append(f"Respect domain tags: {', '.join(tag_list[:5])}")
+    if problem_words < 8:
+        plan_items.append("Clarify problem framing before deep implementation")
+    if solution_words < 8:
+        plan_items.append("Expand solution outline from the handoff markdown")
+
+    return {
+        "idea_id": idea_id,
+        "idea_status": status,
+        "skill_name": skill_name,
+        "timeline": steps,
+        "plan": {
+            "summary": (
+                f"Proposed coding build for “{title}” "
+                f"({problem_words} problem / {solution_words} solution terms)."
+            ),
+            "items": plan_items,
+            "effort_hint": effort or "M",
+        },
+        "prototype_gate": {
+            "required": True,
+            "approved": False,
+            "auto_flip": False,
+            "message": (
+                "Human must approve this build proposal. Approving does not "
+                "move the idea to Prototype — request innovation hours next."
+            ),
+        },
+        "simulated": True,
+    }

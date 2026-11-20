@@ -27,6 +27,7 @@ from app.models.recognition import (
     Badge,
     BadgeAward,
     PointsLedgerEntry,
+    RecognitionThanks,
     RecognitionAward,
 )
 from app.models.admin import AdminAudit, PlatformSetting, ReviewPanel
@@ -78,6 +79,7 @@ __all__ = [
     "PitchScore",
     "PlatformSetting",
     "PointsLedgerEntry",
+    "RecognitionThanks",
     "ProblemMeToo",
     "ProblemMeta",
     "ProposalDecision",

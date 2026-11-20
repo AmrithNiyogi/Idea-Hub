@@ -58,6 +58,21 @@ class LeaderboardRowOut(BaseModel):
     level_id: str
     level_name: str
     dims: dict[str, int] = Field(default_factory=dict)
+    week_points: int = 0
+    rank_change: Optional[int] = None
+
+
+class ThanksIn(BaseModel):
+    to_user_id: uuid.UUID
+    note: str = Field(min_length=1, max_length=280)
+
+
+class ThanksOut(BaseModel):
+    id: uuid.UUID
+    from_user_id: uuid.UUID
+    to_user_id: uuid.UUID
+    note: str
+    created_at: datetime
 
 
 class RulesOut(BaseModel):

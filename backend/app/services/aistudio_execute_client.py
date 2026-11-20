@@ -36,6 +36,7 @@ HUB_AGENT_ENV_KEYS: dict[str, str] = {
     "help": "AISTUDIO_AGENT_HELP",
     "idea-optimizer": "AISTUDIO_AGENT_IDEA_OPTIMIZER",
     "review-intelligence": "AISTUDIO_AGENT_REVIEW_INTELLIGENCE",
+    "coding-agent-build": "AISTUDIO_AGENT_CODING_BUILD",
 }
 
 
@@ -92,7 +93,7 @@ def resolve_kompass_agent_id(hub_agent_key: str) -> Optional[str]:
 
     Args:
         hub_agent_key: One of ``submit-assist``, ``help``, ``idea-optimizer``,
-            ``review-intelligence``.
+            ``review-intelligence``, ``coding-agent-build``.
 
     Returns:
         Configured Kompass agent id/slug, or None if unset.

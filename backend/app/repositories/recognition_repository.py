@@ -13,6 +13,7 @@ from app.models.recognition import (
     BadgeAward,
     PointsLedgerEntry,
     RecognitionAward,
+    RecognitionThanks,
 )
 
 
@@ -95,6 +96,74 @@ class RecognitionRepository:
             .limit(limit)
         )
         return [(row[0], int(row[1])) for row in result.all()]
+
+    async def totals(
+        self,
+        *,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+    ) -> dict[uuid.UUID, dict[str, int]]:
+        """Non-escrow points per user per rule, optionally within a time window."""
+        stmt = (
+            select(
+                PointsLedgerEntry.user_id,
+                PointsLedgerEntry.rule_id,
+                func.sum(PointsLedgerEntry.points),
+            )
+            .where(PointsLedgerEntry.escrow.is_(False))
+            .group_by(PointsLedgerEntry.user_id, PointsLedgerEntry.rule_id)
+        )
+        if since is not None:
+            stmt = stmt.where(PointsLedgerEntry.created_at >= since)
+        if until is not None:
+            stmt = stmt.where(PointsLedgerEntry.created_at < until)
+        result = await self.session.execute(stmt)
+        out: dict[uuid.UUID, dict[str, int]] = {}
+        for user_id, rule_id, pts in result.all():
+            out.setdefault(user_id, {})[rule_id] = int(pts)
+        return out
+
+    async def thanks_sent_in_month(
+        self, from_user_id: uuid.UUID, year: int, month: int
+    ) -> int:
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(RecognitionThanks)
+            .where(
+                RecognitionThanks.from_user_id == from_user_id,
+                func.extract("year", RecognitionThanks.created_at) == year,
+                func.extract("month", RecognitionThanks.created_at) == month,
+            )
+        )
+        return int(result.scalar_one())
+
+    async def thanks_between_in_month(
+        self, from_user_id: uuid.UUID, to_user_id: uuid.UUID, year: int, month: int
+    ) -> int:
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(RecognitionThanks)
+            .where(
+                RecognitionThanks.from_user_id == from_user_id,
+                RecognitionThanks.to_user_id == to_user_id,
+                func.extract("year", RecognitionThanks.created_at) == year,
+                func.extract("month", RecognitionThanks.created_at) == month,
+            )
+        )
+        return int(result.scalar_one())
+
+    async def add_thanks(self, row: RecognitionThanks) -> RecognitionThanks:
+        self.session.add(row)
+        await self.session.flush()
+        return row
+
+    async def recent_thanks(self, limit: int) -> Sequence[RecognitionThanks]:
+        result = await self.session.execute(
+            select(RecognitionThanks)
+            .order_by(RecognitionThanks.created_at.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
 
     async def ensure_badges(self, defs: Sequence[dict]) -> None:
         for d in defs:

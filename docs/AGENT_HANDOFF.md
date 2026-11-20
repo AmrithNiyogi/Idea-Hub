@@ -7,7 +7,10 @@ Turn a reviewed idea into a paste-ready context pack so a coding agent can start
 | Surface | What you get |
 |---------|----------------|
 | **Idea detail** (`/ideas/:id`) | **Copy for Cursor**, **Copy for Claude**, **Download context.md**, **Download skill**, plus **How to launch** |
+| **Idea detail (Accepted)** | **Launch agent build** — generates the same context/skill pack, persists an `AgentRun` (live Kompass execute or simulated timeline), human gate before Prototype |
 | **Review workspace** (`/review/:id`) | Same bar (compact) |
+
+Agent build API: `POST /api/v1/agents/builds/{idea_id}` (see `docs/AGENT_SIMULATION.md`). Approving the proposal does **not** auto-flip status to Prototype — request innovation hours on Delivery as usual.
 
 ### Recommended flow (actually interact)
 

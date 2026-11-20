@@ -1,6 +1,7 @@
 /** Side panel for the AI Newsletter: trending repos, weekly papers, recurring themes. */
 
 import type { NewsInsights } from '../types/news';
+import { Icon } from './Icons';
 
 interface Props {
   insights: NewsInsights | null;
@@ -54,7 +55,7 @@ export function NewsInsightsPanel({ insights, failed }: Props) {
                   {r.name}
                 </a>
                 <span className="nws-side__meta">
-                  ★ {r.stars.toLocaleString()}
+                  <Icon name="star" size={12} /> {r.stars.toLocaleString()}
                   {r.language ? ` · ${r.language}` : ''}
                 </span>
               </li>

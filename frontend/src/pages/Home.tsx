@@ -2,14 +2,15 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ideasApi } from '../api/ideas';
 import { recognitionApi } from '../api/recognition';
+import { InfoTip } from '../components/ui/InfoTip';
 import { usersApi } from '../api/users';
 import { Avatar, Icon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
 import { fmtNum } from '../constants/ideathons';
-import { STAGE_KEYS, STAGE_LABELS, STATUS_META } from '../constants/status';
+import { STATUS_META } from '../constants/status';
 import { useAuth } from '../auth/AuthProvider';
 import { CAN_SUBMIT, ROLE_BLURBS, roleLabel } from '../constants/roles';
-import { firstName, greeting, nextStep, relTime } from '../utils/format';
+import { nextStep, relTime } from '../utils/format';
 import type { HomeAggregates, Idea } from '../types/idea';
 import type { LeaderboardRow } from '../types/recognition';
 import type { Role, User } from '../types/auth';
@@ -140,33 +141,8 @@ export function HomePage() {
     ],
   ];
 
-  const also: Array<[string, number, string]> = [
-    ['parked', counts.parked ?? 0, 'parked'],
-    ['declined', counts.declined ?? 0, 'declined'],
-    ['merged', counts.merged ?? 0, 'merged'],
-    ['withdrawn', counts.withdrawn ?? 0, 'withdrawn'],
-  ];
-
-  const stageValues = STAGE_KEYS.map((k) => {
-    if (k === 'accepted') {
-      return (
-        (counts.accepted ?? 0) +
-        (counts.parked ?? 0) +
-        (counts.merged ?? 0) +
-        (counts.declined ?? 0)
-      );
-    }
-    if (k === 'under_review') {
-      return (counts.under_review ?? 0) + (counts.needs_info ?? 0);
-    }
-    if (k === 'submitted') return counts.submitted ?? 0;
-    return counts[k] ?? 0;
-  });
-  const maxStage = Math.max(1, ...stageValues);
   const attention = data?.needs_attention ?? [];
   const peopleMap = new Map(people.map((p) => [p.id, p]));
-  const maxPts = Math.max(1, ...board.map((b) => b.points));
-  const maxBar = Math.max(1, ...stageValues);
 
   let band: ReactNode;
   if (active === 'reviewer' || active === 'admin') {
@@ -302,85 +278,83 @@ export function HomePage() {
     );
   }
 
+  // Only things the viewer must act on count as "your next move".
+  // Ideas another reviewer is already scoring are not the viewer's move.
+  const isReviewer = active === "reviewer" || active === "admin";
+  const scoringMine = isReviewer ? queue.find((i) => i.reviewer_id === user?.id) : undefined;
+  const awaitingPickup = isReviewer ? queue.find((i) => !i.picked_up_at) : undefined;
+  const answerMine = mine.find((i) => i.status === "needs_info");
+  const action: { idea: Idea; kind: "decide" | "answer" | "pickup" } | null = scoringMine
+    ? { idea: scoringMine, kind: "decide" }
+    : answerMine
+      ? { idea: answerMine, kind: "answer" }
+      : awaitingPickup
+        ? { idea: awaitingPickup, kind: "pickup" }
+        : null;
+  const myBoardIdx = board.findIndex((r) => r.user_id === user?.id);
+  const myBoardRow = myBoardIdx >= 0 ? board[myBoardIdx] : undefined;
+  const movers = board
+    .filter((r) => (r.week_points ?? 0) > 0)
+    .sort((a, b) => (b.week_points ?? 0) - (a.week_points ?? 0))
+    .slice(0, 3);
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+
   return (
     <div className="stack stack--lg">
       <div className="page-head">
         <div>
-          <div className="eyebrow eyebrow--plain">{greeting()}</div>
-          <h1>Welcome back, {firstName(user?.name)}</h1>
+          <div className="eyebrow eyebrow--plain">{today}</div>
+          <h1>Home</h1>
           <p>{ROLE_BLURBS[active] ?? roleLabel(active)}</p>
         </div>
       </div>
 
-      <div className="grid grid-5 kpi-row">
+      {action ? (
+        <section className="home-hero" aria-label="Your next move">
+          <div className="home-hero__text">
+            <div className="eyebrow eyebrow--plain">Your next move</div>
+            <Link className="home-hero__title" to={`/ideas/${action.idea.id}`}>
+              {action.idea.title}
+            </Link>
+            <p>
+              {action.kind === "decide"
+                ? "You are scoring this idea. Record a decision with a written reason."
+                : action.kind === "answer"
+                  ? "A reviewer asked a question. Answer it to resume the review."
+                  : "Nobody has picked this idea up yet. Open it to start scoring."}
+            </p>
+          </div>
+          <div className="home-hero__actions">
+            <Link className="btn btn--primary" to={`/ideas/${action.idea.id}`}>
+              {action.kind === "decide"
+                ? "Record decision"
+                : action.kind === "answer"
+                  ? "Answer reviewer"
+                  : "Open review"}
+              <Icon name="arrowRight" size={14} />
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      <div className="home-strip card" role="list" aria-label="Idea counts">
         {tiles.map(([label, value, sub, href, tone]) => (
-          <Link key={label} className={`kpi ${tone}`} to={href}>
-            <span className="kpi__label">{label}</span>
-            <span className="kpi__value">{value}</span>
-            <span className="kpi__sub">{sub}</span>
+          <Link
+            key={label}
+            role="listitem"
+            className={`home-strip__cell ${tone}`}
+            to={href}
+            title={sub}
+          >
+            <span className="home-strip__value">{value}</span>
+            <span className="home-strip__label">{label}</span>
           </Link>
         ))}
       </div>
-      <p className="muted small kpi-also">
-        Also:{' '}
-        {also.map(([status, n, lab], idx) => (
-          <span key={status}>
-            {idx ? ' · ' : ''}
-            <Link to={`/explore?status=${status}`}>
-              {n} {lab}
-            </Link>
-          </span>
-        ))}
-        . The four tiles after Total plus parked, declined and merged add up to
-        the {total} total. Withdrawn ideas are not in the total.
-      </p>
-
-      {board.length ? (
-        <div className="card">
-          <div className="card__head">
-            <h2>Leaderboard</h2>
-            <Link className="lbh__more" to="/recognition">
-              See full status
-              <Icon name="chevronR" size={14} />
-            </Link>
-          </div>
-          <div className="lbh">
-            {board.slice(0, 5).map((r, n) => {
-              const u = peopleMap.get(r.user_id);
-              return (
-                <div
-                  key={r.user_id}
-                  className={`lbh__row${n === 0 ? ' lbh__row--top' : ''}`}
-                >
-                  <span className="lbh__rank mono">{n + 1}</span>
-                  <span className="lbh__who">
-                    <Avatar
-                      name={u?.name ?? r.user_id}
-                      avatar={u?.avatar ?? 1}
-                      size="sm"
-                    />
-                    <span className="truncate">
-                      {u?.name ?? `${r.user_id.slice(0, 8)}…`}
-                      {r.user_id === user?.id ? (
-                        <span className="muted"> (you)</span>
-                      ) : null}
-                    </span>
-                  </span>
-                  <span className="lbh__track">
-                    <i
-                      style={{
-                        width: `${Math.max(4, Math.round((r.points / maxPts) * 100))}%`,
-                      }}
-                    />
-                  </span>
-                  <span className="lbh__pts mono">{fmtNum(r.points)}</span>
-                </div>
-              );
-            })}
-          </div>
-          <p className="muted small">Ranked by points, never by number of ideas</p>
-        </div>
-      ) : null}
 
       <div className="layout-rail layout-rail--wide" style={{ marginTop: 'var(--space-5)' }}>
         <div className="stack">
@@ -455,52 +429,72 @@ export function HomePage() {
         </div>
 
         <div className="stack">
-          <div className="card">
+          <div className="card home-race">
             <div className="card__head">
-              <h2>Lifecycle funnel</h2>
+              <h2>
+                Contribution board{" "}
+                <InfoTip label="How the board works">
+                  Points come from outcomes, collaboration and verified impact.
+                  Upvotes and idea counts earn nothing. "Moving this week" counts
+                  points from the last seven days.
+                </InfoTip>
+              </h2>
+              <Link className="lbh__more" to="/recognition?tab=leaderboard">
+                Full board
+              </Link>
             </div>
-            <div className="funnel">
-              {STAGE_LABELS.map((label, i) => (
-                <div key={label} className="funnel__row">
-                  <span className="funnel__lab">{label}</span>
-                  <span className="funnel__track">
-                    <i
-                      style={{
-                        width: `${Math.round((stageValues[i] / maxStage) * 100)}%`,
-                      }}
-                    />
-                  </span>
-                  <span className="funnel__val mono">{stageValues[i]}</span>
-                </div>
-              ))}
+            <ol className="home-race__top">
+              {board.slice(0, 3).map((r, n) => {
+                const u = peopleMap.get(r.user_id);
+                const me = r.user_id === user?.id;
+                return (
+                  <li key={r.user_id} className={`home-race__seat home-race__seat--${n + 1}${me ? " is-me" : ""}`}>
+                    <span className="home-race__place">{n + 1}</span>
+                    <span className="home-race__avatar">
+                      <Avatar name={u?.name ?? r.user_id} avatar={u?.avatar ?? 1} size="md" />
+                    </span>
+                    <span className="home-race__who">
+                      <span className="home-race__name">
+                        {u?.name ?? `${r.user_id.slice(0, 8)}…`}
+                        {me ? " (you)" : ""}
+                      </span>
+                      <span className="home-race__level lvl" data-level={r.level_id}>{r.level_name}</span>
+                    </span>
+                    <span className="home-race__score">
+                      <span className="home-race__pts">{fmtNum(r.points)}</span>
+                      <span className="home-race__unit">points</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+            <div className="home-race__week">
+              <div className="eyebrow eyebrow--plain">Moving this week</div>
+              {movers.length ? (
+                <ul>
+                  {movers.map((r) => (
+                    <li key={r.user_id}>
+                      <span>{peopleMap.get(r.user_id)?.name ?? "A teammate"}</span>
+                      <span className="home-race__gain">+{fmtNum(r.week_points ?? 0)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted small">
+                  Nobody has moved yet this week. One idea moving forward starts it.
+                </p>
+              )}
             </div>
-            <p className="muted small">
-              Ideas that have reached each stage. Rejected and parked ideas count
-              as reaching Decision.
-            </p>
-          </div>
-
-          <div className="card">
-            <div className="card__head">
-              <h2>Where ideas are now</h2>
+            <div className="home-race__foot">
+              <span className="muted small">
+                {myBoardRow
+                  ? `You are #${myBoardIdx + 1} with ${fmtNum(myBoardRow.points)} points.`
+                  : "Your first point comes from moving one idea forward."}
+              </span>
+              <Link className="btn btn--sm btn--primary" to="/recognition?tab=standing">
+                See how to earn
+              </Link>
             </div>
-            <div className="stagebar" aria-hidden="true">
-              {stageValues.map((n, i) => (
-                <span
-                  key={STAGE_LABELS[i]}
-                  style={{ flex: Math.max(0.08, n / maxBar) }}
-                />
-              ))}
-            </div>
-            <ul className="stagebar__legend">
-              {STAGE_LABELS.map((label, i) => (
-                <li key={label}>
-                  <i aria-hidden="true" />
-                  <span className="stagebar__lab">{label}</span>
-                  <span className="mono">{stageValues[i]}</span>
-                </li>
-              ))}
-            </ul>
           </div>
 
           <div className="card">

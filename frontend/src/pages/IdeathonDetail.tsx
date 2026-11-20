@@ -17,6 +17,7 @@ import { IdeaCard } from '../components/IdeaCard';
 import { Avatar, Icon } from '../components/Icons';
 import { AgentBlock } from '../components/ui/AgentBlock';
 import { EmptyState } from '../components/ui/EmptyState';
+import { JourneyStepper, type JourneyStage } from '../components/ui/JourneyStepper';
 import { Pill } from '../components/ui/Pill';
 import { TabsNav } from '../components/ui/TabsNav';
 import { CAN_SUBMIT } from '../constants/roles';
@@ -69,37 +70,58 @@ function StatusPillFor({ it }: { it: IdeathonDetail }) {
   );
 }
 
+/** Gates mirror IdeathonService.advance(): the checks the backend enforces before each move. */
+const IDEATHON_GATES: Record<string, { gate: string; owner: string }> = {
+  open: {
+    gate: 'At least 2 entries are in. The organiser moves it to Shortlist.',
+    owner: 'Organiser',
+  },
+  shortlist: {
+    gate: 'The agent proposes a shortlist. The organiser approves at least 2 ideas, then moves to Pitch day.',
+    owner: 'Organiser',
+  },
+  pitch: {
+    gate: 'Close voting first. Then the organiser moves to Results.',
+    owner: 'Organiser',
+  },
+  results: {
+    gate: 'Confirm at least one winner. Then the organiser moves to Handoff.',
+    owner: 'Organiser',
+  },
+  handoff: {
+    gate: 'Mark the ideathon complete once winners are handed off.',
+    owner: 'Organiser',
+  },
+};
+
 function IdeathonStepper({ it }: { it: IdeathonDetail }) {
   const idx = ithPhaseIdx(it.phase);
-  const done = !!it.completed_at;
+  const stages: JourneyStage[] = ITH_PHASES.map((ph) => ({
+    label: ph.label,
+    gate: IDEATHON_GATES[ph.id]?.gate ?? ph.blurb,
+    owner: IDEATHON_GATES[ph.id]?.owner ?? 'Organiser',
+  }));
   return (
-    <ol className="stepper" aria-label="Ideathon phase">
-      {ITH_PHASES.map((ph, n) => {
-        const cls =
-          n < idx || (done && n === idx)
-            ? 'step--done'
-            : n === idx
-              ? 'step--current'
-              : 'step--future';
-        const log = it.phase_log.find((x) => x.phase === ph.id);
-        return (
-          <li
-            key={ph.id}
-            className={`step ${cls}`}
-            aria-current={n === idx && !done ? 'step' : undefined}
-          >
-            <span className="step__dot">
-              {cls === 'step--done' ? <Icon name="check" size={14} /> : n + 1}
-            </span>
-            <div className="step__label">{ph.label}</div>
-            <div className="step__meta">
-              {log?.at && n <= idx ? `${fmtDate(log.at)} · ` : ''}
-              {ph.blurb}
-            </div>
-          </li>
-        );
-      })}
-    </ol>
+    <JourneyStepper
+      ariaLabel="Ideathon phase"
+      stages={stages}
+      current={idx}
+      finished={!!it.completed_at}
+      when={(n) => {
+        const log = it.phase_log.find((x) => x.phase === ITH_PHASES[n]?.id);
+        return log?.at ? fmtDate(log.at) : undefined;
+      }}
+      now={
+        <>
+          <div className="eyebrow eyebrow--plain">Now</div>
+          <div>
+            {it.completed_at
+              ? 'This ideathon is complete.'
+              : `${ITH_PHASES[idx]?.blurb ?? ''}. ${IDEATHON_GATES[it.phase]?.gate ?? ''}`}
+          </div>
+        </>
+      }
+    />
   );
 }
 

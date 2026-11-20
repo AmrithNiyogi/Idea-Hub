@@ -87,9 +87,10 @@ export function AgentsPage() {
       <div className="kmap-note" role="note">
         <Icon name="alert" size={20} />
         <div>
-          <strong>Not connected to Kompass — integration design only.</strong>{' '}
-          Nothing in this app calls Kompass. Every agent run is simulated by a
-          deterministic local engine.
+          <strong>Kompass seam:</strong> default is simulated (
+          <code>SIMULATE_AGENTS=true</code>). When live env is set, chat and
+          coding-agent-build call <code>POST /api/v2/runs/execute</code>. Agents
+          still propose only — humans decide.
         </div>
       </div>
 

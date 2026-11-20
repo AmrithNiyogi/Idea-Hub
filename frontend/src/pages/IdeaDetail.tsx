@@ -9,12 +9,14 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { collabApi } from '../api/collab';
 import { ideasApi } from '../api/ideas';
 import { usersApi } from '../api/users';
+import { AgentBuildPanel } from '../components/AgentBuildPanel';
 import { AgentHandoffBar } from '../components/AgentHandoffBar';
 import { IdeaOptimizePanel } from '../components/IdeaOptimizePanel';
 import { Avatar, Icon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
+import { JourneyStepper, type JourneyStage } from '../components/ui/JourneyStepper';
 import { useAuth } from '../auth/AuthProvider';
-import { EFFORT_LABELS, STAGE_LABELS } from '../constants/status';
+import { EFFORT_LABELS } from '../constants/status';
 import { DeliveryTab } from './DeliveryTab';
 import { TrackerTab } from './TrackerTab';
 import { CollabTrackerPanel } from '../components/CollabTrackerPanel';
@@ -52,6 +54,35 @@ function stageIndex(status: string): number {
   if (status === 'implemented') return 4;
   return -1;
 }
+
+/** Each stage, what moves the idea on, and who has to act. Matches the status transitions in the backend. */
+const IDEA_STAGES: JourneyStage[] = [
+  {
+    label: 'Submitted',
+    gate: 'A reviewer on the category panel picks it up.',
+    owner: 'Review panel',
+  },
+  {
+    label: 'Under review',
+    gate: 'A reviewer scores it and records a decision with a reason.',
+    owner: 'Reviewer',
+  },
+  {
+    label: 'Decision',
+    gate: 'The owner requests innovation hours to start a prototype.',
+    owner: 'Owner',
+  },
+  {
+    label: 'Prototype',
+    gate: 'The owner marks it implemented and records the impact.',
+    owner: 'Owner',
+  },
+  {
+    label: 'Implemented',
+    gate: 'Final stage. A second person can verify the recorded impact.',
+    owner: 'Verifier',
+  },
+];
 
 export function IdeaDetailPage() {
   const { id = '' } = useParams();
@@ -297,6 +328,17 @@ export function IdeaDetailPage() {
   const canWork =
     ['reviewer', 'admin'].includes(user?.active_role ?? '') &&
     ['under_review', 'needs_info', 'submitted'].includes(idea.status);
+  const canLaunchBuild =
+    idea.status === 'accepted' &&
+    (user?.id === idea.owner_id ||
+      isAuthor ||
+      ['reviewer', 'admin', 'lead', 'leadership'].includes(
+        user?.active_role ?? '',
+      ));
+  const canDecideBuild =
+    user?.id === idea.owner_id ||
+    isAuthor ||
+    ['reviewer', 'admin', 'leadership'].includes(user?.active_role ?? '');
   const ns = nextStep(idea);
   const history = [...idea.status_history].sort(
     (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
@@ -439,6 +481,13 @@ export function IdeaDetailPage() {
 
         <AgentHandoffBar ideaId={idea.id} />
 
+        <AgentBuildPanel
+          ideaId={idea.id}
+          ideaStatus={idea.status}
+          canLaunch={canLaunchBuild}
+          canDecide={canDecideBuild}
+        />
+
         <div className="meta-row">
           <span className="person">
             <Avatar
@@ -509,44 +558,29 @@ export function IdeaDetailPage() {
           </span>
         </div>
 
-        <div className="stepper" aria-label="Lifecycle stages">
-          {STAGE_LABELS.map((label, i) => {
-            const done = si > i;
-            const current = si === i;
-            const bad =
-              current && ['declined', 'withdrawn'].includes(idea.status);
-            const paused = current && idea.status === 'parked';
-            const cls = [
-              'step',
-              done ? 'step--done' : '',
-              current ? 'step--current' : '',
-              !done && !current ? 'step--future' : '',
-              bad ? 'step--bad' : '',
-              paused ? 'step--paused' : '',
-            ]
-              .filter(Boolean)
-              .join(' ');
-            return (
-              <div key={label} className={cls}>
-                <div className="step__dot">{done ? '✓' : i + 1}</div>
-                <div className="step__label">{label}</div>
+        <JourneyStepper
+          ariaLabel="Idea lifecycle"
+          stages={IDEA_STAGES}
+          current={si}
+          finished={idea.status === 'implemented'}
+          tone={
+            ['declined', 'withdrawn'].includes(idea.status)
+              ? 'stopped'
+              : idea.status === 'parked'
+                ? 'paused'
+                : 'normal'
+          }
+          now={
+            <>
+              <div className="eyebrow eyebrow--plain">Now</div>
+              <div>
+                {['declined', 'withdrawn'].includes(idea.status)
+                  ? `This idea was ${idea.status}. It stops here unless it is reopened.`
+                  : ns.text}
               </div>
-            );
-          })}
-        </div>
-
-        <div className="nextstep" style={{ marginTop: 'var(--space-4)' }}>
-          <div
-            className="eyebrow eyebrow--plain"
-            style={{ marginBottom: 4 }}
-          >
-            What happens next, and who owns it
-          </div>
-          <div>{ns.text}</div>
-          <div className="muted small" style={{ marginTop: 4 }}>
-            Owner of the next step: <strong>{ns.who}</strong>
-          </div>
-        </div>
+            </>
+          }
+        />
       </div>
 
       <div className="tabs" role="tablist">

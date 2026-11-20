@@ -56,14 +56,24 @@ export const agentsApi = {
       body: JSON.stringify(body),
     }),
 
-  runs: (opts?: { limit?: number; agent_id?: string; pending_only?: boolean }) => {
+  runs: (opts?: {
+    limit?: number;
+    agent_id?: string;
+    idea_id?: string;
+    pending_only?: boolean;
+  }) => {
     const q = new URLSearchParams();
     if (opts?.limit) q.set('limit', String(opts.limit));
     if (opts?.agent_id) q.set('agent_id', opts.agent_id);
+    if (opts?.idea_id) q.set('idea_id', opts.idea_id);
     if (opts?.pending_only) q.set('pending_only', 'true');
     const qs = q.toString();
     return apiFetch<AgentRun[]>(`/agents/runs${qs ? `?${qs}` : ''}`);
   },
+
+  /** Launch Idea → Agent Build Loop for an Accepted idea. */
+  launchBuild: (ideaId: string) =>
+    apiFetch<AgentRun>(`/agents/builds/${ideaId}`, { method: 'POST' }),
 
   proposals: () => apiFetch<PendingProposal[]>('/agents/proposals'),
 

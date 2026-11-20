@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { recognitionApi } from '../api/recognition';
 import { usersApi, type Team } from '../api/users';
 import { useAuth } from '../auth/AuthProvider';
-import { Avatar, Icon } from '../components/Icons';
+import { Icon } from '../components/Icons';
 import { AgentBlock } from '../components/ui/AgentBlock';
 import { DimBar, DimLegend } from '../components/ui/DimBar';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -23,10 +23,13 @@ import type { User } from '../types/auth';
 import type {
   Award,
   LeaderboardRow,
+  LedgerEntry,
   RecognitionRules,
+  ThanksItem,
 } from '../types/recognition';
+import { ContributionBoard } from '../components/recognition/ContributionBoard';
 
-const REC_TABS = ['leaderboard', 'teams', 'impact', 'awards', 'how'] as const;
+const REC_TABS = ['standing', 'leaderboard', 'thanks', 'teams', 'impact', 'awards', 'how'] as const;
 type RecTab = (typeof REC_TABS)[number];
 
 function AwardCard({
@@ -112,7 +115,7 @@ export function RecognitionPage() {
   const tabParam = params.get('tab');
   const tab: RecTab = REC_TABS.includes(tabParam as RecTab)
     ? (tabParam as RecTab)
-    : 'leaderboard';
+    : 'standing';
   const period = PERIODS[params.get('period') ?? '']
     ? (params.get('period') as string)
     : 'quarter';
@@ -122,6 +125,7 @@ export function RecognitionPage() {
   const [awards, setAwards] = useState<Award[]>([]);
   const [people, setPeople] = useState<User[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [thanks, setThanks] = useState<ThanksItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -129,6 +133,30 @@ export function RecognitionPage() {
   const [ioqReason, setIoqReason] = useState('');
   const [annualUser, setAnnualUser] = useState('');
   const [annualReason, setAnnualReason] = useState('');
+  const [recent, setRecent] = useState<LedgerEntry[]>([]);
+
+  const myId = user?.id;
+  useEffect(() => {
+    if (!myId) return;
+    let cancelled = false;
+    recognitionApi
+      .ledger(myId)
+      .then((rows) => {
+        if (!cancelled)
+          setRecent(
+            [...rows].sort(
+              (a, b) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            ),
+          );
+      })
+      .catch(() => {
+        if (!cancelled) setRecent([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [myId]);
 
   const isLeadership = user?.active_role === 'leadership';
   const isOrg =
@@ -137,16 +165,18 @@ export function RecognitionPage() {
   const reload = () =>
     Promise.all([
       recognitionApi.rules(),
-      recognitionApi.leaderboard(50),
+      recognitionApi.leaderboard(50, period as 'all' | 'quarter' | 'year'),
       recognitionApi.awards(),
       usersApi.list().catch(() => [] as User[]),
       usersApi.teams().catch(() => [] as Team[]),
-    ]).then(([r, b, a, u, t]) => {
+      recognitionApi.recentThanks(12).catch(() => [] as ThanksItem[]),
+    ]).then(([r, b, a, u, t, th]) => {
       setRules(r);
       setBoard(b);
       setAwards(a);
       setPeople(u);
       setTeams(t);
+      setThanks(th);
     });
 
   useEffect(() => {
@@ -163,7 +193,7 @@ export function RecognitionPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [period]);
 
   const peopleMap = useMemo(
     () => new Map(people.map((p) => [p.id, p])),
@@ -289,81 +319,28 @@ export function RecognitionPage() {
 
   let body: React.ReactNode = null;
 
-  if (tab === 'leaderboard') {
+  const boardProps = {
+    board,
+    rules,
+    me: user,
+    people: peopleMap,
+    teams: teamMap,
+    recent,
+    period,
+    thanks,
+    onChanged: () => void reload(),
+  };
+
+  if (tab === 'standing') {
+    body = <ContributionBoard view="standing" {...boardProps} />;
+  } else if (tab === 'thanks') {
+    body = <ContributionBoard view="thanks" {...boardProps} />;
+  } else if (tab === 'leaderboard') {
     const latest = awards.find((a) => a.kind === 'ioq');
     body = (
       <div className="stack">
         {latest ? <AwardCard a={latest} people={peopleMap} /> : null}
-        <div className="card">
-          <div className="card__head">
-            <h2>Individual leaderboard</h2>
-            <PeriodChips tab="leaderboard" period={period} />
-          </div>
-          <div className="notice notice--brand" style={{ marginBottom: 12 }}>
-            <Icon name="info" size={16} />
-            <span>
-              <strong>Ranked by points, never by number of ideas.</strong>{' '}
-              Points come from outcomes, collaboration and verified impact.
-              Upvotes earn none. Escrowed anonymous points are excluded.
-            </span>
-          </div>
-          <DimLegend />
-          <div className="lb-head">
-            <span>#</span>
-            <span>Person</span>
-            <span className="bd-wrap">Where the points came from</span>
-            <span style={{ textAlign: 'right' }}>Points</span>
-          </div>
-          {board.length ? (
-            board.slice(0, 25).map((r, n) => {
-              const u = peopleMap.get(r.user_id);
-              const team = u?.team_id ? teamMap.get(u.team_id) : null;
-              return (
-                <div
-                  className={`lb-row ${r.user_id === user?.id ? 'lb-row--me' : ''}`}
-                  key={r.user_id}
-                >
-                  <span className={`lb-rank ${n < 3 ? 'lb-rank--top' : ''}`}>
-                    {n + 1}
-                  </span>
-                  <div className="lb-who">
-                    <Avatar
-                      name={u?.name ?? r.user_id}
-                      avatar={u?.avatar ?? 1}
-                    />
-                    <div>
-                      <Link className="strong" to={`/people/${r.user_id}`}>
-                        {u?.name ?? `${r.user_id.slice(0, 8)}…`}
-                      </Link>
-                      {r.user_id === user?.id ? (
-                        <span className="muted small"> (you)</span>
-                      ) : null}
-                      <div className="muted small">
-                        {team?.name ?? '—'} · {r.level_name}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bd-wrap">
-                    <DimBar dims={r.dims} />
-                  </div>
-                  <span className="pts" style={{ textAlign: 'right', fontSize: 15 }}>
-                    {fmtNum(r.points)}
-                  </span>
-                </div>
-              );
-            })
-          ) : (
-            <EmptyState
-              icon="award"
-              title="No points in this period yet"
-              body="Points appear when ideas are accepted, prototyped, implemented or verified."
-            />
-          )}
-          <p className="muted small" style={{ marginTop: 12 }}>
-            Period chips are shown for parity with the prototype; the API
-            currently returns the all-time public leaderboard.
-          </p>
-        </div>
+        <ContributionBoard view="board" {...boardProps} />
       </div>
     );
   } else if (tab === 'teams') {
@@ -377,6 +354,20 @@ export function RecognitionPage() {
           Team points are the sum of members’ points. Points per member is shown
           so larger teams do not win by size alone.
         </p>
+        {(() => {
+          const mine = teamBoard.find((r) => r.id === user?.team_id);
+          const next = mine ? rules.levels.find((l) => l.min > mine.per) : undefined;
+          if (!mine || !next) return null;
+          const gap = Math.max(0, Math.round(next.min * mine.members - mine.pts));
+          return (
+            <p className="cb-relay">
+              <span className="strong">{mine.team?.name}</span> averages{' '}
+              {fmtNum(Math.round(mine.per))} points per member. {next.name} is{' '}
+              {fmtNum(next.min)} per member, so the team needs {fmtNum(gap)} more
+              points to get there together.
+            </p>
+          );
+        })()}
         <DimLegend />
         <div className="lb-head">
           <span>#</span>
@@ -769,7 +760,7 @@ export function RecognitionPage() {
             for the number of ideas.
           </p>
         </div>
-        {user ? (
+        {user && tab !== 'standing' && tab !== 'leaderboard' ? (
           <Link
             className="award-card"
             style={{ textDecoration: 'none', color: 'inherit' }}
@@ -803,11 +794,9 @@ export function RecognitionPage() {
 
       <TabsNav
         tabs={[
-          {
-            id: 'leaderboard',
-            label: 'Leaderboard',
-            href: '/recognition?tab=leaderboard',
-          },
+          { id: 'standing', label: 'My standing', href: '/recognition?tab=standing' },
+          { id: 'leaderboard', label: 'Leaderboard', href: '/recognition?tab=leaderboard' },
+          { id: 'thanks', label: 'Say thanks', href: '/recognition?tab=thanks' },
           { id: 'teams', label: 'Teams', href: '/recognition?tab=teams' },
           { id: 'impact', label: 'Impact', href: '/recognition?tab=impact' },
           { id: 'awards', label: 'Awards', href: '/recognition?tab=awards' },

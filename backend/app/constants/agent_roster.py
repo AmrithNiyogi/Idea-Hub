@@ -79,6 +79,24 @@ AGENT_ROSTER: list[dict[str, Any]] = [
         ],
     },
     {
+        "id": "coding-agent-build",
+        "prompt_slug": "ideakonnekt-wf-coding-agent-build",
+        "form": "Smart Agent (Kompass execute or simulated)",
+        "purpose": (
+            "For accepted ideas: generate the agent-context / skill pack, "
+            "kick a Kompass-shaped coding build (or persist a simulated "
+            "timeline), and open a human gate before Prototype. Never flips "
+            "status without an explicit proposal approve."
+        ),
+        "triggers": ["idea.agent_build_requested"],
+        "approval_default": "owner",
+        "never": [
+            "Move the idea to Prototype without human approval",
+            "Grant innovation hours or write delivery tasks of record",
+            "Overwrite idea fields or de-anonymise authors",
+        ],
+    },
+    {
         "id": "innovation-workflow",
         "prompt_slug": "ideakonnekt-innovation-workflow",
         "form": "Smart Agent (planned)",

@@ -153,6 +153,13 @@ class Settings(BaseSettings):
     AISTUDIO_AGENT_HELP: str = ""
     AISTUDIO_AGENT_IDEA_OPTIMIZER: str = ""
     AISTUDIO_AGENT_REVIEW_INTELLIGENCE: str = ""
+    AISTUDIO_AGENT_CODING_BUILD: str = Field(
+        default="",
+        description=(
+            "Kompass agent id/slug for Idea → Agent Build Loop "
+            "(coding-agent-build). Optional; simulated path used when empty."
+        ),
+    )
 
     # Optional OAuth app credentials for future ClickUp / Jira / Notion OAuth.
     # MVP uses per-user API tokens / webhook secrets / Notion internal secrets

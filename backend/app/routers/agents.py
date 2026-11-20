@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Query
@@ -45,14 +46,40 @@ async def roster(session: DbSession, actor: RequireActor) -> list[AgentInfoOut]:
     summary="Run an agent (simulate or live AI Studio execute)",
     description=(
         "Local heuristics when SIMULATE_AGENTS=true or AI Studio env is incomplete. "
-        "When live, idea-optimizer / review-intelligence call "
-        "POST /api/v2/runs/execute. Approval-gated runs still require a human decide."
+        "When live, idea-optimizer / review-intelligence / coding-agent-build call "
+        "POST /api/v2/runs/execute when configured. Approval-gated runs still "
+        "require a human decide."
     ),
 )
 async def run_agent(
     body: AgentRunRequest, session: DbSession, actor: RequireActor
 ) -> AgentRunOut:
     return await AgentGateway(session).run(body, actor)
+
+
+@router.post(
+    "/builds/{idea_id}",
+    response_model=AgentRunOut,
+    summary="Launch Idea → Agent Build Loop",
+    description=(
+        "For an Accepted idea: generate agent-context / skill pack, execute "
+        "(or simulate) a Kompass-shaped coding build, and open a human gate "
+        "before Prototype. Persists a real AgentRun timeline. Never auto-flips "
+        "status to Prototype."
+    ),
+    responses={
+        400: {"description": "Idea is not Accepted"},
+        403: {"description": "Caller cannot launch builds for this idea"},
+        404: {"description": "Idea not found"},
+    },
+)
+async def launch_agent_build(
+    idea_id: uuid.UUID,
+    session: DbSession,
+    actor: RequireActor,
+) -> AgentRunOut:
+    """Start a coding-agent build run for an Accepted idea."""
+    return await AgentGateway(session).launch_agent_build(idea_id, actor)
 
 
 @router.get(
@@ -65,10 +92,14 @@ async def list_runs(
     actor: RequireActor,
     limit: int = Query(50, ge=1, le=200),
     agent_id: Optional[str] = None,
+    idea_id: Optional[uuid.UUID] = None,
     pending_only: bool = False,
 ) -> list[AgentRunOut]:
     return await AgentGateway(session).list_runs(
-        limit=limit, agent_id=agent_id, pending_only=pending_only
+        limit=limit,
+        agent_id=agent_id,
+        idea_id=idea_id,
+        pending_only=pending_only,
     )
 
 

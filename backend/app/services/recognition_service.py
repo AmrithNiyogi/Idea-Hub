@@ -7,7 +7,7 @@ and Idea of the Quarter / Annual confirmation.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
 
 from fastapi import HTTPException
@@ -22,9 +22,22 @@ from app.constants.recognition_rules import (
     level_for_points,
 )
 from app.dependencies.phase23_auth import Actor
-from app.models.recognition import BadgeAward, PointsLedgerEntry, RecognitionAward
+from app.models.recognition import (
+    BadgeAward,
+    PointsLedgerEntry,
+    RecognitionAward,
+    RecognitionThanks,
+)
+from app.models.user import User
+from app.constants.recognition_rules import (
+    THANKS_MAX_LEN,
+    THANKS_MIN_LEN,
+    THANKS_PER_GIVER_MONTH,
+)
 from app.repositories.recognition_repository import RecognitionRepository
 from app.schemas.recognition import (
+    ThanksIn,
+    ThanksOut,
     AwardOut,
     BadgeAwardOut,
     BadgeOut,
@@ -45,6 +58,32 @@ def _now() -> datetime:
 def _quarter_key(ts: datetime | None = None) -> str:
     d = ts or _now()
     return f"{d.year}-Q{(d.month - 1) // 3 + 1}"
+
+
+def _sum_points(rules_pts: dict[str, int]) -> int:
+    return int(sum(rules_pts.values()))
+
+
+def _dims_of(rules_pts: dict[str, int]) -> dict[str, int]:
+    """Points per dimension, using each rule's dimension from the published rules."""
+    out: dict[str, int] = {}
+    for rule_id, pts in rules_pts.items():
+        dim = REC_RULES.get(rule_id, {}).get("dim")
+        if dim:
+            out[str(dim)] = out.get(str(dim), 0) + int(pts)
+    return out
+
+
+def _period_start(period: str, now: datetime) -> Optional[datetime]:
+    """Start of the leaderboard window. 'all' has no start."""
+    if period == "week":
+        return now - timedelta(days=7)
+    if period == "year":
+        return datetime(now.year, 1, 1, tzinfo=timezone.utc)
+    if period == "quarter":
+        quarter_month = 3 * ((now.month - 1) // 3) + 1
+        return datetime(now.year, quarter_month, 1, tzinfo=timezone.utc)
+    return None
 
 
 class RecognitionService:
@@ -311,20 +350,105 @@ class RecognitionService:
             next_min=nxt,
         )
 
-    async def leaderboard(self, limit: int = 50) -> list[LeaderboardRowOut]:
-        rows = await self.repo.leaderboard(limit=limit)
+    async def leaderboard(
+        self, limit: int = 50, period: str = "all"
+    ) -> list[LeaderboardRowOut]:
+        """Points board for a period. Levels always use lifetime points."""
+        now = _now()
+        since = _period_start(period, now)
+        period_totals = await self.repo.totals(since=since)
+        lifetime = await self.repo.totals()
+        ranked = sorted(
+            period_totals.items(), key=lambda kv: -_sum_points(kv[1])
+        )
+        rank_now = {uid: i for i, (uid, _) in enumerate(ranked)}
+
+        week_start = now - timedelta(days=7)
+        week_totals = await self.repo.totals(since=week_start) if period == "all" else {}
+        prev_rank: dict[uuid.UUID, int] = {}
+        if period == "all":
+            prev = await self.repo.totals(until=week_start)
+            prev_sorted = sorted(prev.items(), key=lambda kv: -_sum_points(kv[1]))
+            prev_rank = {uid: i for i, (uid, _) in enumerate(prev_sorted)}
+
         out: list[LeaderboardRowOut] = []
-        for uid, pts in rows:
-            lvl = level_for_points(pts)
+        for uid, rules_pts in ranked[:limit]:
+            lvl = level_for_points(_sum_points(lifetime.get(uid, {})))
+            change = None
+            if period == "all" and uid in prev_rank:
+                change = prev_rank[uid] - rank_now[uid]
             out.append(
                 LeaderboardRowOut(
                     user_id=uid,
-                    points=pts,
+                    points=_sum_points(rules_pts),
                     level_id=lvl["id"],
                     level_name=lvl["name"],
+                    dims=_dims_of(rules_pts),
+                    week_points=_sum_points(week_totals.get(uid, {})),
+                    rank_change=change,
                 )
             )
         return out
+
+    async def send_thanks(self, actor: Actor, body: ThanksIn) -> ThanksOut:
+        """Written thanks: earns the recipient points, capped per giver."""
+        if body.to_user_id == actor.id:
+            raise HTTPException(400, "You cannot thank yourself.")
+        note = body.note.strip()
+        if len(note) < THANKS_MIN_LEN or len(note) > THANKS_MAX_LEN:
+            raise HTTPException(
+                400,
+                f"Write between {THANKS_MIN_LEN} and {THANKS_MAX_LEN} characters "
+                "so the thanks says what it was for.",
+            )
+        recipient = await self.session.get(User, body.to_user_id)
+        if recipient is None:
+            raise HTTPException(404, "That teammate was not found.")
+        now = _now()
+        if await self.repo.thanks_sent_in_month(actor.id, now.year, now.month) >= THANKS_PER_GIVER_MONTH:
+            raise HTTPException(
+                400, f"You have used this month's {THANKS_PER_GIVER_MONTH} thanks."
+            )
+        if await self.repo.thanks_between_in_month(
+            actor.id, body.to_user_id, now.year, now.month
+        ):
+            raise HTTPException(400, "You already thanked this person this month.")
+        row = await self.repo.add_thanks(
+            RecognitionThanks(
+                from_user_id=actor.id,
+                to_user_id=body.to_user_id,
+                note=note,
+                created_at=now,
+            )
+        )
+        await self.add_points(
+            "thanks",
+            body.to_user_id,
+            int(REC_RULES["thanks"]["points"]),
+            ref_key=str(row.id),
+            note=f"Thanks from {actor.name or 'a teammate'}",
+            at=now,
+        )
+        return ThanksOut(
+            id=row.id,
+            from_user_id=row.from_user_id,
+            to_user_id=row.to_user_id,
+            note=row.note,
+            created_at=now,
+        )
+
+    async def recent_thanks(self, limit: int = 10) -> list[ThanksOut]:
+        rows = await self.repo.recent_thanks(limit)
+        return [
+            ThanksOut(
+                id=r.id,
+                from_user_id=r.from_user_id,
+                to_user_id=r.to_user_id,
+                note=r.note,
+                created_at=r.created_at,
+            )
+            for r in rows
+        ]
 
     async def badges_catalog(self) -> list[BadgeOut]:
         await self.ensure_catalog()

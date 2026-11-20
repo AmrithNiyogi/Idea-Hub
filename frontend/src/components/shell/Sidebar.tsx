@@ -20,8 +20,22 @@ const SPINE_NAV: ExtraNavItem[] = [
     icon: 'checkcircle',
     to: '/review',
     roles: ['reviewer', 'admin'],
-    sectionBefore: 'Work',
   },
+];
+
+/**
+ * Sidebar order follows the idea journey: Shape → Review → Build → Recognise.
+ * Items not listed here land in "More" so new modules still appear.
+ */
+const NAV_SECTIONS: { label: string | null; ids: string[] }[] = [
+  { label: null, ids: ['home'] },
+  { label: 'Shape', ids: ['explore', 'my', 'ideathons', 'problems'] },
+  { label: 'Review', ids: ['review', 'approvals'] },
+  { label: 'Build', ids: ['pipeline'] },
+  { label: 'Recognise', ids: ['recognition'] },
+  { label: 'Connect', ids: ['groups', 'dms'] },
+  { label: 'Insight', ids: ['news', 'insights', 'agents'] },
+  { label: 'You', ids: ['profile', 'integrations', 'admin'] },
 ];
 
 export function Sidebar({
@@ -34,9 +48,21 @@ export function Sidebar({
   const { user } = useAuth();
   const active = (user?.active_role ?? 'contributor') as Role;
 
-  const nav = [...SPINE_NAV, ...collectExtraNavItems()].filter(
+  const all = [...SPINE_NAV, ...collectExtraNavItems()].filter(
     (n) => !n.roles || n.roles.includes(active),
   );
+  const byId = new Map(all.map((n) => [n.id, n]));
+  const placed = new Set(NAV_SECTIONS.flatMap((s) => s.ids));
+  const sections = [
+    ...NAV_SECTIONS.map((s) => ({
+      label: s.label,
+      items: s.ids.map((id) => byId.get(id)).filter((n): n is ExtraNavItem => !!n),
+    })),
+    {
+      label: 'More',
+      items: all.filter((n) => !placed.has(n.id)),
+    },
+  ].filter((s) => s.items.length > 0);
 
   return (
     <aside className="sidebar" aria-label="Primary">
@@ -51,21 +77,22 @@ export function Sidebar({
       </Link>
 
       <nav className="nav" aria-label="Main">
-        {nav.map((n) => (
-          <span key={n.id} style={{ display: 'contents' }}>
-            {n.sectionBefore ? (
-              <div className="nav__label">{n.sectionBefore}</div>
-            ) : null}
-            <NavLink
-              to={n.to}
-              end={n.to === '/'}
-              className="nav-item"
-              title={n.label}
-            >
-              <Icon name={n.icon} size={16} />
-              <span className="nav-item__text">{n.label}</span>
-            </NavLink>
-          </span>
+        {sections.map((s) => (
+          <div key={s.label ?? 'top'} className="nav__group">
+            {s.label ? <div className="nav__label">{s.label}</div> : null}
+            {s.items.map((n) => (
+              <NavLink
+                key={n.id}
+                to={n.to}
+                end={n.to === '/'}
+                className="nav-item"
+                title={n.label}
+              >
+                <Icon name={n.icon} size={16} />
+                <span className="nav-item__text">{n.label}</span>
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
 
@@ -95,8 +122,7 @@ export function Sidebar({
           <span className="btn__text">{collapsed ? 'Expand' : 'Collapse'}</span>
         </button>
         <p className="sidebar__note">
-          Ideas move through review, decision and delivery. Agents propose;
-          people decide.
+          Shape, review, build, recognise. Agents propose; people decide.
         </p>
       </div>
     </aside>
