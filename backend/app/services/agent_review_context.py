@@ -125,4 +125,3 @@ async def panel_decisions(session: AsyncSession, panel: ReviewPanel) -> PanelDec
             for idea_id, title, outcome, reason, role, created in rows
         ],
     )
-

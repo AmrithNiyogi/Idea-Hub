@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines  # cohesive module; splitting is a separate refactor
 """Admin configuration service (Phase 4).
 
 Thin but real: categories, panels, scoring weights, timelines/SLAs,
@@ -153,6 +154,7 @@ def _clear_login_otp_keys(user_id: uuid.UUID) -> None:
 
 
 class AdminService:
+    # pylint: disable=too-many-public-methods  # one cohesive service/repo surface
     """Mutate platform settings and panels; emit audit rows."""
 
     def __init__(self, session: AsyncSession) -> None:

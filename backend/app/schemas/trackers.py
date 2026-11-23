@@ -208,14 +208,15 @@ class IdeaTrackerRemoteUpdate(BaseModel):
 
     @model_validator(mode="after")
     def _require_field(self) -> "IdeaTrackerRemoteUpdate":
-        if (
-            self.status is None
-            and self.title is None
-            and self.priority is None
-            and self.due_date is None
-            and self.assignee_ids is None
-            and self.append_content is None
-        ):
+        provided = (
+            self.status,
+            self.title,
+            self.priority,
+            self.due_date,
+            self.assignee_ids,
+            self.append_content,
+        )
+        if all(value is None for value in provided):
             raise ValueError(
                 "Provide status, title, priority, due_date, assignee_ids, "
                 "and/or append_content."

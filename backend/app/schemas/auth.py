@@ -240,10 +240,8 @@ class LoginResponse(BaseModel):
         False,
         description="True when the account holds multiple roles and must pick one",
     )
-    login_ticket: str | None = Field(
-        None,
-        description="Opaque one-time ticket for complete-login (multi-role only)",
-    )
+    # Opaque one-time ticket for complete-login; only set when the account has multiple roles.
+    login_ticket: str | None = None
     roles: list[str] = Field(
         default_factory=list,
         description="Roles available for selection when requires_role_selection",

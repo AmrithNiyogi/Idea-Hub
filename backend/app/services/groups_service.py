@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines  # cohesive module; splitting is a separate refactor
 """Collaboration groups — Discord-like channels + WhatsApp-like chat + DMs."""
 
 from __future__ import annotations
@@ -88,6 +89,7 @@ def group_avatar_public_url(filename: str) -> str:
 
 
 class GroupsService:
+    # pylint: disable=too-many-public-methods  # one cohesive service/repo surface
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.repo = GroupsRepository(session)

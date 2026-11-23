@@ -6,13 +6,11 @@ Docs: https://developer.clickup.com/docs/authentication
 
 from __future__ import annotations
 
-from typing import Any
+from datetime import datetime, timezone
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 import httpx
-
-from datetime import datetime, timezone
-from typing import Any, Optional
 
 from app.trackers.base import (
     ConnectField,
@@ -25,6 +23,7 @@ from app.trackers.base import (
     RemoteTask,
     UpdateTaskPayload,
 )
+from app.utils.jsonish import as_dict
 
 _API = "https://api.clickup.com/api/v2"
 
@@ -135,7 +134,7 @@ class ClickUpProvider:
             external_id=task_id,
             url=url,
             key=task_id,
-            raw=data if isinstance(data, dict) else {},
+            raw=as_dict(data),
         )
 
     async def resolve_existing(
@@ -313,7 +312,7 @@ def _task_from_clickup(
     assignable: Optional[list[RemoteAssignee]] = None,
 ) -> RemoteTask:
     task_id = str(data.get("id") or fallback_id)
-    status_obj = data.get("status") if isinstance(data.get("status"), dict) else {}
+    status_obj = as_dict(data.get("status"))
     status_name = str(status_obj.get("status") or "")
     assignees = _assignees_from_clickup_users(data.get("assignees") or [])
     url = str(data.get("url") or f"https://app.clickup.com/t/{task_id}")
@@ -359,7 +358,7 @@ def _task_from_clickup(
         status_options=options,
         priority_options=list(_CLICKUP_PRIORITIES),
         editable_fields=list(_EDITABLE),
-        raw=data if isinstance(data, dict) else {},
+        raw=as_dict(data),
     )
 
 
@@ -389,6 +388,17 @@ def _assignees_from_clickup_users(rows: Any) -> list[RemoteAssignee]:
     return out
 
 
+def _unnest_member_rows(rows: list[Any]) -> list[Any]:
+    """Return each member's ``user`` object when nested, otherwise the row itself."""
+    out: list[Any] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        nested_user = row.get("user")
+        out.append(nested_user if isinstance(nested_user, dict) else row)
+    return out
+
+
 async def _fetch_list_members(
     client: httpx.AsyncClient,
     headers: dict[str, str],
@@ -408,15 +418,9 @@ async def _fetch_list_members(
                 members = _assignees_from_clickup_users(data.get("members") or [])
                 # Some responses nest user under each member.
                 if not members:
-                    nested = []
-                    for row in data.get("members") or []:
-                        if isinstance(row, dict) and isinstance(
-                            row.get("user"), dict
-                        ):
-                            nested.append(row["user"])
-                        elif isinstance(row, dict):
-                            nested.append(row)
-                    members = _assignees_from_clickup_users(nested)
+                    members = _assignees_from_clickup_users(
+                        _unnest_member_rows(data.get("members") or [])
+                    )
         except Exception:  # noqa: BLE001
             members = []
     if members:
@@ -428,7 +432,7 @@ async def _fetch_list_members(
         if resp.status_code >= 400:
             return []
         data = resp.json() or {}
-        team = data.get("team") if isinstance(data.get("team"), dict) else data
+        team = as_dict(data.get("team")) or as_dict(data)
         rows = []
         for row in team.get("members") or []:
             if isinstance(row, dict) and isinstance(row.get("user"), dict):

@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines  # cohesive module; splitting is a separate refactor
 """Local simulated agent turns for Submit assist, help, and author optimizer.
 
 No network, no LLM, no secrets. Used while ``SIMULATE_AGENTS`` is true.
@@ -549,6 +550,15 @@ def _intent_beneficiaries(msg: str) -> bool:
     return any(w in low for w in ("beneficiar", "who benefits", "audience", "users"))
 
 
+_REFINE_WORDS: tuple[str, ...] = ("improve", "rewrite", "refine", "expand", "add")
+
+
+def _asks_refine(msg: str) -> bool:
+    """True when the chat message asks to improve or rewrite existing copy."""
+    lowered = msg.lower()
+    return any(word in lowered for word in _REFINE_WORDS)
+
+
 def _intent_problem(msg: str) -> bool:
     low = msg.lower()
     return any(
@@ -689,13 +699,7 @@ def _conversational_refine(
             field_prompt=SUBMIT_FIELDS[-1][1],
         )
 
-    if _intent_problem(msg) and (
-        "improve" in msg.lower()
-        or "rewrite" in msg.lower()
-        or "refine" in msg.lower()
-        or "expand" in msg.lower()
-        or "add" in msg.lower()
-    ):
+    if _intent_problem(msg) and _asks_refine(msg):
         base = _draft_get(draft, "problem") or msg
         # If message is mostly instruction, refine existing; else treat as new copy
         if len(msg) > 60 and not msg.lower().startswith(
@@ -709,13 +713,7 @@ def _conversational_refine(
             patches=patches,
         )
 
-    if _intent_solution(msg) and (
-        "improve" in msg.lower()
-        or "rewrite" in msg.lower()
-        or "refine" in msg.lower()
-        or "expand" in msg.lower()
-        or "add" in msg.lower()
-    ):
+    if _intent_solution(msg) and _asks_refine(msg):
         base = _draft_get(draft, "solution") or msg
         if len(msg) > 60 and not msg.lower().startswith(
             ("improve", "rewrite", "refine", "expand", "add")

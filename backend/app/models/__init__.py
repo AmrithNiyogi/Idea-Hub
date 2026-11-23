@@ -69,7 +69,6 @@ __all__ = [
     "Ideathon",
     "IdeathonEntry",
     "IdeathonHandoff",
-    "IdeaMcpConnection",
     "IdeaTrackerLink",
     "ImpactEntry",
     "InnovationTimePool",

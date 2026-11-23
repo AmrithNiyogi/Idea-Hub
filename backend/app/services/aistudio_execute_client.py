@@ -26,6 +26,7 @@ import httpx
 
 from app.config.settings import settings
 from app.utils.debug_log import log_outgoing_run
+from app.utils.jsonish import as_dict
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +229,7 @@ def normalize_execution_payload(payload: Any) -> ExecuteResult:
         except (TypeError, ValueError):
             result_text = str(result)
 
-    metadata = source.get("metadata") if isinstance(source.get("metadata"), dict) else {}
+    metadata = as_dict(source.get("metadata"))
 
     return ExecuteResult(
         success=success,
@@ -271,14 +272,14 @@ def parse_structured_result(result: Any) -> dict[str, Any]:
     except json.JSONDecodeError:
         # Try first {...} slice.
         start, end = text.find("{"), text.rfind("}")
-        if start >= 0 and end > start:
+        if 0 <= start < end:
             try:
                 parsed = json.loads(text[start : end + 1])
             except json.JSONDecodeError:
                 return {}
         else:
             return {}
-    return parsed if isinstance(parsed, dict) else {}
+    return as_dict(parsed)
 
 
 async def execute_flow(
@@ -320,7 +321,8 @@ async def execute_flow(
     payload = response.json() if response.content else {}
     if not isinstance(payload, dict):
         return ExecuteResult(success=False, error="Flow returned an unreadable reply.")
-    envelope = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+    data_obj = payload.get("data")
+    envelope = data_obj if isinstance(data_obj, dict) else payload
     status = str(envelope.get("status") or "completed").lower()
     errors = envelope.get("errors") or []
     if status != "completed" or errors:
@@ -410,7 +412,7 @@ async def execute_run(
                 return ExecuteResult(
                     success=False,
                     error="Run accepted (202) but no run_id was returned.",
-                    raw=pending if isinstance(pending, dict) else {},
+                    raw=as_dict(pending),
                 )
             return await _poll_run(client, run_id, headers=headers)
 
@@ -423,7 +425,7 @@ async def execute_run(
             )
 
         data = response.json() if response.content else {}
-        normalized = normalize_execution_payload(data if isinstance(data, dict) else {})
+        normalized = normalize_execution_payload(as_dict(data))
         # Agent execute replies carry no conversation id; echo the session the caller sent.
         normalized.conversation_id = normalized.conversation_id or (conversation_id or None)
         return normalized
@@ -454,7 +456,7 @@ async def _poll_run(
                 raw=_safe_json(response),
             )
         payload = response.json() if response.content else {}
-        last = payload if isinstance(payload, dict) else {}
+        last = as_dict(payload)
         normalized = normalize_execution_payload(last)
         normalized.run_id = normalized.run_id or run_id
 

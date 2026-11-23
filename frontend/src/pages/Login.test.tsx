@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginPage } from './Login';
 import { mockUser } from '../test/fixtures';
+import { ToastProvider } from '../components/ToastProvider';
 
 vi.mock('../api/auth', () => ({
   sendLoginOtp: vi.fn(),
@@ -24,13 +25,15 @@ import { useAuth } from '../auth/AuthProvider';
 
 function renderLogin(initial = '/login') {
   return render(
-    <MemoryRouter initialEntries={[initial]}>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<div>home</div>} />
-        <Route path="/explore" element={<div>explore</div>} />
-      </Routes>
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter initialEntries={[initial]}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<div>home</div>} />
+          <Route path="/explore" element={<div>explore</div>} />
+        </Routes>
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -84,7 +87,7 @@ describe('LoginPage', () => {
       totp_enabled: false,
       email_otp_sent: true,
     });
-    login.mockResolvedValue(mockUser);
+    login.mockResolvedValue({ status: 'authenticated', user: mockUser });
 
     renderLogin();
 
@@ -96,7 +99,7 @@ describe('LoginPage', () => {
     expect(screen.getByText(/a\*\*\*@example.com/)).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/Verification code/i), '123456');
-    await user.click(screen.getByRole('button', { name: /^Log in$/i }));
+    await user.click(screen.getByRole('button', { name: /Continue/i }));
 
     await screen.findByText(/You're in/i);
     expect(login).toHaveBeenCalledWith(
@@ -115,7 +118,8 @@ describe('LoginPage', () => {
     await user.type(screen.getByLabelText(/Email/i), 'alice@example.com');
     await user.type(screen.getByLabelText(/^Password/i), 'bad');
     await user.click(screen.getByRole('button', { name: /Continue/i }));
-    await screen.findByText(/Invalid credentials/);
+    // The message shows inline and in a toast, so expect at least one match.
+    expect((await screen.findAllByText(/Invalid credentials/)).length).toBeGreaterThan(0);
 
     vi.mocked(sendLoginOtp).mockResolvedValue({
       message: 'sent',
@@ -128,7 +132,7 @@ describe('LoginPage', () => {
     await user.type(screen.getByLabelText(/^Password/i), 'good');
     await user.click(screen.getByRole('button', { name: /Continue/i }));
     await screen.findByRole('heading', { name: /Enter code/i });
-    await user.click(screen.getByRole('button', { name: /^Log in$/i }));
+    await user.click(screen.getByRole('button', { name: /Continue/i }));
     expect(screen.getByText(/6-digit code/i)).toBeInTheDocument();
   });
 
@@ -176,7 +180,8 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: /Continue/i }));
     await screen.findByRole('heading', { name: /Enter code/i });
     await user.type(screen.getByLabelText(/Verification code/i), '000000');
-    await user.click(screen.getByRole('button', { name: /^Log in$/i }));
-    await screen.findByText(/bad otp/);
+    await user.click(screen.getByRole('button', { name: /Continue/i }));
+    // Shown inline and as a toast; either is enough to prove the failure surfaced.
+    expect((await screen.findAllByText(/bad otp/)).length).toBeGreaterThan(0);
   });
 });

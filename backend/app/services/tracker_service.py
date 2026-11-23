@@ -246,13 +246,12 @@ class TrackerService:
 
         try:
             if body.mode == "link":
-                if not (body.external_id_or_url or "").strip():
+                external_ref = (body.external_id_or_url or "").strip()
+                if not external_ref:
                     raise HTTPException(
                         400, "external_id_or_url is required when mode=link."
                     )
-                remote = await provider.resolve_existing(
-                    credentials, body.external_id_or_url.strip()
-                )
+                remote = await provider.resolve_existing(credentials, external_ref)
             else:
                 if idea.status not in TRACKER_CREATABLE_STATUSES:
                     raise HTTPException(
@@ -677,7 +676,7 @@ class TrackerService:
 
     def _default_description(self, idea: Any) -> str:
         parts = [
-            f"Created from Idea Hub.",
+            "Created from Idea Hub.",
             f"Title: {getattr(idea, 'title', '')}",
             f"Status: {getattr(idea, 'status', '')}",
         ]

@@ -705,10 +705,7 @@ class AgentGateway:
                     idea = await self.session.get(Idea, run.idea_id)
                     is_owner = bool(
                         idea
-                        and (
-                            idea.owner_id == actor.id
-                            or idea.author_id == actor.id
-                        )
+                        and actor.id in (idea.owner_id, idea.author_id)
                     )
                     if not is_owner and not actor.has_role(
                         "reviewer", "admin", "leadership"
