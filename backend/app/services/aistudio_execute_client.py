@@ -272,7 +272,7 @@ def parse_structured_result(result: Any) -> dict[str, Any]:
     except json.JSONDecodeError:
         # Try first {...} slice.
         start, end = text.find("{"), text.rfind("}")
-        if start >= 0 and end > start:
+        if 0 <= start < end:
             try:
                 parsed = json.loads(text[start : end + 1])
             except json.JSONDecodeError:

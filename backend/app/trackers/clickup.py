@@ -6,13 +6,11 @@ Docs: https://developer.clickup.com/docs/authentication
 
 from __future__ import annotations
 
-from typing import Any
+from datetime import datetime, timezone
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 import httpx
-
-from datetime import datetime, timezone
-from typing import Any, Optional
 
 from app.trackers.base import (
     ConnectField,
@@ -390,6 +388,17 @@ def _assignees_from_clickup_users(rows: Any) -> list[RemoteAssignee]:
     return out
 
 
+def _unnest_member_rows(rows: list[Any]) -> list[Any]:
+    """Return each member's ``user`` object when nested, otherwise the row itself."""
+    out: list[Any] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        nested_user = row.get("user")
+        out.append(nested_user if isinstance(nested_user, dict) else row)
+    return out
+
+
 async def _fetch_list_members(
     client: httpx.AsyncClient,
     headers: dict[str, str],
@@ -409,15 +418,9 @@ async def _fetch_list_members(
                 members = _assignees_from_clickup_users(data.get("members") or [])
                 # Some responses nest user under each member.
                 if not members:
-                    nested = []
-                    for row in data.get("members") or []:
-                        if isinstance(row, dict) and isinstance(
-                            row.get("user"), dict
-                        ):
-                            nested.append(row["user"])
-                        elif isinstance(row, dict):
-                            nested.append(row)
-                    members = _assignees_from_clickup_users(nested)
+                    members = _assignees_from_clickup_users(
+                        _unnest_member_rows(data.get("members") or [])
+                    )
         except Exception:  # noqa: BLE001
             members = []
     if members:

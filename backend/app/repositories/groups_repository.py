@@ -21,6 +21,7 @@ from app.models.groups import (
 
 
 class GroupsRepository:
+    # pylint: disable=too-many-public-methods  # one cohesive service/repo surface
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 

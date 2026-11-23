@@ -145,6 +145,7 @@ export function TeamFields({
         <input
           className="input"
           id="sf-teammate-search"
+          aria-label="Search people by name or email"
           type="search"
           placeholder="Search by name or email (at least 2 letters)"
           value={query}

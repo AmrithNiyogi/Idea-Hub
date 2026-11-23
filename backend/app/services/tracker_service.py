@@ -676,7 +676,7 @@ class TrackerService:
 
     def _default_description(self, idea: Any) -> str:
         parts = [
-            f"Created from Idea Hub.",
+            "Created from Idea Hub.",
             f"Title: {getattr(idea, 'title', '')}",
             f"Status: {getattr(idea, 'status', '')}",
         ]
