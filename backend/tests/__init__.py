@@ -1,1 +1,1 @@
-"""KonnektIdea backend quality-gate test package."""
+"""IdeaKonnekt backend quality-gate test package."""

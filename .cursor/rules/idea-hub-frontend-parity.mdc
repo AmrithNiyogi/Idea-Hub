@@ -1,10 +1,10 @@
 ---
-description: KonnektIdea UI design — HTML parity, tokens, list patterns, scoped CSS
+description: IdeaKonnekt UI design — HTML parity, tokens, list patterns, scoped CSS
 globs: frontend/**/*.{tsx,ts,css}
 alwaysApply: false
 ---
 
-# KonnektIdea UI design
+# IdeaKonnekt UI design
 
 `idea-hub.html` + `frontend/src/styles/tokens.css` are the design source of truth. Port; do not invent a new visual system.
 
@@ -35,7 +35,7 @@ alwaysApply: false
 
 ## Brand vs AI-slop
 
-- **Preserve** KonnektIdea brand tokens (`--brand` purple family, cool blue-gray canvas, stage/category hues). Brand purple in tokens is correct.
+- **Preserve** IdeaKonnekt brand tokens (`--brand` purple family, cool blue-gray canvas, stage/category hues). Brand purple in tokens is correct.
 - **Do not** add AI-default chrome on top: purple glow stacks, random pill clusters, cream+serif+terracotta themes, broadsheet hairline layouts, multi-layer neon shadows, emoji decoration, or a second unrelated palette
 - No new hex when a token exists; add tokens in HTML + `tokens.css` together if truly new
 

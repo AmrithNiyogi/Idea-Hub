@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KonnektIdea (Project KonnektIdea) - Dotkonnekt</title>
-<meta name="description" content="KonnektIdea MVP: an AI-native innovation management prototype. All agent activity is simulated.">
+<title>IdeaKonnekt (Project IdeaKonnekt) - Dotkonnekt</title>
+<meta name="description" content="IdeaKonnekt MVP: an AI-native innovation management prototype. All agent activity is simulated.">
 <!-- Fonts: Geist and Geist Mono (SIL Open Font License 1.1) are embedded below as subsetted woff2. The file makes no network requests. -->
 <!--
 =====================================================================================================
-KONNEKTIDEA MVP  -  single-file application (phases 1-3 of the build plan)
+IDEAKONNEKT MVP  -  single-file application (phases 1-3 of the build plan)
 Section index (search for the banner text; never edit by line number):
   CSS  : SECTION C1 TOKENS | C2 BASE AND LAYOUT | C3 COMPONENTS | C4 MODULE STYLES | C5 RESPONSIVE
   JS   : 0 NAMESPACE | 1 UTILS | 2 SCHEMA AND CONSTANTS | 3 SEED DATA | 4 STORE AND ACTIONS | 5 SELECTORS
@@ -1083,7 +1083,7 @@ const AGENT_META = {
   'review-intelligence':{ name:'Review Intelligence', kind:'Computed + extractive' },
   'innovation-workflow':{ name:'Innovation Workflow', kind:'Computed' },
   'innovation-analytics':{ name:'Innovation Analytics', kind:'Computed + templated' },
-  'orchestrator':{ name:'KonnektIdea Orchestrator', kind:'Rules engine' },
+  'orchestrator':{ name:'IdeaKonnekt Orchestrator', kind:'Rules engine' },
   'ideathon':{ name:'Ideathon', kind:'Computed + templated' },
   'recognition':{ name:'Recognition', kind:'Computed' }
 };
@@ -1141,7 +1141,7 @@ const KOMPASS_QUESTIONS = [
   { id:'q6', text:'Structured output: can an agent’s output be forced to a JSON schema? Does the Adapter only reshape or also validate, and what happens on invalid JSON?' },
   { id:'q7', text:'Traces: can an external app read Traces through an API, correlate them with a run identifier, and redact anonymous content?' },
   { id:'q8', text:'AI Brain: is there programmatic ingestion and deletion (needed for withdrawn ideas and erasure requests), and collection-level permissions?' },
-  { id:'q9', text:'Identity: can KonnektIdea users map to Kompass roles, or would KonnektIdea call as a single service identity?' },
+  { id:'q9', text:'Identity: can IdeaKonnekt users map to Kompass roles, or would IdeaKonnekt call as a single service identity?' },
   { id:'q10', text:'Kompass as an MCP server, and whether any pre-built idea-management agent exists.' },
   { id:'q11', text:'Data residency, available models, cost per run and rate limits.' }
 ];
@@ -1149,14 +1149,14 @@ const KOMPASS_MAP = [
   { need:'Text-analysis agents (Idea Intelligence, Idea Enhancement, Review Intelligence, Recognition, Innovation Analytics)', concept:'Smart Agents (system prompt, model, tools, guardrails, memory, AI Brain reference)', doc:'Documented', status:'Simulated in MVP', qs:['q6'], note:'The MVP uses a deterministic local engine (mock-heuristic-v1) behind AgentGateway.' },
   { need:'Ideathon pipeline (group entries, brief, pitch summary)', concept:'Agentic Team (sequential or hierarchical)', doc:'Documented', status:'Planned', qs:['q1'], note:'Candidate design only. How a team is invoked from outside is not documented.' },
   { need:'Multi-step flows A to E', concept:'Workflows using Input, Agent, LLM, Adapter, Conditional, API, Subflow, Guardrails, Output', doc:'Components documented', status:'Planned', qs:[], note:'Candidate designs are on the Flows tab. Nothing has been built in Kompass.' },
-  { need:'Starting a workflow from KonnektIdea', concept:'Workflow Input component (string or JSON)', doc:'Component documented. External invocation is not documented.', status:'Open question', qs:['q1','q2','q3'], note:'Endpoint, authentication and request and response format are unknown.' },
-  { need:'Structured results (JSON)', concept:'Agent followed by Adapter', doc:'Adapter documented. Validation is not documented.', status:'Open question', qs:['q6'], note:'KonnektIdea would validate every response against its own schema and fall back to no suggestion.' },
+  { need:'Starting a workflow from IdeaKonnekt', concept:'Workflow Input component (string or JSON)', doc:'Component documented. External invocation is not documented.', status:'Open question', qs:['q1','q2','q3'], note:'Endpoint, authentication and request and response format are unknown.' },
+  { need:'Structured results (JSON)', concept:'Agent followed by Adapter', doc:'Adapter documented. Validation is not documented.', status:'Open question', qs:['q6'], note:'IdeaKonnekt would validate every response against its own schema and fall back to no suggestion.' },
   { need:'Idea and decision corpus for similarity and consistency checks', concept:'AI Brain collections (documents chunked, embedded and indexed)', doc:'Documented', status:'Planned', qs:['q8'], note:'Programmatic ingestion and deletion are not documented.' },
-  { need:'Fetching live KonnektIdea data during a run', concept:'API component with Vault secrets', doc:'Documented (outbound calls)', status:'Planned', qs:['q9'], note:'The network path from Kompass to an KonnektIdea API has not been confirmed.' },
+  { need:'Fetching live IdeaKonnekt data during a run', concept:'API component with Vault secrets', doc:'Documented (outbound calls)', status:'Planned', qs:['q9'], note:'The network path from Kompass to an IdeaKonnekt API has not been confirmed.' },
   { need:'Protecting anonymous submissions', concept:'Guardrails (PII, prompt injection, hallucination, jailbreak, custom)', doc:'Documented', status:'Planned', qs:['q6'], note:'Effectiveness for author-identifying writing style is unverified.' },
-  { need:'Agent activity log', concept:'Traces', doc:'Documented', status:'Open question', qs:['q7'], note:'In the MVP the run records are stored in KonnektIdea and are simulated. Reading Kompass Traces from outside is not documented.' },
-  { need:'Human approval of agent proposals', concept:'None documented', doc:'Not found in the documentation reviewed', status:'Open question', qs:['q5'], note:'Approval state, approver and audit trail are KonnektIdea records whatever Kompass offers. In the MVP they are simulated records.' },
-  { need:'Scheduled checks and event triggers (overdue reviews, stale prototypes)', concept:'None documented', doc:'Not found in the documentation reviewed', status:'Open question', qs:['q4'], note:'The MVP computes these when a page is opened. Production would need a scheduler in KonnektIdea or a documented Kompass trigger.' }
+  { need:'Agent activity log', concept:'Traces', doc:'Documented', status:'Open question', qs:['q7'], note:'In the MVP the run records are stored in IdeaKonnekt and are simulated. Reading Kompass Traces from outside is not documented.' },
+  { need:'Human approval of agent proposals', concept:'None documented', doc:'Not found in the documentation reviewed', status:'Open question', qs:['q5'], note:'Approval state, approver and audit trail are IdeaKonnekt records whatever Kompass offers. In the MVP they are simulated records.' },
+  { need:'Scheduled checks and event triggers (overdue reviews, stale prototypes)', concept:'None documented', doc:'Not found in the documentation reviewed', status:'Open question', qs:['q4'], note:'The MVP computes these when a page is opened. Production would need a scheduler in IdeaKonnekt or a documented Kompass trigger.' }
 ];
 const KOMPASS_BRAIN = [
   ['ideahub-ideas', 'Summaries of accepted and declined ideas, so similarity search can find precedents. Anonymous ideas would be indexed without author fields.'],
@@ -1264,7 +1264,7 @@ const USERS = [
   ['victor','Victor Nguyen','Sales Engineer','team_rev','contributor'],
   ['wen','Wen Zhao','ML Platform Engineer','team_ai','contributor'],
   ['yara','Yara Costa','Onboarding Specialist','team_cs','contributor'],
-  /* recent joiners who have not yet engaged with KonnektIdea, so participation is a realistic figure (see QUIET in the seed builder) */
+  /* recent joiners who have not yet engaged with IdeaKonnekt, so participation is a realistic figure (see QUIET in the seed builder) */
   ['noor','Noor Rahim','Support Engineer','team_cs','contributor'],
   ['jonas','Jonas Keller','Account Manager','team_rev','contributor'],
   ['leila','Leila Haddad','Operations Analyst','team_ops','contributor'],
@@ -1854,14 +1854,14 @@ const Store = {
   subscribe(fn){ this.listeners.add(fn); return () => this.listeners.delete(fn); },
   dispatch(name, payload){
     const fn = ACTIONS[name];
-    if (!fn) { console.error('[KonnektIdea] unknown action', name); return { ok:false, error:'Unknown action ' + name }; }
+    if (!fn) { console.error('[IdeaKonnekt] unknown action', name); return { ok:false, error:'Unknown action ' + name }; }
     let res;
     if (!_state.meta.currentUserId && !/^(session\.|persona\.|ui\.)/.test(name)) return { ok:false, error:'Sign in first.' };
     try { res = fn(_state, payload || {}, { now:Date.now(), actor:_state.meta.currentUserId, role:_state.meta.activeRole }); }
-    catch (e) { console.error('[KonnektIdea] action failed', name, e); return { ok:false, error:'Something went wrong: ' + e.message }; }
+    catch (e) { console.error('[IdeaKonnekt] action failed', name, e); return { ok:false, error:'Something went wrong: ' + e.message }; }
     if (res && res.ok === false) return res;
     this.version++; this.schedulePersist();
-    this.listeners.forEach(l => { try { l(name); } catch (e) { console.error('[KonnektIdea] listener failed', e); } });
+    this.listeners.forEach(l => { try { l(name); } catch (e) { console.error('[IdeaKonnekt] listener failed', e); } });
     return res || { ok:true };
   },
   schedulePersist(){ this.persistNow(); },   /* synchronous: a reload right after any action never loses it */
@@ -1992,7 +1992,7 @@ function bootState(){
         if (!o || !o.meta || (ver !== IH.schemaVersion && ver !== 7) || !o.ent || !o.ent.ideas || !o.ent.users) throw new Error('Unexpected data shape or schema version');
         loaded = o;
       }
-    } catch (e) { Store.persistence = 'recovered'; Store.persistNote = 'Saved data could not be read (' + e.message + '). Fresh demo data was loaded; it replaces the unreadable copy on your next change.'; console.warn('[KonnektIdea] stored state unreadable', e); }
+    } catch (e) { Store.persistence = 'recovered'; Store.persistNote = 'Saved data could not be read (' + e.message + '). Fresh demo data was loaded; it replaces the unreadable copy on your next change.'; console.warn('[IdeaKonnekt] stored state unreadable', e); }
   }
   if (loaded) { _state = loaded; migrateRoles(_state); shiftDates(_state); }
   else { _state = buildSeed(); }
@@ -2883,8 +2883,8 @@ Object.assign(ACTIONS, {
 /* pure validation of an exported file: used by the dialog (to explain) and by the action (as the source of truth) */
 const IMPORT_COLLECTIONS = ['users','teams','categories','panels','ideas','comments','votes','follows','collabRequests','milestones','checkins','decisions','reviews','history','activity','notifications','agentRuns','proposalDecisions','hourRequests','announcements','credits','ideathons','pitchScores','audienceVotes','handoffs','ledger','awards','flagReviews','adminAudit','kompassAnswers','reopenConditions','problemMe','problemMeta'];
 function validateImport(f){
-  if (!f || typeof f !== 'object' || Array.isArray(f)) return { ok:false, error:'This is not an KonnektIdea export file (expected a JSON object).' };
-  if (f.app !== 'idea-hub') return { ok:false, error:'This file was not exported from KonnektIdea (missing app marker).' };
+  if (!f || typeof f !== 'object' || Array.isArray(f)) return { ok:false, error:'This is not an IdeaKonnekt export file (expected a JSON object).' };
+  if (f.app !== 'idea-hub') return { ok:false, error:'This file was not exported from IdeaKonnekt (missing app marker).' };
   const st = f.state;
   if (!st || typeof st !== 'object' || !st.meta || !st.config || !st.ent) return { ok:false, error:'The file has no state to import (meta, config and ent are required).' };
   if (f.schemaVersion !== IH.schemaVersion || st.meta.schemaVersion !== IH.schemaVersion) return { ok:false, error:'Schema version mismatch. The file is version ' + (f.schemaVersion != null ? f.schemaVersion : 'unknown') + ' but this build reads version ' + IH.schemaVersion + '. Re-export it from a matching build.' };
@@ -3288,7 +3288,7 @@ const SEL = {
     const panel = i.categoryId ? SEL.panelOf(i) : null, owner = i.ownerId ? SEL.user(i.ownerId) : null, t = SEL.timing(i);
     switch (i.status) {
       case 'draft': return { text:'Finish the template and submit it. You own the next step.', who:'You (author)' };
-      case 'submitted': return { text:'The idea is being routed to the ' + panel.name + '.', who:'KonnektIdea routing' };
+      case 'submitted': return { text:'The idea is being routed to the ' + panel.name + '.', who:'IdeaKonnekt routing' };
       case 'under_review':
         if (!i.pickedUpAt) return { text:'A reviewer on the ' + panel.name + ' will pick this up by ' + fmtDate(i.pickupDueAt) + '. The decision is due by ' + fmtDate(i.dueAt) + '.', who:panel.name + ' (chair: ' + SEL.user(panel.chairId).name + ')' };
         return { text:'The panel records a decision by ' + fmtDate(i.dueAt) + (t.overdue ? ', which has passed, so it is overdue' : '') + '.', who:(i.reviewerId ? SEL.user(i.reviewerId).name + ', ' : '') + panel.name };
@@ -3795,7 +3795,7 @@ const INS = {
   },
   summaryText(days){
     const fu = INS.funnel(days), rv = INS.review(days), im = INS.impact(days), pa = INS.participation(days), pl = SEL.pool(), th = INS.themes(days), imp = INS.implementation(days), pe = SEL.pendingApprovals();
-    const L = []; L.push('KONNEKTIDEA LEADERSHIP SUMMARY (templated, simulated)'); L.push('Period: last ' + days + ' days, generated ' + fmtDate(Date.now(), true)); L.push('');
+    const L = []; L.push('IDEAKONNEKT LEADERSHIP SUMMARY (templated, simulated)'); L.push('Period: last ' + days + ' days, generated ' + fmtDate(Date.now(), true)); L.push('');
     L.push('Headlines'); L.push('- ' + fu.counts[0] + ' ideas submitted; ' + fu.counts[2] + ' reached a decision; ' + fu.counts[3] + ' reached prototype; ' + fu.counts[4] + ' implemented.');
     L.push('- ' + pa.active + ' of ' + pa.total + ' people (' + pa.pct + '%) took part; previous period: ' + pa.prevActive + '.');
     L.push('- ' + plural(imp.implementedInPeriod, 'idea') + ' implemented in the period; ' + imp.inPrototype + ' currently in prototype.'); L.push('');
@@ -4702,7 +4702,7 @@ function renderSidebar(){
     out.push(html`<a class="nav-item" href="${n.href}" ${cur === n.id ? raw('aria-current="page"') : ''} title="${n.label}">${icon(n.icon, 20)}<span class="nav-item__text">${n.label}</span>${badge(n.id)}</a>`);
   });
   $('#sidebar').innerHTML = String(html`
-    <a class="brand" href="#/home" aria-label="KonnektIdea. Home"><span class="brand__glyph">${icon('logo', 18)}</span><span class="brand__text"><span class="brand__name">KonnektIdea</span><span class="brand__sub">KonnektIdea</span></span></a>
+    <a class="brand" href="#/home" aria-label="IdeaKonnekt. Home"><span class="brand__glyph">${icon('logo', 18)}</span><span class="brand__text"><span class="brand__name">IdeaKonnekt</span><span class="brand__sub">IdeaKonnekt</span></span></a>
     <nav class="nav" aria-label="Main">${out}</nav>
     <div class="sidebar__foot"><div class="dk-logo" role="img" aria-label="dotkonnekt">${raw('<svg class="dk-logo__mark" viewBox="52 46 162 62" fill="currentColor" aria-hidden="true" focusable="false">' + LOGO_MARK + '</svg>')}${raw('<svg class="dk-logo__word" viewBox="17 119 232 34" fill="currentColor" aria-hidden="true" focusable="false">' + LOGO_WORD + '</svg>')}</div><button class="btn btn--ghost btn--sm" id="collapse-btn" data-action="ui.toggleSidebar" aria-pressed="${!!S().meta.sidebarCollapsed}">${icon('sidebar', 18)}<span class="btn__text">${S().meta.sidebarCollapsed ? 'Expand' : 'Collapse'}</span></button><p class="sidebar__note">Prototype build on demo data. Agents are simulated. Icons are not the official set.</p></div>`);
 }
@@ -4781,14 +4781,14 @@ const RT = {
       if (!rc.def) out = notFoundView();
       else if (rc.def.roles && !rc.def.roles.includes(ar(me))) out = guardPanel(rc.def);
       else out = rc.def.render(rc.params, rc.query);
-    } catch (e) { console.error('[KonnektIdea] view error', rc.path, e); out = errorView(e); }
+    } catch (e) { console.error('[IdeaKonnekt] view error', rc.path, e); out = errorView(e); }
     view.innerHTML = String(out);
     this.lastPath = rc.path;
-    if (rc.def && rc.def.title) document.title = rc.def.title + ' | KonnektIdea';
+    if (rc.def && rc.def.title) document.title = rc.def.title + ' | IdeaKonnekt';
     if (keep) restoreView(keep); else if (fromHash !== 'store') { window.scrollTo(0, 0); }
     renderSidebar(); renderTopbar(); applyShellState(); renderBanner();
     $('#app').classList.remove('drawer-open');
-    try { if (rc.def && rc.def.after && !(rc.def.roles && !rc.def.roles.includes(ar(me)))) rc.def.after(rc.params, rc.query); } catch (e) { console.error('[KonnektIdea] after-render error', e); }
+    try { if (rc.def && rc.def.after && !(rc.def.roles && !rc.def.roles.includes(ar(me)))) rc.def.after(rc.params, rc.query); } catch (e) { console.error('[IdeaKonnekt] after-render error', e); }
     hydrateSlots(); auditHandlers(); focusSpec.restore();
   },
   renderChrome(){ if (!SEL.me()) { showSignIn(true); return; } renderSidebar(); renderTopbar(); renderPopover(); renderBanner(); applyShellState(); focusSpec.restore(); }
@@ -4812,7 +4812,7 @@ function agentSlot(key, args){ const k = key + '|' + JSON.stringify(args); retur
 function hydrateSlots(){
   $$('#view .agent-slot').forEach(el => {
     const key = el.dataset.slot, args = JSON.parse(el.dataset.args || '{}'), loader = SLOT_LOADERS[key], ck = key + '|' + el.dataset.args; if (!loader) return;
-    loader.load(args).then(h => { const s = String(h); SLOT_CACHE[ck] = s; if (el.isConnected && el.innerHTML !== s) { const open = $$('details[id]', el).filter(d => d.open).map(d => d.id); el.innerHTML = s; open.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; }); auditHandlers(); } }).catch(e => { console.error('[KonnektIdea] agent slot failed', key, e); });
+    loader.load(args).then(h => { const s = String(h); SLOT_CACHE[ck] = s; if (el.isConnected && el.innerHTML !== s) { const open = $$('details[id]', el).filter(d => d.open).map(d => d.id); el.innerHTML = s; open.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; }); auditHandlers(); } }).catch(e => { console.error('[IdeaKonnekt] agent slot failed', key, e); });
   });
 }
 let storeRenderQueued = false;
@@ -4848,7 +4848,7 @@ function renderSignIn(){
   let main;
   if (!u) {
     SI.step = 1;
-    main = html`<div><h1 id="si-h" tabindex="-1">Who are you?</h1><p class="muted">Pick a demo account to explore KonnektIdea, or search for anyone else.</p></div>
+    main = html`<div><h1 id="si-h" tabindex="-1">Who are you?</h1><p class="muted">Pick a demo account to explore IdeaKonnekt, or search for anyone else.</p></div>
       <aside class="signin__legend" aria-labelledby="si-legend-h">
         <h2 class="signin__legend-title" id="si-legend-h">Roles</h2>
         <p class="muted small signin__legend-intro">Everyone is a Contributor. Extra roles open review, delivery, leadership or admin views. Purple chip on a card is that person’s default role.</p>
@@ -4866,14 +4866,14 @@ function renderSignIn(){
       <div class="row"><button class="btn btn--primary" data-action="si.go">Sign in as ${roleLabel(SI.role)}</button></div>`;
   }
   root.innerHTML = String(html`<div class="signin"><div class="signin__top"><button class="btn btn--ghost btn--icon" data-action="ui.toggleTheme" aria-label="Switch to ${S().meta.theme === 'dark' ? 'light' : 'dark'} theme">${icon(S().meta.theme === 'dark' ? 'sun' : 'moon', 20)}</button></div>
-    <main class="signin__main" id="signin-main"><div class="signin__brand"><span class="brand__glyph">${icon('logo', 18)}</span><span class="brand__text"><span class="brand__name">KonnektIdea</span><span class="brand__sub">KonnektIdea</span></span></div>${main}
+    <main class="signin__main" id="signin-main"><div class="signin__brand"><span class="brand__glyph">${icon('logo', 18)}</span><span class="brand__text"><span class="brand__name">IdeaKonnekt</span><span class="brand__sub">IdeaKonnekt</span></span></div>${main}
       <p class="muted small">${icon('lock', 12)} Demo sign-in — no password. In production this would be single sign-on.</p></main>
     <footer class="signin__foot">${dkLogoBlock()}</footer></div>`);
   const h = $('#si-h'); if (h && SI.userId) h.focus({ preventScroll:true });
 }
 function showSignIn(on){
   document.body.classList.toggle('is-signedout', !!on); const root = $('#signin-root'); root.hidden = !on;
-  if (on) { ['#view','#sidebar','#tb-actions','#tb-title','#popover-root'].forEach(q => { const el = $(q); if (el) el.innerHTML = ''; }); document.documentElement.dataset.theme = S().meta.theme === 'dark' ? 'dark' : 'light'; document.title = 'Sign in | KonnektIdea'; renderSignIn(); renderBanner(); }
+  if (on) { ['#view','#sidebar','#tb-actions','#tb-title','#popover-root'].forEach(q => { const el = $(q); if (el) el.innerHTML = ''; }); document.documentElement.dataset.theme = S().meta.theme === 'dark' ? 'dark' : 'light'; document.title = 'Sign in | IdeaKonnekt'; renderSignIn(); renderBanner(); }
   else if (root.firstChild) root.innerHTML = '';
 }
 async function siSignIn(userId, role, remember){
@@ -4900,7 +4900,7 @@ Object.assign(CHANGES, { 'si.remember':({ el }) => { SI.remember = !!el.checked;
 function activityLine(a){
   const i = SEL.idea(a.ideaId); if (!i) return '';
   const anon = i.anonymous && (a.actorId === i.authorId || (i.anonCoAuthorIds || []).includes(a.actorId)), u = a.actorId ? SEL.user(a.actorId) : null;
-  const who = anon ? html`<span class="strong">Anonymous author</span>` : u ? html`<a class="strong" href="#/people/${u.id}">${u.name}</a>` : html`<span class="strong">KonnektIdea</span>`;
+  const who = anon ? html`<span class="strong">Anonymous author</span>` : u ? html`<a class="strong" href="#/people/${u.id}">${u.name}</a>` : html`<span class="strong">IdeaKonnekt</span>`;
   const link = html`<a href="#/ideas/${i.id}">${trunc(i.title, 70)}</a>`;
   const V = { submitted:'submitted', pickedup:'picked up for review', asked:'asked for more information on', answered:'answered the reviewer on', commented:'commented on', volunteered:'offered to help build', collabreq:'asked to join the team on', collabacc:'answered a collaboration request on', collabdec:'answered a collaboration request on', collableft:'left the team on', collabrem:'updated the team on', checkin:'posted a check-in on', prototype:'started a prototype for', implemented:'marked implemented', update:'posted an update on', hoursrequested:'requested innovation hours for', withdrew:'withdrew', returned:'returned to review', reopened:'reopened for review', coauthorreq:'asked to co-author', coauthoradded:'accepted a co-author on', coauthordeclined:'declined a co-author request on' };
   let verb = V[a.verb] || a.verb;
@@ -5267,7 +5267,7 @@ route({ path:'/approvals', title:'Approvals', nav:'approvals', roles:['leadershi
 
 function ideaActivity(i){
   const items = SEL.history(i.id).map(h => ({ at:h.at, h })).concat(SEL.runsFor(i.id).map(r => ({ at:r.startedAt, r })), SEL.deliveryUpdates(i).map(u => ({ at:u.at, u }))).sort((a, b) => b.at - a.at);
-  const actor = h => { if (!h.actorId) return 'KonnektIdea routing'; const r = SEL.personRef(h.actorId, i); return r.anon ? r.label : r.label + asRoleText(h, SEL.user(h.actorId)); };
+  const actor = h => { if (!h.actorId) return 'IdeaKonnekt routing'; const r = SEL.personRef(h.actorId, i); return r.anon ? r.label : r.label + asRoleText(h, SEL.user(h.actorId)); };
   return html`<div class="card"><div class="card__head"><h2>Activity</h2></div><div class="timeline">${items.map(x => x.r
     ? html`<div class="timeline__item"><span class="timeline__dot timeline__dot--agent">${icon('spark', 14)}</span><div>${runTrace(x.r)}</div></div>`
     : x.u ? html`<div class="timeline__item"><span class="timeline__dot">${icon('message', 14)}</span><div style="min-width:0;overflow-wrap:anywhere"><div><strong>Check-in</strong> <span class="muted">by ${SEL.personRef(x.u.by, i).label}</span></div><div class="muted small" style="margin-top:2px">${x.u.text}</div><div class="timeline__when">${fmtDateTime(x.u.at)}</div></div></div>`
@@ -5585,7 +5585,7 @@ function viewSubmit(p, q){
   const efforts = Object.keys(EFFORTS).map(k => html`<label><input type="radio" name="sf-effort" value="${k}" data-change="submit.effort" ${d.effort === k ? raw('checked') : ''}><span title="${EFFORTS[k]}">${k}</span></label>`);
   const txt = (f, rows, ph) => html`<textarea class="textarea" id="sf-${f}" data-input="submit.field" data-field="${f}" rows="${rows}" placeholder="${ph}" aria-describedby="err-${f}">${d[f]}</textarea>`;
   return html`
-    <div class="page-head"><div><div class="eyebrow eyebrow--plain">New idea</div><h1>${p.draftId ? 'Continue your draft' : 'Submit an idea'}</h1><p>Five short fields. KonnektIdea will check for similar ideas as you type, and you keep full control of what you apply.</p></div>
+    <div class="page-head"><div><div class="eyebrow eyebrow--plain">New idea</div><h1>${p.draftId ? 'Continue your draft' : 'Submit an idea'}</h1><p>Five short fields. IdeaKonnekt will check for similar ideas as you type, and you keep full control of what you apply.</p></div>
       <div class="row"><a class="btn btn--ghost" href="#/submit/drafts">My drafts</a><button class="btn" data-action="submit.saveDraft">${icon('edit', 16)} Save draft</button><button class="btn btn--primary" data-action="submit.submit">${icon('send', 16)} Submit idea</button></div></div>
     <div class="layout-rail layout-rail--submit"><div class="card sf-section">
       <div class="field"><span class="label" id="sf-cat-label">Category</span><div class="radio-cards" role="radiogroup" aria-labelledby="sf-cat-label" id="sf-cat-group">${catCards}</div>${fieldError('categoryId')}</div>
@@ -5603,7 +5603,7 @@ function viewSubmit(p, q){
       <label class="switch"><input type="checkbox" id="sf-anon" data-change="submit.anon" ${d.anonymous ? raw('checked') : ''}><span class="switch__track"></span><span><strong>Submit anonymously</strong><br><span class="muted small">Your name is hidden from everyone, including reviewers, on the idea, in the discussion, search and activity. You will still see it as yours. Anonymous ideas cannot have co-authors, and any points you earn are held in a sealed escrow that only you can see until you choose to Reveal and claim them from your profile. In this demo the hiding is a display rule, not a security control.</span></span></label>
       <div class="row" style="justify-content:flex-end"><button class="btn" data-action="submit.saveDraft">Save draft</button><button class="btn btn--primary" data-action="submit.submit">Submit idea</button></div>
     </div>
-    <aside class="stack sticky"><details class="card card--tight sf-details" ${desk ? raw('open') : ''}><summary>${icon('spark', 16)} KonnektIdea assistants <span class="pill pill--agent">Simulated</span></summary><div class="stack"><div id="sf-agents">${sfAgents()}</div><div id="sf-checklist" class="card card--tight">${sfChecklist()}</div></div></details></aside></div>`;
+    <aside class="stack sticky"><details class="card card--tight sf-details" ${desk ? raw('open') : ''}><summary>${icon('spark', 16)} IdeaKonnekt assistants <span class="pill pill--agent">Simulated</span></summary><div class="stack"><div id="sf-agents">${sfAgents()}</div><div id="sf-checklist" class="card card--tight">${sfChecklist()}</div></div></details></aside></div>`;
 }
 route({ path:'/submit', title:'Submit an idea', nav:'my', roles:CAN_SUBMIT, static:true, render:viewSubmit, after:() => { if (SF.data && !SF.assist) sfAssist(); }, crumbs:() => [{ label:'My ideas', href:'#/my' }, { label:'Submit an idea' }] });
 route({ path:'/submit/drafts', title:'My drafts', nav:'my', roles:CAN_SUBMIT, render:() => viewDrafts(), crumbs:() => [{ label:'My ideas', href:'#/my' }, { label:'Drafts' }] });
@@ -6333,8 +6333,8 @@ function hubFlows(){
 function hubKompass(){
   const ans = S().ent.kompassAnswers, me = SEL.me(), isAdmin = ar(me) === 'admin', st = s => s === 'Simulated in MVP' ? 'brand' : s === 'Planned' ? 'info' : 'warning';
   return html`<div class="stack">
-    <section class="card" aria-labelledby="km-h"><div class="card__head"><h2 id="km-h">KonnektIdea need to documented Kompass concept</h2></div><p class="muted small" style="margin-bottom:8px">Only these Kompass concepts are named: Workflows (visual builder) with the components Input, API, LLM, Agent, Output, Subflow, Guardrails, MCP, Embedding, Conditional, Adapter and Context; Smart Agents; Agentic Teams; AI Brain collections; Guardrails; Traces; Vault; Prompts. Status chips: <strong>Simulated in MVP</strong> (a local stand-in exists), <strong>Planned</strong> (design only), <strong>Open question</strong> (not documented or not confirmed).</p>
-      <div class="table-wrap"><table class="table"><caption class="sr-only">Mapping of KonnektIdea needs to Kompass concepts</caption><thead><tr><th scope="col">KonnektIdea need</th><th scope="col">Kompass concept</th><th scope="col">Documented?</th><th scope="col">Status</th><th scope="col">Notes and open questions</th></tr></thead><tbody>${KOMPASS_MAP.map(r => html`<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--text);white-space:normal;min-width:200px">${r.need}</th><td style="min-width:200px">${r.concept}</td><td style="min-width:160px">${r.doc}</td><td>${pill(r.status, st(r.status))}</td><td style="min-width:220px">${r.note}${r.qs.length ? html`<div class="small" style="margin-top:4px">${r.qs.map((qid, k) => html`${k ? ', ' : ''}<a href="#/agents?tab=kompass&q=${qid}">${qid.toUpperCase()}</a> <span class="muted">(${ans[qid] ? 'answered' : 'open'})</span>`)}</div>` : ''}</td></tr>`)}</tbody></table></div></section>
+    <section class="card" aria-labelledby="km-h"><div class="card__head"><h2 id="km-h">IdeaKonnekt need to documented Kompass concept</h2></div><p class="muted small" style="margin-bottom:8px">Only these Kompass concepts are named: Workflows (visual builder) with the components Input, API, LLM, Agent, Output, Subflow, Guardrails, MCP, Embedding, Conditional, Adapter and Context; Smart Agents; Agentic Teams; AI Brain collections; Guardrails; Traces; Vault; Prompts. Status chips: <strong>Simulated in MVP</strong> (a local stand-in exists), <strong>Planned</strong> (design only), <strong>Open question</strong> (not documented or not confirmed).</p>
+      <div class="table-wrap"><table class="table"><caption class="sr-only">Mapping of IdeaKonnekt needs to Kompass concepts</caption><thead><tr><th scope="col">IdeaKonnekt need</th><th scope="col">Kompass concept</th><th scope="col">Documented?</th><th scope="col">Status</th><th scope="col">Notes and open questions</th></tr></thead><tbody>${KOMPASS_MAP.map(r => html`<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--text);white-space:normal;min-width:200px">${r.need}</th><td style="min-width:200px">${r.concept}</td><td style="min-width:160px">${r.doc}</td><td>${pill(r.status, st(r.status))}</td><td style="min-width:220px">${r.note}${r.qs.length ? html`<div class="small" style="margin-top:4px">${r.qs.map((qid, k) => html`${k ? ', ' : ''}<a href="#/agents?tab=kompass&q=${qid}">${qid.toUpperCase()}</a> <span class="muted">(${ans[qid] ? 'answered' : 'open'})</span>`)}</div>` : ''}</td></tr>`)}</tbody></table></div></section>
     <div class="grid grid-2"><section class="card" aria-labelledby="kb-h"><div class="card__head"><h2 id="kb-h">AI Brain collections</h2>${pill('Proposal', 'warning')}</div><p class="muted small">Proposed names and contents. Nothing has been created in Kompass. Programmatic ingestion is an open question (Q8).</p>${KOMPASS_BRAIN.map(b => html`<div class="listrow" style="align-items:flex-start"><div class="listrow__main"><strong class="mono small">${b[0]}</strong><div class="muted small">${b[1]}</div></div></div>`)}</section>
       <section class="card" aria-labelledby="kg-h"><div class="card__head"><h2 id="kg-h">Guardrails</h2>${pill('Proposal', 'warning')}</div><p class="muted small">Proposed use of the documented guardrail types. Whether they protect anonymity well enough is unverified.</p>${KOMPASS_GUARDS.map(b => html`<div class="listrow" style="align-items:flex-start"><div class="listrow__main"><strong>${b[0]}</strong><div class="muted small">${b[1]}</div></div></div>`)}</section></div>
     <section class="card" aria-labelledby="kq-h"><div class="card__head"><h2 id="kq-h">Open questions for the Kompass team</h2><span class="muted small">${KOMPASS_QUESTIONS.filter(x => !ans[x.id]).length} open of ${KOMPASS_QUESTIONS.length}</span></div>
@@ -6560,14 +6560,14 @@ function ithTabHandoff(it, me){
       <div class="field" style="margin-top:12px"><label for="ho-${i.id}">Problem statement</label><textarea class="textarea" id="ho-${i.id}" data-keep rows="14" ${org ? '' : raw('readonly')} aria-describedby="err-ho-${i.id}">${draft}</textarea>${fieldError('ho-' + i.id)}</div>
       ${org ? html`<div class="row"><button class="btn btn--primary" data-action="ho.send" data-id="${it.id}" data-idea="${i.id}">${icon('send', 16)} Send to hackathon backlog</button><button class="btn btn--ghost" data-action="ho.reset" data-id="${it.id}" data-idea="${i.id}">Reset to agent draft</button></div>` : html`<p class="muted small">The organiser edits and sends this.</p>`}</div>`;
   });
-  return html`<div class="stack"><div class="notice">${icon('info', 16)}<span><strong>Simulated handoff.</strong> Sending creates a backlog item inside KonnektIdea only. No hackathon tool or external system is connected.</span></div>${cards}
+  return html`<div class="stack"><div class="notice">${icon('info', 16)}<span><strong>Simulated handoff.</strong> Sending creates a backlog item inside IdeaKonnekt only. No hackathon tool or external system is connected.</span></div>${cards}
     <div class="card"><div class="card__head"><h2>Hackathon backlog</h2><span class="muted small">${plural(hs.length, 'item')}</span></div>${hs.length ? hs.map(h => { const i = SEL.idea(h.ideaId); return html`<div class="listrow"><div class="listrow__main"><a class="listrow__title" href="#/ideas/${i.id}">${i.title}</a><div class="muted small">Sent ${fmtDate(h.at, true)} by ${H.name(h.sentBy)}</div></div>${pill(h.status, 'info')}</div>`; }) : emptyState('layers', 'Nothing in the backlog yet', 'Winners appear here once the organiser sends them.')}</div>
     ${it.completedAt ? html`<div class="notice notice--ok">${icon('checkcircle', 16)}<span>This ideathon was completed on ${fmtDate(it.completedAt, true)}.</span></div>` : ''}</div>`;
 }
 // ==== END SECTION 11.F ====
 
 // ==== SECTION 11.F2 IDEATHON HANDLERS ====
-const runRec = (agent, event, ctx, ap) => { AgentGateway.run(agent, event, ctx, { record:true, approval:ap }).catch(e => console.warn('[KonnektIdea] run not recorded', e)); };
+const runRec = (agent, event, ctx, ap) => { AgentGateway.run(agent, event, ctx, { record:true, approval:ap }).catch(e => console.warn('[IdeaKonnekt] run not recorded', e)); };
 const apprv = state => ({ required:true, role:'leadership', state, decidedBy:S().meta.currentUserId });
 Object.assign(api, {
   ideathons:{
@@ -6594,7 +6594,7 @@ Object.assign(HANDLERS, {
     toastRes(await api.ideathons.advance(id), r => 'Now in ' + r.data.label + '.');
   },
   'ith.link':async ({ id }) => { const sel = $('#ith-link-select'); if (!sel || !sel.value) return; toastRes(await api.ideathons.link(id, sel.value), r => '“' + trunc(r.data.title, 50) + '” is now an entry.'); },
-  'ith.unlink':async ({ id, el }) => { const ok = await Modal.confirm({ title:'Remove this entry?', message:'The idea stays in KonnektIdea with its status and history. It simply leaves this ideathon.', confirmLabel:'Remove from ideathon' }); if (ok) toastRes(await api.ideathons.unlink(id, el.dataset.idea), 'Removed from the ideathon.'); },
+  'ith.unlink':async ({ id, el }) => { const ok = await Modal.confirm({ title:'Remove this entry?', message:'The idea stays in IdeaKonnekt with its status and history. It simply leaves this ideathon.', confirmLabel:'Remove from ideathon' }); if (ok) toastRes(await api.ideathons.unlink(id, el.dataset.idea), 'Removed from the ideathon.'); },
   'ith.approveShortlist':async ({ id }) => {
     const it = S().ent.ideathons[id], pr = SEL.ithShortlistProposal(it), sel = slSelection(it), ids = pr.ranked.map(x => x.idea.id).filter(x => sel.includes(x));
     const same = pr.picks.length === ids.length && pr.picks.every(x => ids.includes(x.idea.id));
@@ -6617,7 +6617,7 @@ Object.assign(HANDLERS, {
   'ho.reset':({ el }) => { const i = SEL.idea(el.dataset.idea), it = S().ent.ideathons[el.dataset.id], ta = $('#ho-' + i.id); if (ta) { ta.value = SEL.handoffDraft(it, i); toast('Reset to the agent draft.'); } },
   'ho.send':async ({ id, el }) => {
     const i = SEL.idea(el.dataset.idea), it = S().ent.ideathons[id], ta = $('#ho-' + i.id), text = ta ? ta.value.trim() : '', er = $('#err-ho-' + i.id); if (er) er.textContent = '';
-    const ok = await Modal.confirm({ title:'Send to the hackathon backlog?', message:'This creates a backlog item for “' + i.title + '”. It is a simulated handoff inside KonnektIdea: no external system is called.', confirmLabel:'Send to hackathon backlog' }); if (!ok) return;
+    const ok = await Modal.confirm({ title:'Send to the hackathon backlog?', message:'This creates a backlog item for “' + i.title + '”. It is a simulated handoff inside IdeaKonnekt: no external system is called.', confirmLabel:'Send to hackathon backlog' }); if (!ok) return;
     const r = await api.ideathons.sendHandoff(id, i.id, text, text !== SEL.handoffDraft(it, i).trim());
     if (!r.ok) { if (r.fieldErrors && er) { er.textContent = r.fieldErrors.statement || r.error; if (ta) ta.focus(); } else toast(r.error, 'error'); return; } toast('Sent to the hackathon backlog (simulated).');
   },
@@ -6970,7 +6970,7 @@ const warnedHandlers = new Set();
 function auditHandlers(){
   const missing = [], regs = [['action', HANDLERS], ['submit', SUBMITS], ['input', INPUTS], ['change', CHANGES], ['enter', ENTERS]];
   $$('[data-action],[data-submit],[data-input],[data-change],[data-enter]').forEach(el => regs.forEach(([k, reg]) => { const v = el.dataset[k]; if (v !== undefined && !reg[v]) missing.push('data-' + k + '="' + v + '"'); }));
-  uniq(missing).forEach(m => { if (!warnedHandlers.has(m)) { warnedHandlers.add(m); console.warn('[KonnektIdea] handler audit: no handler registered for ' + m); } });
+  uniq(missing).forEach(m => { if (!warnedHandlers.has(m)) { warnedHandlers.add(m); console.warn('[IdeaKonnekt] handler audit: no handler registered for ' + m); } });
   return uniq(missing);
 }
 function selfCheckP5(){
@@ -7041,13 +7041,13 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#search-wrap')) closeSearch();
   const el = e.target.closest('[data-action]'); if (!el) return;
   if (el.disabled || el.getAttribute('aria-disabled') === 'true') return;
-  const h = HANDLERS[el.dataset.action]; if (!h) { console.warn('[KonnektIdea] no handler for', el.dataset.action); return; }
-  Promise.resolve(h({ el, id:el.dataset.id, e })).catch(err => { console.error('[KonnektIdea] handler failed', el.dataset.action, err); toast('Something went wrong. Please try again.', 'error'); });
+  const h = HANDLERS[el.dataset.action]; if (!h) { console.warn('[IdeaKonnekt] no handler for', el.dataset.action); return; }
+  Promise.resolve(h({ el, id:el.dataset.id, e })).catch(err => { console.error('[IdeaKonnekt] handler failed', el.dataset.action, err); toast('Something went wrong. Please try again.', 'error'); });
 });
 document.addEventListener('submit', e => {
   const f = e.target.closest('form[data-submit]'); if (!f) return; e.preventDefault();
   const h = SUBMITS[f.dataset.submit]; if (!h) return;
-  Promise.resolve(h({ el:f, e })).catch(err => { console.error('[KonnektIdea] submit failed', f.dataset.submit, err); toast('Something went wrong. Please try again.', 'error'); });
+  Promise.resolve(h({ el:f, e })).catch(err => { console.error('[IdeaKonnekt] submit failed', f.dataset.submit, err); toast('Something went wrong. Please try again.', 'error'); });
 });
 document.addEventListener('input', e => { const el = e.target.closest('[data-input]'); if (el && INPUTS[el.dataset.input]) INPUTS[el.dataset.input]({ el, e }); });
 document.addEventListener('change', e => { const el = e.target.closest('[data-change]'); if (el && CHANGES[el.dataset.change]) Promise.resolve(CHANGES[el.dataset.change]({ el, e })).catch(err => { console.error(err); toast('Something went wrong. Please try again.', 'error'); }); });
@@ -7070,9 +7070,9 @@ function boot(){
     window.addEventListener('pagehide', () => Store.persistNow());
     if (!location.hash) history.replaceState(null, '', '#/home');
     RT.render(true); renderPopover();
-    const problems = selfCheck(); if (problems.length) console.warn('[KonnektIdea] selfCheck found ' + problems.length + ' problem(s)', problems);
+    const problems = selfCheck(); if (problems.length) console.warn('[IdeaKonnekt] selfCheck found ' + problems.length + ' problem(s)', problems);
   } catch (e) {
-    console.error('[KonnektIdea] boot failed', e);
+    console.error('[IdeaKonnekt] boot failed', e);
     $('#view').innerHTML = String(errorView(e));
   }
 }

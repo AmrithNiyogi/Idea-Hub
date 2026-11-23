@@ -1,6 +1,6 @@
 # Integrations (org default + personal override)
 
-KonnektIdea connects to external tools through a shared **Integrations** surface.
+IdeaKonnekt connects to external tools through a shared **Integrations** surface.
 Trackers (ClickUp, Jira, custom webhook) and **Notion** (docs) are fully wired.
 Google Sheets and Microsoft Teams remain **coming soon** stubs.
 
@@ -77,7 +77,7 @@ become Notion blocks. Database row create is **optional / Advanced**.
 3. In Notion, open the **parent page** where idea docs should live → **•••** →
    **Connections** → invite your integration.
 4. Copy the page ID from the URL (32-char hex at the end).
-5. KonnektIdea → **Integrations → Notion** → Connect:
+5. IdeaKonnekt → **Integrations → Notion** → Connect:
    - Internal integration secret
    - **Parent page ID** (required for document create)
    - Advanced (optional): database ID + title property for row create
@@ -100,7 +100,7 @@ at rest) or a private local note.
 ### Teams (chat) — Incoming Webhook MVP
 
 1. Teams channel → **Connectors** → **Incoming Webhook** → copy HTTPS URL.
-2. KonnektIdea → **Integrations → Microsoft Teams** → paste URL (personal or org).
+2. IdeaKonnekt → **Integrations → Microsoft Teams** → paste URL (personal or org).
 3. Idea → **Channels** → **Schedule** → “Notify Microsoft Teams” posts a
    MessageCard; optionally announces in the idea channel.
 

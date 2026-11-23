@@ -1,6 +1,6 @@
 /**
- * KonnektIdea Help chat widget — UX adapted from aistudio-chatbot-ui-v2
- * (DotAgent launcher + panel). Calls KonnektIdea ``/agents/simulate/help``
+ * IdeaKonnekt Help chat widget — UX adapted from aistudio-chatbot-ui-v2
+ * (DotAgent launcher + panel). Calls IdeaKonnekt ``/agents/simulate/help``
  * (simulate or live runs/execute via backend) and echoes ``conversation_id``.
  */
 
@@ -14,6 +14,7 @@ type Msg = {
   role: 'user' | 'assistant';
   text: string;
   links?: Array<{ label: string; href: string }>;
+  followups?: string[];
   loading?: boolean;
   error?: boolean;
   at: Date;
@@ -30,7 +31,7 @@ const WELCOME: Msg = {
   id: 'welcome',
   role: 'assistant',
   text:
-    'Hi — I am the KonnektIdea help guide. Ask about Submit, Review, roles, Explore, Admin, or SSO/MFA. I never need passwords or OTP codes.',
+    'Hi — I am the IdeaKonnekt help guide. Ask about Submit, Review, roles, Explore, Admin, or SSO/MFA. I never need passwords or OTP codes.',
   links: [
     { label: 'Submit', href: '/submit' },
     { label: 'Review', href: '/review' },
@@ -111,6 +112,7 @@ export function HelpChatFab() {
           role: 'assistant',
           text: turn.reply,
           links: turn.links,
+          followups: turn.followups ?? [],
           at: new Date(),
         },
       ]);
@@ -165,7 +167,7 @@ export function HelpChatFab() {
               />
               <div className="ik-chat__title-wrap">
                 <h2 className="ik-chat__title" id={titleId}>
-                  KonnektIdea Help
+                  IdeaKonnekt Help
                 </h2>
                 <span className="ik-chat__mode">{modeLabel}</span>
               </div>
@@ -208,6 +210,20 @@ export function HelpChatFab() {
                     {m.loading ? <span className="ik-chat__loading-dot" /> : null}
                     {m.text}
                   </div>
+                  {m.role === 'assistant' && m.followups?.length && !busy ? (
+                    <div className="ik-chat__starters" aria-label="Suggested follow-up questions">
+                      {m.followups.map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          className="ik-chat__starter"
+                          onClick={() => void ask(q)}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   {m.links?.length ? (
                     <div className="ik-chat__links">
                       {m.links.map((l) => (

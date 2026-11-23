@@ -1149,7 +1149,7 @@ export function IdeathonDetailPage() {
             <Icon name="info" size={16} />
             <span>
               <strong>Simulated handoff.</strong> Sending creates a backlog item
-              inside KonnektIdea only. No external hackathon tool is connected.
+              inside IdeaKonnekt only. No external hackathon tool is connected.
             </span>
           </div>
           {it.winners.map((iid) => {
@@ -1236,7 +1236,7 @@ export function IdeathonDetailPage() {
                         if (
                           await dialog.confirm({
                             title: 'Send to the hackathon backlog?',
-                            message: 'This is a simulated handoff inside KonnektIdea.',
+                            message: 'This is a simulated handoff inside IdeaKonnekt.',
                             confirmLabel: 'Send',
                           })
                         ) {

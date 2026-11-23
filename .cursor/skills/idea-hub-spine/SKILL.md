@@ -1,9 +1,9 @@
 ---
 name: idea-hub-spine
-description: Run KonnektIdea local stack — Postgres/Redis via dev-services, uv sync, Alembic migrate, seed demo users, uvicorn, and Vite frontend. Use when starting the app, resetting local DB, seeding, or debugging boot/migrate/seed failures.
+description: Run IdeaKonnekt local stack — Postgres/Redis via dev-services, uv sync, Alembic migrate, seed demo users, uvicorn, and Vite frontend. Use when starting the app, resetting local DB, seeding, or debugging boot/migrate/seed failures.
 ---
 
-# KonnektIdea spine — run / migrate / seed
+# IdeaKonnekt spine — run / migrate / seed
 
 ## Preferred path (no Docker)
 

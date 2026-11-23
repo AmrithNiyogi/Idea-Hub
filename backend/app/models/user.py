@@ -42,7 +42,7 @@ class Team(Base):
 
 
 class User(Base):
-    """Authenticated KonnektIdea person with multi-role membership.
+    """Authenticated IdeaKonnekt person with multi-role membership.
 
     Responsibilities:
     - Persist credentials and profile fields used by auth and UI.

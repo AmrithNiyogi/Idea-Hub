@@ -38,7 +38,7 @@ function ideaBodyMarkdown(idea: Idea): string {
   if (solution) {
     parts.push('## Solution', solution, '');
   }
-  parts.push(`Synced from KonnektIdea · ${new Date().toISOString().slice(0, 10)}`);
+  parts.push(`Synced from IdeaKonnekt · ${new Date().toISOString().slice(0, 10)}`);
   return parts.join('\n').trim();
 }
 

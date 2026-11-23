@@ -36,7 +36,7 @@ const paths: Record<string, string> = {
   star: '<path d="M12 3.8l2.5 5.1 5.6.8-4.1 4 1 5.6L12 16.5l-5 2.8 1-5.6-4.1-4 5.6-.8z"/>',
   arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   arrowLeft: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
-  /* KonnektIdea mark — 4-point spark geometry from idea-hub.html; filled for crisp sidebar glyph */
+  /* IdeaKonnekt mark — 4-point spark geometry from idea-hub.html; filled for crisp sidebar glyph */
   logo: '<path d="M12 3.5 14.2 9.8 20.5 12 14.2 14.2 12 20.5 9.8 14.2 3.5 12 9.8 9.8z" fill="currentColor" stroke="none"/>',
   flag: '<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
   award:

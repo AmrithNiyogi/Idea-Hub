@@ -1,4 +1,4 @@
-# KonnektIdea — Product Strategy and Requirements Analysis (Agent 1, Discovery)
+# IdeaKonnekt — Product Strategy and Requirements Analysis (Agent 1, Discovery)
 
 Source of truth: CONTEXT.md only. All numbers below are PROPOSALS, not facts. No Kompass or Dotkonnekt facts are assumed beyond CONTEXT.md.
 

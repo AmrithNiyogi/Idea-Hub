@@ -48,7 +48,7 @@ HUB_AGENT_ENV_KEYS: dict[str, str] = {
 
 @dataclass
 class ExecuteResult:
-    """Normalized execute outcome for KonnektIdea adapters.
+    """Normalized execute outcome for IdeaKonnekt adapters.
 
     Attributes:
         success: True when a usable result was obtained.
@@ -95,7 +95,7 @@ def use_live_execute() -> bool:
 
 
 def resolve_kompass_agent_id(hub_agent_key: str) -> Optional[str]:
-    """Map an KonnektIdea surface key to the Kompass ``agent_id`` / slug.
+    """Map an IdeaKonnekt surface key to the Kompass ``agent_id`` / slug.
 
     Args:
         hub_agent_key: One of ``submit-assist``, ``help``, ``idea-optimizer``,
@@ -355,7 +355,7 @@ async def execute_run(
     """POST ``/api/v2/runs/execute`` and normalize the reply.
 
     Args:
-        agent_id: Kompass agent id or slug (not the KonnektIdea roster id).
+        agent_id: Kompass agent id or slug (not the IdeaKonnekt roster id).
         input_payload: Value for body ``input`` (string or JSON-serializable).
         conversation_id: Optional prior thread id; omit to let the engine create one.
         tool_auth_token: Sent as X-Authorization for this run only. Pass the signed-in

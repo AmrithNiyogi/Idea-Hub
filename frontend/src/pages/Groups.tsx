@@ -122,7 +122,7 @@ export function GroupsPage({ defaultTab = 'groups' }: { defaultTab?: TabId }) {
         </h1>
         <p className="muted" style={{ margin: 0, maxWidth: 560 }}>
           {tab === 'dms'
-            ? 'One-to-one chats with anyone in KonnektIdea.'
+            ? 'One-to-one chats with anyone in IdeaKonnekt.'
             : tab === 'invites'
               ? 'Accept or decline invitations to join a group.'
               : 'Groups you belong to. Invite teammates by name — they must accept before joining.'}

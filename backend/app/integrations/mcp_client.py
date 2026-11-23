@@ -139,7 +139,7 @@ async def call_tool(
     )
 
 
-# Built-in tool names KonnektIdea understands when a custom MCP exposes them.
+# Built-in tool names IdeaKonnekt understands when a custom MCP exposes them.
 KNOWN_TEAM_TOOLS = (
     "schedule_meeting",
     "list_channels",
@@ -150,7 +150,7 @@ STUB_TOOL_CATALOG: list[dict[str, Any]] = [
     {
         "name": "schedule_meeting",
         "description": (
-            "Schedule a team meeting for an KonnektIdea team space. "
+            "Schedule a team meeting for an IdeaKonnekt team space. "
             "Args: title, starts_at (ISO-8601), ends_at?, description?, "
             "join_url?, channel_slug?, notify_teams?"
         ),

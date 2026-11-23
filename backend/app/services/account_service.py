@@ -128,8 +128,14 @@ async def change_password(
         body: Current + new password (new must match confirm).
 
     Raises:
-        HTTPException: 400 on mismatch / weak new password; 401 on bad current.
+        HTTPException: 403 for Microsoft SSO-only accounts; 400 on mismatch /
+            weak new password; 401 on bad current.
     """
+    if not user.has_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your password is managed by Microsoft and cannot be changed here.",
+        )
     if body.new_password != body.confirm_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# KonnektIdea frontend: Vite build served by nginx, which also proxies /api and
+# IdeaKonnekt frontend: Vite build served by nginx, which also proxies /api and
 # /uploads to the backend so the browser sees a single origin. Build context: frontend/
 #   docker build -t ideahub-web frontend/
 #   docker run -p 8080:8080 -e API_UPSTREAM=https://<api-host> ideahub-web

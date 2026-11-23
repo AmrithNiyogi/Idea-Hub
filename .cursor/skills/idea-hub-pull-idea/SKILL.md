@@ -1,13 +1,13 @@
 ---
 name: idea-hub-pull-idea
-description: Pull an KonnektIdea idea’s full agent context (markdown + structured JSON) by UUID or idea URL so Cursor/Claude can start building. Use when the user pastes an idea link/ID, asks to implement an KonnektIdea idea, or mentions agent handoff / context.md.
+description: Pull an IdeaKonnekt idea’s full agent context (markdown + structured JSON) by UUID or idea URL so Cursor/Claude can start building. Use when the user pastes an idea link/ID, asks to implement an IdeaKonnekt idea, or mentions agent handoff / context.md.
 ---
 
-# Pull KonnektIdea idea → agent context
+# Pull IdeaKonnekt idea → agent context
 
 ## Install (if missing)
 
-End users: KonnektIdea UI → **Build with an agent → Download skill** → extract the zip at the **target repo root** so both exist:
+End users: IdeaKonnekt UI → **Build with an agent → Download skill** → extract the zip at the **target repo root** so both exist:
 
 - `.cursor/skills/idea-hub-pull-idea/SKILL.md`
 - `.claude/skills/idea-hub-pull-idea/SKILL.md`
@@ -17,7 +17,7 @@ Or `GET /api/v1/agent-handoff/skill-pack.zip` (auth cookie / Bearer). First-time
 ## When to use
 
 - User gives an idea UUID or URL like `/ideas/<uuid>` or `http://localhost:5173/ideas/<uuid>`
-- User asks to “build this idea”, “implement from KonnektIdea”, or “pull agent context”
+- User asks to “build this idea”, “implement from IdeaKonnekt”, or “pull agent context”
 
 ## Env
 
@@ -47,7 +47,7 @@ Never put SMTP passwords, JWT secrets, or OTP codes into prompts.
    - `prompts.claude` when running in Claude Code
    - `markdown` for a neutral pack / writing `context.md`
 4. **Confirm target repo** with the user:
-   - Default KonnektIdea checkout hint: `/home/nakula/Desktop/DotKonnekt/REPOS/Idea-Hub`
+   - Default IdeaKonnekt checkout hint: `/home/nakula/Desktop/DotKonnekt/REPOS/Idea-Hub`
    - If they name another product repo, implement there instead
 5. **Plan then build** against problem / solution / success metrics. Keep changes additive; match existing architecture.
 

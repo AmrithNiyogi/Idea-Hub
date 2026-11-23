@@ -281,7 +281,7 @@ function AssigneePicker({
                         ) : null}
                         {o.idea_hub_user_id ? (
                           <span className="pill pill--brand" style={{ minHeight: 18, fontSize: 10 }}>
-                            KonnektIdea
+                            IdeaKonnekt
                           </span>
                         ) : null}
                       </span>

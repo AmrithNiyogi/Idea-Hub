@@ -800,7 +800,7 @@ export function IdeaDetailPage() {
                         <div className="row" style={{ gap: 8 }}>
                           <StatusPill status={h.to_status} />
                           <span className="muted small">
-                            by {h.actor_id ? nameOf(h.actor_id) : 'KonnektIdea'} ·{' '}
+                            by {h.actor_id ? nameOf(h.actor_id) : 'IdeaKonnekt'} ·{' '}
                             {fmtDate(h.at, true)}
                           </span>
                         </div>
@@ -871,7 +871,7 @@ export function IdeaDetailPage() {
                           Status changed to{' '}
                           <strong>{h.to_status.replace(/_/g, ' ')}</strong>{' '}
                           <span className="muted">
-                            by {h.actor_id ? nameOf(h.actor_id) : 'KonnektIdea'}
+                            by {h.actor_id ? nameOf(h.actor_id) : 'IdeaKonnekt'}
                           </span>
                         </div>
                         {h.reason ? (

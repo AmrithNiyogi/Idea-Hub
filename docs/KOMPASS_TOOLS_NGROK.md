@@ -1,6 +1,6 @@
-# Kompass tools → KonnektIdea (ngrok)
+# Kompass tools → IdeaKonnekt (ngrok)
 
-Create these **HTTP tools** (and/or Workflow **API nodes**) in Kompass Dev so agents/workflows can call a local KonnektIdea API exposed through **ngrok**.
+Create these **HTTP tools** (and/or Workflow **API nodes**) in Kompass Dev so agents/workflows can call a local IdeaKonnekt API exposed through **ngrok**.
 
 Related: [`KOMPASS_DEV_SETUP_RUNBOOK.md`](KOMPASS_DEV_SETUP_RUNBOOK.md), [`KOMPASS_PROMPT_CREATE_PAYLOADS.json`](KOMPASS_PROMPT_CREATE_PAYLOADS.json), [`KOMPASS_PROMPT_CREATE_API.md`](KOMPASS_PROMPT_CREATE_API.md), [`TRACKER_PROVIDERS.md`](TRACKER_PROVIDERS.md), [`AGENT_SIMULATION.md`](AGENT_SIMULATION.md).
 
@@ -15,7 +15,7 @@ Kompass worker (staging)
 https://<subdomain>.ngrok-free.app   ← ngrok http 8000
     │
     ▼
-KonnektIdea API  http://127.0.0.1:8000
+IdeaKonnekt API  http://127.0.0.1:8000
     paths under /api/v1/…
 ```
 

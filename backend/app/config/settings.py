@@ -10,7 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Runtime configuration for the KonnektIdea spine API.
+    """Runtime configuration for the IdeaKonnekt spine API.
 
     Responsibilities:
     - Centralize env-driven knobs for DB, Redis, JWT, OTP, SMTP, and CORS.
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     )
 
     ENV: Literal["dev", "staging", "prod"] = "dev"
-    APP_NAME: str = "KonnektIdea"
+    APP_NAME: str = "IdeaKonnekt"
     API_PREFIX: str = "/api/v1"
     FRONTEND_ORIGIN: str = "http://localhost:5173"
     # Comma-separated extra browser origins (ngrok HTTPS UI, etc.).
@@ -148,7 +148,7 @@ class Settings(BaseSettings):
         default=120,
         description="HTTP timeout for POST /api/v2/runs/execute (and poll budget).",
     )
-    # Kompass agent id or slug per KonnektIdea surface (fill after agents exist).
+    # Kompass agent id or slug per IdeaKonnekt surface (fill after agents exist).
     AISTUDIO_AGENT_SUBMIT_ASSIST: str = ""
     AISTUDIO_AGENT_HELP: str = ""
     AISTUDIO_AGENT_IDEA_OPTIMIZER: str = ""

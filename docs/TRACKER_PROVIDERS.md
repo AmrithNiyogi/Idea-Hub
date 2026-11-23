@@ -1,6 +1,6 @@
 # Tracker providers (ClickUp, Jira, custom)
 
-KonnektIdea can push accepted / in-prototype ideas into external work trackers.
+IdeaKonnekt can push accepted / in-prototype ideas into external work trackers.
 Integrations are **pluggable**: core flow never hardcodes vendors.
 
 For **org default vs personal override**, the Integrations settings page,
@@ -60,7 +60,7 @@ Credentials are encrypted with Fernet derived from `JWT_SECRET_KEY`. Rotating th
 ```
 
 2. Respond `2xx` with JSON: `{ "id": "…", "url": "https://…", "key": "…" }`.
-3. In KonnektIdea, connect provider **Custom tracker (webhook)** with that URL (+ auth header).
+3. In IdeaKonnekt, connect provider **Custom tracker (webhook)** with that URL (+ auth header).
 
 No code change required.
 
@@ -118,7 +118,7 @@ UI: idea detail **Tracker** tab (`?tab=tracker`) shows live tasks; **Delivery** 
 ## Follow-ups
 
 - OAuth authorization-code flows using `CLICKUP_*` / `JIRA_*` client settings
-- Sync status / webhooks from remote → KonnektIdea delivery tasks
+- Sync status / webhooks from remote → IdeaKonnekt delivery tasks
 - Dedicated credential encryption key independent of JWT
 - Notion public OAuth using `NOTION_CLIENT_*` (MVP uses internal integration secret)
 - Promote Sheets / Teams stubs (see INTEGRATIONS.md)

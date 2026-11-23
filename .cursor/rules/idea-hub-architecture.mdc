@@ -1,9 +1,9 @@
 ---
-description: KonnektIdea stack, spine+phases layout, and layering contracts
+description: IdeaKonnekt stack, spine+phases layout, and layering contracts
 alwaysApply: true
 ---
 
-# KonnektIdea Architecture
+# IdeaKonnekt Architecture
 
 ## Stack
 

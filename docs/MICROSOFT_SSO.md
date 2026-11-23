@@ -1,6 +1,6 @@
 # Microsoft Entra ID (Azure AD) sign-in
 
-KonnektIdea supports **Microsoft work/school account** OIDC alongside the existing email + password + OTP flow. This is standard Entra ID / Azure AD OAuth — the same identity M365 and Teams users already have. It is **not** a Teams bot.
+IdeaKonnekt supports **Microsoft work/school account** OIDC alongside the existing email + password + OTP flow. This is standard Entra ID / Azure AD OAuth — the same identity M365 and Teams users already have. It is **not** a Teams bot.
 
 OTP is **skipped** for Microsoft SSO. Successful SSO sets the same httpOnly JWT cookies as password login.
 
@@ -40,7 +40,7 @@ Frontend (optional):
 ## Azure app registration
 
 1. Azure Portal → **Microsoft Entra ID** → **App registrations** → **New registration**.
-2. Name: e.g. `KonnektIdea`.
+2. Name: e.g. `IdeaKonnekt`.
 3. **Supported account types** (Authentication / registration wizard) — pick to match demo needs:
    - *Accounts in any organizational directory (Any Microsoft Entra ID tenant - Multitenant)* → use `MICROSOFT_TENANT_ID=organizations` or `common`
    - *Multitenant + personal Microsoft accounts* → use `MICROSOFT_TENANT_ID=common`
@@ -67,13 +67,13 @@ The app registration is still **single-tenant**, or `MICROSOFT_TENANT_ID` is a d
 
 **In Azure Portal (required — env alone cannot override this):**
 
-1. **Microsoft Entra ID** → **App registrations** → app `d9d41ca3-…` (KonnektIdea).
+1. **Microsoft Entra ID** → **App registrations** → app `d9d41ca3-…` (IdeaKonnekt).
 2. **Authentication** (or **Manifest** if the blade is locked) → **Supported account types**.
 3. Select **Accounts in any organizational directory (Multitenant)**  
    — or **Multitenant + personal Microsoft accounts** if you need `@outlook.com` / MSA.
 4. Save. Optionally under **Users** invite the person as a **guest** if you must stay single-tenant.
 
-**In `backend/.env`:** set `MICROSOFT_TENANT_ID=common` (or `organizations`), restart uvicorn. KonnektIdea already accepts multi-tenant `iss` values when authority is `common` / `organizations` / `consumers`.
+**In `backend/.env`:** set `MICROSOFT_TENANT_ID=common` (or `organizations`), restart uvicorn. IdeaKonnekt already accepts multi-tenant `iss` values when authority is `common` / `organizations` / `consumers`.
 
 ### Optional: expose email claim
 
@@ -83,7 +83,7 @@ If `id_token` lacks `email` / `preferred_username` with `@`, add an optional cla
 
 - Email from the validated `id_token` (`email`, else `preferred_username` / `upn`) is normalized to lowercase.
 - If a user already exists (including seed users), they are signed in and linked by email.
-- If the email is new, KonnektIdea creates an **active** user with `MICROSOFT_DEFAULT_ROLE` (default `contributor`) and a random unusable password hash (password+OTP login will not work until a password is set by other means).
+- If the email is new, IdeaKonnekt creates an **active** user with `MICROSOFT_DEFAULT_ROLE` (default `contributor`) and a random unusable password hash (password+OTP login will not work until a password is set by other means).
 
 ## Local test plan
 

@@ -212,7 +212,7 @@ HELP_FAQ: list[dict[str, Any]] = [
         "id": "agents",
         "keywords": ("agent", "kompass", "simulated", "ai", "assistant"),
         "reply": (
-            "KonnektIdea agents are Simulated today — local heuristics, labelled "
+            "IdeaKonnekt agents are Simulated today — local heuristics, labelled "
             "Simulated in the UI. Live Kompass agents will plug in later through "
             "the same AgentGateway seam. Agents propose; humans decide. They never "
             "write scores or decisions of record."
@@ -235,7 +235,7 @@ HELP_FAQ: list[dict[str, Any]] = [
         "reply": (
             "Sign-in options depend on admin policy: email + password with a "
             "one-time code (OTP), optional authenticator MFA (TOTP), and Microsoft "
-            "Entra SSO when enabled. KonnektIdea never asks you to paste secrets into "
+            "Entra SSO when enabled. IdeaKonnekt never asks you to paste secrets into "
             "chat. Manage MFA under Account settings when available."
         ),
         "links": [
@@ -957,8 +957,30 @@ def submit_assist_turn(
     )
 
 
+FAQ_FOLLOWUPS: dict[str, list[str]] = {
+    "submit": [
+        "How do I add my teammates?",
+        "Can I save a draft and finish later?",
+        "How do I join an ideathon?",
+    ],
+    "review": [
+        "What do the review scores mean?",
+        "How long does a review take?",
+    ],
+    "roles": [
+        "What can a reviewer do?",
+        "How do I get another role?",
+    ],
+    "fallback": [
+        "How do I submit an idea?",
+        "How do I join an ideathon?",
+        "Why can't I change my password?",
+    ],
+}
+
+
 def help_turn(*, message: str) -> dict[str, Any]:
-    """Answer a basic KonnektIdea FAQ question from a local intent map.
+    """Answer a basic IdeaKonnekt FAQ question from a local intent map.
 
     Args:
         message: User question text.
@@ -984,6 +1006,7 @@ def help_turn(*, message: str) -> dict[str, Any]:
             "topic": best["id"],
             "reply": best["reply"],
             "links": list(best["links"]),
+            "followups": list(FAQ_FOLLOWUPS.get(best["id"], [])),
             "notice": "Simulated — Kompass soon",
         }
 
@@ -997,6 +1020,7 @@ def help_turn(*, message: str) -> dict[str, Any]:
             "agents (Simulated), and high-level SSO/MFA sign-in. Ask about one of "
             "those — I do not need or store passwords or OTP codes."
         ),
+        "followups": list(FAQ_FOLLOWUPS["fallback"]),
         "links": [
             {"label": "Submit", "href": "/submit"},
             {"label": "Review", "href": "/review"},

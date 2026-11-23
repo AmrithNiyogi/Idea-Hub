@@ -337,18 +337,18 @@ a.nav-item[aria-current='page'] {
 }
 
 /* Help chat widget — structure from aistudio-chatbot-ui-v2 DotAgent;
-   colors/fonts from KonnektIdea tokens (no purple-on-white invent). */
+   colors/fonts from IdeaKonnekt tokens (no purple-on-white invent). */
 .ik-chat {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: 16px;
+  bottom: 16px;
   z-index: 60;
   font-family: var(--font-sans);
 }
 
 .ik-chat__launcher {
-  width: 64px;
-  height: 64px;
+  width: 44px;
+  height: 44px;
   border: none;
   padding: 0;
   cursor: pointer;
@@ -372,13 +372,13 @@ a.nav-item[aria-current='page'] {
 }
 
 .ik-chat__launcher-icon {
-  width: 40px;
-  height: 40px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
   pointer-events: none;
   background: #0a0a0b;
   border-radius: 50%;
-  padding: 4px;
+  padding: 3px;
   box-sizing: border-box;
 }
 
@@ -739,14 +739,18 @@ a.nav-item[aria-current='page'] {
     bottom: 16px;
   }
 
+  .ts-composer {
+    padding-right: 64px;
+  }
+
   .ik-chat__launcher {
-    width: 58px;
-    height: 58px;
+    width: 40px;
+    height: 40px;
   }
 
   .ik-chat__launcher-icon {
-    width: 36px;
-    height: 36px;
+    width: 22px;
+    height: 22px;
   }
 
   .ik-chat__panel {
@@ -1497,7 +1501,7 @@ a.nav-item[aria-current='page'] {
   }
 }
 
-/* —— Groups / channels (Discord nav + WhatsApp chat, KonnektIdea tokens) —— */
+/* —— Groups / channels (Discord nav + WhatsApp chat, IdeaKonnekt tokens) —— */
 .grp-page {
   display: flex;
   flex-direction: column;
@@ -1654,12 +1658,56 @@ button.grp-row:disabled {
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* DM conversation fills the screen below the top bar, like a messaging app:
+   header at the top, messages scrolling in the middle, composer pinned at the bottom. */
+.view:has(.dm-screen) {
+  padding: 0;
+  max-width: none;
+}
+
+.dm-screen {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--topbar-h));
+  height: calc(100dvh - var(--topbar-h));
+  min-height: 0;
+}
+
+.dm-screen__head {
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.dm-screen .ts-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.dm-screen .ts-pane {
+  min-height: 0;
+  height: 100%;
+}
+
+.dm-screen .ts-messages {
+  max-height: none;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+/* Chat boxes (groups and DMs) size to their content and only scroll once they are tall. */
 .ts-shell {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   gap: 0;
-  min-height: min(70vh, 640px);
-  height: min(70vh, 640px);
+  height: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -1793,36 +1841,46 @@ button.grp-row:disabled {
 }
 
 .ts-messages {
-  flex: 1;
+  flex: 0 1 auto;
+  height: auto;
+  min-height: 160px;
+  max-height: min(60vh, 560px);
   overflow: auto;
   padding: 14px 12px 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-height: 0;
 }
 
 /* WhatsApp-like bubbles (tokens only) */
 .ts-bubble {
   display: flex;
   flex-direction: column;
-  max-width: min(78%, 520px);
-  padding: 6px 10px 5px;
-  border-radius: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  max-width: min(72%, 460px);
+  padding: 8px 12px 6px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  border: 0;
   box-shadow: none;
 }
 
+/* Sent: brand colour, right aligned. */
 .ts-bubble--mine {
   align-self: flex-end;
-  background: var(--brand-soft);
-  border-color: transparent;
+  background: var(--brand);
+  color: var(--on-brand);
   border-bottom-right-radius: 4px;
 }
 
+.ts-bubble--mine .ts-bubble__time {
+  color: var(--on-brand);
+  opacity: 0.75;
+}
+
+/* Received: neutral surface, left aligned, name in brand ink. */
 .ts-bubble--theirs {
   align-self: flex-start;
+  background: var(--surface-2);
   border-bottom-left-radius: 4px;
 }
 
@@ -1851,7 +1909,7 @@ button.grp-row:disabled {
 
 .ts-bubble__time {
   align-self: flex-end;
-  margin-top: 2px;
+  margin-top: 4px;
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--muted);
@@ -1867,7 +1925,8 @@ button.grp-row:disabled {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 10px 12px;
+  /* Leave room on the right for the floating help button so it never covers Send. */
+  padding: 10px 72px 10px 12px;
   border-top: 1px solid var(--border);
   background: var(--surface);
   flex-shrink: 0;
@@ -1885,6 +1944,28 @@ button.grp-row:disabled {
 .ts-composer .btn {
   border-radius: 999px;
   min-width: 40px;
+}
+
+.ts-emoji {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ts-emoji__toggle {
+  border-radius: 999px;
+  min-width: 40px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.ts-emoji__popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 5;
+  box-shadow: var(--shadow-2);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .ts-drawer {
@@ -1936,7 +2017,6 @@ button.grp-row:disabled {
   .ts-shell:has(.ts-drawer) {
     grid-template-columns: 1fr;
     height: auto;
-    min-height: 520px;
   }
 
   .ts-channels {

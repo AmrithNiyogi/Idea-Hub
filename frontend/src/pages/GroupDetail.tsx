@@ -9,7 +9,13 @@ import {
   useMemo,
   useRef,
   useState,
+  lazy,
+  Suspense,
 } from 'react';
+import { EmojiStyle, Theme, type EmojiClickData } from 'emoji-picker-react';
+
+// Loaded only when the emoji menu is opened, so the chat page stays light.
+const EmojiPicker = lazy(() => import('emoji-picker-react'));
 import {
   Link,
   Navigate,
@@ -35,6 +41,7 @@ import { useDialog } from '../components/DialogProvider';
 
 type SidePanel = 'none' | 'meeting' | 'mcp' | 'members';
 
+
 export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   const dialog = useDialog();
   const { id = '' } = useParams();
@@ -52,6 +59,7 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
   const [notice, setNotice] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [side, setSide] = useState<SidePanel>('none');
@@ -153,15 +161,25 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
     };
   }, [channelId, reloadMessages]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Light polling so chats feel live without websockets.
+  // Light polling so chats feel live without websockets. Background refresh
+  // failures are logged rather than hidden, so a stalled chat is visible in the console.
   useEffect(() => {
     if (!channelId) return;
-    const t = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        void reloadMessages(channelId).catch(() => undefined);
-      }
-    }, 8000);
-    return () => window.clearInterval(t);
+    const refresh = () => {
+      if (document.visibilityState !== 'visible') return;
+      reloadMessages(channelId).catch((err: unknown) => {
+        console.warn('Chat refresh failed', err);
+      });
+    };
+    const t = window.setInterval(refresh, 8000);
+    // Browsers throttle timers in background tabs, so catch up as soon as the tab is back.
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('focus', refresh);
+    };
   }, [channelId, reloadMessages]);
 
   useEffect(() => {
@@ -474,6 +492,40 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
       </div>
 
       <form className="ts-composer" onSubmit={onSend}>
+        <div className="ts-emoji">
+          <button
+            type="button"
+            className="btn ts-emoji__toggle"
+            aria-label="Insert emoji"
+            aria-expanded={emojiOpen}
+            disabled={!group.can_post || busy || !channelId}
+            onClick={() => setEmojiOpen((open) => !open)}
+          >
+            <span aria-hidden>😊</span>
+          </button>
+          {emojiOpen ? (
+            <div
+              className="ts-emoji__popover"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setEmojiOpen(false);
+              }}
+            >
+              <Suspense fallback={<p className="muted small">Loading emoji…</p>}>
+                <EmojiPicker
+                  emojiStyle={EmojiStyle.NATIVE}
+                  theme={Theme.AUTO}
+                  width={320}
+                  height={380}
+                  previewConfig={{ showPreview: false }}
+                  onEmojiClick={(data: EmojiClickData) => {
+                    setDraft((d) => `${d}${data.emoji}`);
+                    setEmojiOpen(false);
+                  }}
+                />
+              </Suspense>
+            </div>
+          ) : null}
+        </div>
         <input
           className="input"
           placeholder={
@@ -512,8 +564,8 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   if (group.kind === 'dm') {
     const peer = group.peer_user_id;
     return (
-      <div className="grp-page">
-        <div className="row grp-head" style={{ gap: 12 }}>
+      <div className="dm-screen">
+        <div className="row dm-screen__head">
           <Avatar
             name={group.name}
             avatar={group.peer_avatar}

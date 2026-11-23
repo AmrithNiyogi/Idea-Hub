@@ -1,8 +1,8 @@
-"""KonnektIdea branded HTML email layout.
+"""IdeaKonnekt branded HTML email layout.
 
 Visual system mirrors the tracing / Kompass admin house style (purple accent
 ``#7663F2``, ``#F6F2F3`` page background, ``#160922`` near-black text/footer,
-tinted code box, amber notice). Copy and footer are KonnektIdea–specific.
+tinted code box, amber notice). Copy and footer are IdeaKonnekt–specific.
 
 This module must stay free of SMTP I/O — callers compose bodies here and send
 elsewhere.
@@ -15,15 +15,15 @@ from html import escape
 
 from app.config.settings import settings
 
-SENDER_NAME = "KonnektIdea"
+SENDER_NAME = "IdeaKonnekt"
 
 TEXT_FOOTER = (
-    "KonnektIdea by DotKonnekt\nThis is an automated message, please do not reply."
+    "IdeaKonnekt by DotKonnekt\nThis is an automated message, please do not reply."
 )
 
 
 def source_address() -> str:
-    """Format the SMTP From header with the KonnektIdea display name.
+    """Format the SMTP From header with the IdeaKonnekt display name.
 
     Returns:
         RFC 5322 ``From`` value using ``SMTP_FROM``.
@@ -79,7 +79,7 @@ def notice(html: str) -> str:
 
 
 def render_email(heading: str, body_html: str, *, preheader: str = "") -> str:
-    """Wrap body content in the KonnektIdea header bar and footer.
+    """Wrap body content in the IdeaKonnekt header bar and footer.
 
     Inline styles only — email clients do not reliably load ``<style>`` blocks.
     ``preheader`` is a hidden inbox-preview snippet so clients do not concatenate
@@ -93,7 +93,7 @@ def render_email(heading: str, body_html: str, *, preheader: str = "") -> str:
     Returns:
         Full HTML document string.
     """
-    brand = escape(settings.APP_NAME or "KonnektIdea")
+    brand = escape(settings.APP_NAME or "IdeaKonnekt")
     preheader_block = ""
     if preheader:
         preheader_block = (

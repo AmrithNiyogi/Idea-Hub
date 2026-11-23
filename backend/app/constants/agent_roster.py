@@ -190,7 +190,7 @@ KOMPASS_OPEN_QUESTIONS: list[dict[str, str]] = [
     {"id": "q4", "text": "Webhook or callback for run completion?"},
     {"id": "q5", "text": "Human approval: is there any approval or pause-and-resume primitive?"},
     {"id": "q6", "text": "Which LLM models are available in the tenant catalog?"},
-    {"id": "q7", "text": "Tool auth: how do custom tools authenticate to KonnektIdea?"},
+    {"id": "q7", "text": "Tool auth: how do custom tools authenticate to IdeaKonnekt?"},
     {"id": "q8", "text": "Multi-tenant isolation for agent runs?"},
     {"id": "q9", "text": "Rate limits / cost budgets per agent?"},
     {"id": "q10", "text": "Prompt versioning / inherit semantics confirmed?"},

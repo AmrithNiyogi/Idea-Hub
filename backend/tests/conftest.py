@@ -1,4 +1,4 @@
-"""Shared fixtures for KonnektIdea backend unit tests.
+"""Shared fixtures for IdeaKonnekt backend unit tests.
 
 External I/O (Postgres, Redis, SMTP) is mocked so ``make test`` runs without
 dev-services. Critical-path coverage targets are declared in ``pyproject.toml``.

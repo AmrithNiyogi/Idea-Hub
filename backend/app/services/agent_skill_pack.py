@@ -1,4 +1,4 @@
-"""Ship the KonnektIdea → agent skill pack for end-user install.
+"""Ship the IdeaKonnekt → agent skill pack for end-user install.
 
 Responsibilities:
 - Locate the canonical ``idea-hub-pull-idea`` SKILL.md (API assets first).
@@ -27,7 +27,7 @@ _ZIP_FILENAME = "idea-hub-pull-idea-skill.zip"
 
 
 def _repo_root() -> Path:
-    """Return the KonnektIdea checkout root (parent of ``backend/``)."""
+    """Return the IdeaKonnekt checkout root (parent of ``backend/``)."""
     # backend/app/services/this_file.py → parents[3] == repo root
     return Path(__file__).resolve().parents[3]
 
@@ -114,7 +114,7 @@ def install_instructions(*, api_base: str | None = None) -> tuple[str, str, str]
             "The context pack below is **self-contained** — paste a Cursor/Claude "
             "prompt to start building without installing anything.",
             "",
-            "To re-fetch live context later, install the skill from KonnektIdea "
+            "To re-fetch live context later, install the skill from IdeaKonnekt "
             "(**Build with an agent → Download skill**), then extract at the "
             "target repo root:",
             "",
@@ -162,7 +162,7 @@ def build_skill_pack_zip() -> SkillPackBytes:
             f"# {SKILL_NAME} skill pack",
             "",
             "Extract this archive at the **root of the repo** where you want "
-            "the coding agent to work (KonnektIdea or your product repo).",
+            "the coding agent to work (IdeaKonnekt or your product repo).",
             "",
             "## Cursor",
             "",
