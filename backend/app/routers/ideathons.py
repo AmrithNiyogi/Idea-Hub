@@ -19,6 +19,7 @@ from app.schemas.ideathon import (
     IdeathonCreate,
     IdeathonDetailOut,
     IdeathonSummaryOut,
+    IdeathonUpdate,
     LinkIdeaRequest,
     MovePitchRequest,
     PitchScoreRequest,
@@ -61,6 +62,19 @@ async def get_ideathon(
     ideathon_id: uuid.UUID, session: DbSession, actor: RequireActor
 ) -> IdeathonDetailOut:
     return await IdeathonService(session).get(ideathon_id)
+
+
+@router.patch(
+    "/{ideathon_id}",
+    summary="Edit ideathon details (organiser)",
+)
+async def update_ideathon(
+    ideathon_id: uuid.UUID,
+    body: IdeathonUpdate,
+    session: DbSession,
+    actor: RequireActor,
+) -> dict:
+    return await IdeathonService(session).update(ideathon_id, body, actor)
 
 
 @router.post("/{ideathon_id}/advance", summary="Advance ideathon to next phase")

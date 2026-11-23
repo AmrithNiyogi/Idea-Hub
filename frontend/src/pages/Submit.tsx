@@ -1,6 +1,10 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ideasApi } from '../api/ideas';
+import { ideathonsApi } from '../api/ideathons';
+import { useAuth } from '../auth/AuthProvider';
+import { GITHUB_REPO_PATTERN } from '../constants/github';
+import { TeamFields } from '../components/submit/TeamFields';
 import { agentsApi } from '../api/agents';
 import { Icon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
@@ -18,6 +22,9 @@ const empty: IdeaWrite = {
   success_metrics: '',
   tags: [],
   anonymous: false,
+  co_author_ids: [],
+  team_name: '',
+  github_url: '',
 };
 
 const CAT_HELP: Record<string, string> = {
@@ -83,7 +90,11 @@ function patchLabels(patches: Record<string, unknown>): string[] {
 export function SubmitPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { user } = useAuth();
   const draftParam = params.get('draft');
+  const ideathonId = params.get('ideathon');
+  const [ideathonTitle, setIdeathonTitle] = useState<string | null>(null);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [form, setForm] = useState<IdeaWrite>(empty);
   const [draftId, setDraftId] = useState<string | null>(draftParam);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -123,6 +134,17 @@ export function SubmitPage() {
   useEffect(() => {
     ideasApi.categories().then(setCategories).catch(() => setCategories([]));
   }, []);
+
+  useEffect(() => {
+    if (!ideathonId) {
+      setIdeathonTitle(null);
+      return;
+    }
+    ideathonsApi
+      .get(ideathonId)
+      .then((d) => setIdeathonTitle(d.title))
+      .catch(() => setIdeathonTitle(null));
+  }, [ideathonId]);
 
   const applyPatches = (
     patches: Record<string, unknown>,
@@ -234,6 +256,9 @@ export function SubmitPage() {
           success_metrics: idea.success_metrics,
           tags: idea.tags,
           anonymous: idea.anonymous,
+          co_author_ids: idea.co_author_ids ?? [],
+          team_name: idea.team_name ?? '',
+          github_url: idea.github_url ?? '',
         });
       })
       .catch((e) => setError(e instanceof Error ? e.message : 'Draft not found'));
@@ -409,13 +434,31 @@ export function SubmitPage() {
       setError('Beneficiaries and success metrics are required.');
       return;
     }
+    const github = (form.github_url ?? '').trim();
+    if (github && !GITHUB_REPO_PATTERN.test(github)) {
+      setError('GitHub link must look like https://github.com/owner/repo.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const idea = await ideasApi.submit(
-        { ...form, title: form.title.trim() },
+        { ...form, title: form.title.trim(), github_url: github },
         draftId,
       );
+      if (ideathonId) {
+        try {
+          await ideathonsApi.link(ideathonId, idea.id);
+        } catch (linkErr) {
+          // The idea is already submitted, so keep the page open and say how to fix it.
+          setSubmittedId(idea.id);
+          const why = linkErr instanceof Error ? linkErr.message : 'Link failed';
+          setError(
+            `Your idea was submitted, but it could not be added to the ideathon (${why}). Open the ideathon and link it from "Or link one of your existing ideas".`,
+          );
+          return;
+        }
+      }
       navigate(`/ideas/${idea.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Submit failed');
@@ -466,11 +509,28 @@ export function SubmitPage() {
         </div>
       </div>
 
+      {ideathonId && !submittedId ? (
+        <div className="notice">
+          <Icon name="flag" size={16} />
+          <span>
+            {ideathonTitle
+              ? `This idea will be added to the ideathon "${ideathonTitle}" when you submit.`
+              : 'This idea will be added to the ideathon when you submit.'}
+          </span>
+        </div>
+      ) : null}
+
       {error ? (
         <div className="notice notice--danger" role="alert">
           <Icon name="alert" size={18} />
           <span>{error}</span>
         </div>
+      ) : null}
+
+      {submittedId ? (
+        <Link className="btn" to={`/ideas/${submittedId}`}>
+          Open my submitted idea
+        </Link>
       ) : null}
 
       <div className="layout-rail layout-rail--submit">
@@ -833,6 +893,16 @@ export function SubmitPage() {
               ))}
             </datalist>
           </div>
+
+          <TeamFields
+            currentUserId={user?.id ?? null}
+            coAuthorIds={form.co_author_ids ?? []}
+            teamName={form.team_name ?? ''}
+            githubUrl={form.github_url ?? ''}
+            onCoAuthorsChange={(ids) => set('co_author_ids', ids)}
+            onTeamNameChange={(v) => set('team_name', v)}
+            onGithubUrlChange={(v) => set('github_url', v)}
+          />
 
           <label className="switch">
             <input

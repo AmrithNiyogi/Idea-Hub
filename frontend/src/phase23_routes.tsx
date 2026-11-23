@@ -10,6 +10,7 @@ import { Route } from 'react-router-dom';
 import { IdeathonsPage } from './pages/Ideathons';
 import { IdeathonDetailPage } from './pages/IdeathonDetail';
 import { IdeathonNewPage } from './pages/IdeathonNew';
+import { IdeathonEditPage } from './pages/IdeathonEdit';
 import { RecognitionPage } from './pages/Recognition';
 import { ProfilePage } from './pages/Profile';
 import { PipelinePage } from './pages/Pipeline';
@@ -23,6 +24,7 @@ export const phase23Routes = (
     <Route path="/ideathons" element={<IdeathonsPage />} />
     <Route path="/ideathons/new" element={<IdeathonNewPage />} />
     <Route path="/ideathons/:id" element={<IdeathonDetailPage />} />
+    <Route path="/ideathons/:id/edit" element={<IdeathonEditPage />} />
     <Route path="/recognition" element={<RecognitionPage />} />
     <Route path="/people/:id" element={<ProfilePage />} />
   </>
@@ -61,6 +63,7 @@ export {
   IdeathonsPage,
   IdeathonDetailPage,
   IdeathonNewPage,
+  IdeathonEditPage,
   RecognitionPage,
   ProfilePage,
   PipelinePage,

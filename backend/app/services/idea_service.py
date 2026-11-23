@@ -36,6 +36,17 @@ def _as_uuid_list(raw: Any) -> list[uuid.UUID]:
     return out
 
 
+def _clean_co_authors(idea: Idea, ids: list[uuid.UUID] | None) -> list[str]:
+    """Dedupe teammate ids and drop the author, so nobody is listed twice."""
+    author = str(idea.author_id) if idea.author_id else None
+    out: list[str] = []
+    for raw in ids or []:
+        value = str(raw)
+        if value != author and value not in out:
+            out.append(value)
+    return out
+
+
 def _apply_fields(idea: Idea, data: IdeaWrite) -> None:
     idea.title = data.title.strip()
     idea.category_id = data.category_id
@@ -46,7 +57,9 @@ def _apply_fields(idea: Idea, data: IdeaWrite) -> None:
     idea.success_metrics = data.success_metrics or ""
     idea.tags = list(data.tags or [])
     idea.anonymous = bool(data.anonymous)
-    idea.co_author_ids = [str(x) for x in (data.co_author_ids or [])]
+    idea.co_author_ids = _clean_co_authors(idea, data.co_author_ids)
+    idea.team_name = data.team_name
+    idea.github_url = data.github_url
     idea.updated_at = _now()
 
 

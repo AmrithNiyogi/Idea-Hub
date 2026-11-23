@@ -36,6 +36,8 @@ export interface Idea {
   author_id: string;
   anonymous: boolean;
   co_author_ids: string[];
+  team_name?: string | null;
+  github_url?: string | null;
   owner_id: string | null;
   status: IdeaStatus;
   is_draft: boolean;
@@ -72,6 +74,8 @@ export interface IdeaWrite {
   tags?: string[];
   anonymous?: boolean;
   co_author_ids?: string[];
+  team_name?: string | null;
+  github_url?: string | null;
 }
 
 export interface IdeaListResponse {

@@ -29,6 +29,29 @@ class IdeathonCreate(BaseModel):
         return cleaned
 
 
+class IdeathonUpdate(BaseModel):
+    """Partial edit of an ideathon. Omitted (or null) fields are left unchanged."""
+
+    title: Optional[str] = Field(default=None, min_length=4, max_length=80)
+    theme: Optional[str] = Field(default=None, min_length=3, max_length=60)
+    challenges: Optional[list[str]] = Field(default=None, min_length=1, max_length=3)
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+
+    @field_validator("challenges")
+    @classmethod
+    def challenge_lengths(cls, v: Optional[list[str]]) -> Optional[list[str]]:
+        if v is None:
+            return None
+        cleaned = [c.strip() for c in v if c and c.strip()]
+        if not cleaned:
+            raise ValueError("Write at least one challenge statement")
+        for c in cleaned:
+            if len(c) < 20 or len(c) > 300:
+                raise ValueError("Each challenge needs 20–300 characters")
+        return cleaned
+
+
 class LinkIdeaRequest(BaseModel):
     idea_id: uuid.UUID
 

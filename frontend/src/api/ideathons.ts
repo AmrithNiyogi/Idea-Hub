@@ -5,6 +5,7 @@ import type {
   AgentRunResult,
   Handoff,
   IdeathonCreateBody,
+  IdeathonUpdateBody,
   IdeathonDetail,
   IdeathonSummary,
   TallyRow,
@@ -18,6 +19,12 @@ export const ideathonsApi = {
   create: (body: IdeathonCreateBody) =>
     apiFetch<{ id: string }>('/ideathons', {
       method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  update: (id: string, body: IdeathonUpdateBody) =>
+    apiFetch<{ id: string }>(`/ideathons/${id}`, {
+      method: 'PATCH',
       body: JSON.stringify(body),
     }),
 

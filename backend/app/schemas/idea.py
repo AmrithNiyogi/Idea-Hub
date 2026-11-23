@@ -5,7 +5,11 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+import re
+
+from pydantic import BaseModel, Field, field_validator
+
+GITHUB_REPO_URL = re.compile(r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$")
 
 
 class IdeaWrite(BaseModel):
@@ -21,6 +25,26 @@ class IdeaWrite(BaseModel):
     tags: list[str] = Field(default_factory=list)
     anonymous: bool = False
     co_author_ids: list[UUID] = Field(default_factory=list)
+    team_name: str | None = Field(default=None, max_length=120)
+    github_url: str | None = Field(default=None, max_length=300)
+
+    @field_validator("team_name")
+    @classmethod
+    def clean_team_name(cls, v: str | None) -> str | None:
+        """Blank team names are stored as no team name."""
+        cleaned = (v or "").strip()
+        return cleaned or None
+
+    @field_validator("github_url")
+    @classmethod
+    def check_github_url(cls, v: str | None) -> str | None:
+        """Accept an empty value or one GitHub repository URL (one per idea)."""
+        cleaned = (v or "").strip()
+        if not cleaned:
+            return None
+        if not GITHUB_REPO_URL.match(cleaned):
+            raise ValueError("GitHub link must look like https://github.com/owner/repo")
+        return cleaned
 
 
 class IdeaDraftSave(BaseModel):
@@ -97,6 +121,8 @@ class IdeaOut(BaseModel):
     author_id: UUID
     anonymous: bool = False
     co_author_ids: list[UUID] = Field(default_factory=list)
+    team_name: str | None = None
+    github_url: str | None = None
     owner_id: UUID | None = None
     status: str
     is_draft: bool = False

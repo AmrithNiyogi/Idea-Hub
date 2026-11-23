@@ -79,6 +79,8 @@ class Idea(Base):
     ideathon_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), nullable=True, index=True
     )
+    team_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    github_url: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
     submitted_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

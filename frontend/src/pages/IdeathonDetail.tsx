@@ -1310,6 +1310,13 @@ export function IdeathonDetailPage() {
           <Pill icon="flag">{it.theme}</Pill>
         </div>
         <h1 className="idea-title">{it.title}</h1>
+        {isOrg && !it.completed_at ? (
+          <div className="row" style={{ justifyContent: 'flex-end' }}>
+            <Link className="btn btn--ghost" to={`/ideathons/${it.id}/edit`}>
+              <Icon name="edit" size={14} /> Edit details
+            </Link>
+          </div>
+        ) : null}
         <div className="meta-row">
           <span className="muted">Sponsor</span>
           {sponsor ? (

@@ -41,6 +41,7 @@ from app.schemas.ideathon import (
     IdeathonCreate,
     IdeathonDetailOut,
     IdeathonSummaryOut,
+    IdeathonUpdate,
     LinkIdeaRequest,
     MovePitchRequest,
     PitchScoreRequest,
@@ -134,6 +135,51 @@ class IdeathonService:
             winners=[],
         )
         await self.repo.add(it)
+        await self.session.commit()
+        return {"id": str(it.id)}
+
+    async def update(
+        self, ideathon_id: uuid.UUID, body: IdeathonUpdate, actor: Actor
+    ) -> dict:
+        """Apply a partial edit to an ideathon.
+
+        Title and dates can change until the ideathon is complete. Theme and
+        challenges are fixed once the ideathon leaves the open phase. The
+        sponsor is never editable.
+
+        Args:
+            ideathon_id: Ideathon to edit.
+            body: Fields to change; omitted or null fields stay as they are.
+            actor: Authenticated organiser or admin.
+
+        Returns:
+            The ideathon id.
+
+        Raises:
+            HTTPException: 403 for non-organisers, 404 if missing, 400 if the
+                ideathon is complete, a locked field is changed, or the end
+                date is not after the start date.
+        """
+        self._require_org(actor)
+        it = await self._require(ideathon_id)
+        if it.completed_at is not None or it.phase == "complete":
+            raise HTTPException(400, "Completed ideathons can't be edited.")
+        if it.phase != "open" and (body.theme is not None or body.challenges is not None):
+            raise HTTPException(
+                400, "Theme and challenges can only change while the ideathon is open."
+            )
+        start_at = body.start_at or it.start_at
+        end_at = body.end_at or it.end_at
+        if end_at <= start_at:
+            raise HTTPException(400, "The end date must be after the start date.")
+        if body.title is not None:
+            it.title = body.title.strip()
+        if body.theme is not None:
+            it.theme = body.theme.strip()
+        if body.challenges is not None:
+            it.challenges = body.challenges
+        it.start_at = start_at
+        it.end_at = end_at
         await self.session.commit()
         return {"id": str(it.id)}
 

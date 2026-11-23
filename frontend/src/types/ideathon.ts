@@ -55,6 +55,15 @@ export interface IdeathonCreateBody {
   end_at: string;
 }
 
+/** Partial organiser edit. Theme and challenges are only accepted while the ideathon is open. */
+export interface IdeathonUpdateBody {
+  title?: string;
+  theme?: string;
+  challenges?: string[];
+  start_at?: string;
+  end_at?: string;
+}
+
 export interface TallyRow {
   idea_id: string;
   panel_avg: number;

@@ -61,6 +61,7 @@ def test_as_uuid_list_and_apply_fields() -> None:
         tags=[],
         anonymous=False,
         co_author_ids=[],
+        author_id=None,
         updated_at=None,
     )
     data = _write()

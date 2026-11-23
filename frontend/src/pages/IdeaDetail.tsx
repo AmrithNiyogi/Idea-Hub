@@ -522,6 +522,20 @@ export function IdeaDetailPage() {
               ))}
             </>
           ) : null}
+          {idea.team_name ? (
+            <>
+              <span className="muted">Team</span>
+              <span>{idea.team_name}</span>
+            </>
+          ) : null}
+          {idea.github_url ? (
+            <>
+              <span className="muted">Code</span>
+              <a href={idea.github_url} target="_blank" rel="noreferrer">
+                {idea.github_url.replace('https://github.com/', 'github.com/')}
+              </a>
+            </>
+          ) : null}
           {idea.owner_id ? (
             <>
               <span className="muted">Owner</span>
