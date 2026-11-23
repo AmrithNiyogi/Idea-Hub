@@ -7,12 +7,13 @@
 
   /* Cool blue-gray canvas — subtle tint, not strong blue / not purple */
   --bg:#F5F4F0; --surface:#FFFFFF; --surface-2:#ECEAE4; --surface-3:#E0DDD5;
+  --panel-bg:var(--brand); --panel-ink:var(--on-brand);
   --border:rgba(28,25,20,.10); --border-strong:rgba(28,25,20,.18);
   --text:#1C1A17; --text-2:#55504A; --text-3:#6E6960;
   --overlay:rgba(20,18,15,.45);
 
-  --brand:#0F6B63; --brand-hover:#0B5852; --brand-ink:#0B5852; --brand-soft:#E2F0ED; --brand-line:#B5DAD2; --on-brand:#FFFFFF;
-  --accent:#0F6B63; --btn-bg:#1C1A17; --btn-fg:#FFFFFF;
+  --brand:#7560B8; --brand-hover:#63499E; --brand-ink:#5E4A9C; --brand-soft:#F4F1FA; --brand-line:#DDD4F0; --on-brand:#FFFFFF;
+  --accent:#9580D2; --btn-bg:#1C1A17; --btn-fg:#FFFFFF;
   --gold:#E0A526; --gold-ink:#7A5200; --gold-soft:#FBF1D6;
   --success:#17703F; --success-soft:#E2F2E8;
   --warning:#8A5A00; --warning-soft:#FBEFCB;
@@ -21,12 +22,12 @@
   --info:#3B5BA5;    --info-soft:#E7ECF8;
   --neutral-soft:#E9E6DF;
   --cat-tech:#3B5BA5; --cat-business:#C48A12; --cat-process:#6E6960; --cat-innovation:#8A5CB8;
-  --av-1:#0F6B63; --av-2:#3B5BA5; --av-3:#17703F; --av-4:#8A5A00; --av-5:#B42318; --av-6:#8A5CB8; --av-7:#2D6FA8; --av-8:#6E6960;
+  --av-1:#7A3FB0; --av-2:#3B5BA5; --av-3:#17703F; --av-4:#8A5A00; --av-5:#B42318; --av-6:#8A5CB8; --av-7:#2D6FA8; --av-8:#6E6960;
   /* Derived for modules added after the design file (extra category colours, chart series); same official ramps. */
   --cat-amber:#8A5A00; --cat-green:#17703F; --cat-violet:#5B3A7A; --cat-coral:#B42318;
-  --chart-1:#0F6B63; --chart-2:#D08A1E; --chart-3:#3B5BA5; --chart-4:#A4553C; --chart-5:#5E7D3A; --chart-6:#8A857B;
+  --chart-1:#7A3FB0; --chart-2:#D08A1E; --chart-3:#3B5BA5; --chart-4:#A4553C; --chart-5:#5E7D3A; --chart-6:#8A857B;
   /* Lifecycle stage accents (funnel / stagebar) — multi-hue, not a purple opacity wash. */
-  --stage-1:#C9C5BB; --stage-2:#AFA99E; --stage-3:#938D82; --stage-4:#6E6960; --stage-5:#0F6B63;
+  --stage-1:#C9C5BB; --stage-2:#AFA99E; --stage-3:#938D82; --stage-4:#6E6960; --stage-5:#7A3FB0;
 
   --agent-bg:linear-gradient(transparent,transparent);
   --agent-border:var(--border); --agent-glow:none;
@@ -41,17 +42,18 @@
   --sidebar-w:232px; --sidebar-w-collapsed:64px; --topbar-h:52px;
   --fs-eyebrow:12px; --fs-small:13px; --fs-body:14px; --fs-h3:16px; --fs-h2:20px; --fs-h1:24px; --fs-kpi:28px;
   color-scheme:light;
-  --lvl-spark:#6B726A; --lvl-contributor:#0F6B63; --lvl-builder:#3B5BA5; --lvl-catalyst:#9A5F0C; --lvl-pioneer:#7A4BA8;
+  --lvl-spark:#6B726A; --lvl-contributor:#7A3FB0; --lvl-builder:#3B5BA5; --lvl-catalyst:#9A5F0C; --lvl-pioneer:#7A4BA8;
 }
 [data-theme="dark"]{
   /* Cool violet-slate stack — layered canvas / elevated / tertiary (not flat black) */
   --bg:#101211; --surface:#161917; --surface-2:#1E221F; --surface-3:#282D29;
+  --panel-bg:#2A1A3A; --panel-ink:#F1E9FA;
   --border:rgba(236,240,234,.09); --border-strong:rgba(236,240,234,.17);
   --text:#E9ECE7; --text-2:#AEB5AB; --text-3:#8E968B;
   --overlay:rgba(4,6,5,.65);
   /* Brand: same purple family, softer ink / soft fills (no neon glow) */
-  --brand:#5FC4B6; --brand-hover:#7AD3C6; --brand-ink:#7AD3C6; --brand-soft:rgba(95,196,182,.14); --brand-line:rgba(95,196,182,.42); --on-brand:#0C1412;
-  --accent:#5FC4B6; --btn-bg:#E9ECE7; --btn-fg:#101211;
+  --brand:#8B5CF6; --brand-hover:#7C4DE8; --brand-ink:#C4B0F8; --brand-soft:rgba(139,92,246,.2); --brand-line:rgba(167,139,250,.42); --on-brand:#FFFFFF;
+  --accent:#A78BFA; --btn-bg:#E9ECE7; --btn-fg:#101211;
   /* Status hues preserved (review purple / accepted gold / delivery blue / implemented green) */
   --gold:#E8B84A; --gold-ink:#E8B84A; --gold-soft:rgba(232,184,74,.14);
   --success:#5FD18F; --success-soft:rgba(95,209,143,.16);
@@ -60,17 +62,17 @@
   --info:#8FA8E8;    --info-soft:rgba(143,168,232,.16);
   --neutral-soft:#282D29;
   --cat-tech:#8FA8E8; --cat-business:#E8B84A; --cat-process:#A9B0A6; --cat-innovation:#C7A8F0;
-  --av-1:#5FC4B6; --av-2:#8FA8E8; --av-3:#5FD18F; --av-4:#E8B84A; --av-5:#F07A6E; --av-6:#C7A8F0; --av-7:#7FB8E0; --av-8:#A9B0A6;
+  --av-1:#B894E8; --av-2:#8FA8E8; --av-3:#5FD18F; --av-4:#E8B84A; --av-5:#F07A6E; --av-6:#C7A8F0; --av-7:#7FB8E0; --av-8:#A9B0A6;
   --cat-amber:#E8B84A; --cat-green:#5FD18F; --cat-violet:#E0D0F5; --cat-coral:#F07A6E;
-  --chart-1:#5FC4B6; --chart-2:#E8B84A; --chart-3:#8FA8E8; --chart-4:#E08F7E; --chart-5:#9CC87A; --chart-6:#8E968B;
-  --stage-1:#3A403C; --stage-2:#4C534E; --stage-3:#656C66; --stage-4:#8E968B; --stage-5:#5FC4B6;
+  --chart-1:#B894E8; --chart-2:#E8B84A; --chart-3:#8FA8E8; --chart-4:#E08F7E; --chart-5:#9CC87A; --chart-6:#8E968B;
+  --stage-1:#3A403C; --stage-2:#4C534E; --stage-3:#656C66; --stage-4:#8E968B; --stage-5:#B894E8;
   --agent-bg:linear-gradient(transparent,transparent);
   --agent-border:var(--border); --agent-glow:none;
   --shadow-1:none;
   --shadow-2:0 16px 40px rgba(0,0,0,.5);
   --focus:0 0 0 2px var(--accent);
   color-scheme:dark;
-  --lvl-spark:#B3BAB0; --lvl-contributor:#5FC4B6; --lvl-builder:#8FA8E8; --lvl-catalyst:#E8B84A; --lvl-pioneer:#C7A8F0;
+  --lvl-spark:#B3BAB0; --lvl-contributor:#B894E8; --lvl-builder:#8FA8E8; --lvl-catalyst:#E8B84A; --lvl-pioneer:#C7A8F0;
 }
 /* ==== END SECTION C1 ==== */
 

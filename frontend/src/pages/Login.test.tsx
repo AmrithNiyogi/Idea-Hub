@@ -37,6 +37,11 @@ function renderLogin(initial = '/login') {
   );
 }
 
+
+async function openEmailForm(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /Sign in with email/i }));
+}
+
 describe('LoginPage', () => {
   const login = vi.fn();
 
@@ -73,6 +78,7 @@ describe('LoginPage', () => {
   it('validates credentials before requesting OTP', async () => {
     const user = userEvent.setup();
     renderLogin();
+    await openEmailForm(user);
     await user.click(screen.getByRole('button', { name: /Continue/i }));
     expect(screen.getByText(/valid email/i)).toBeInTheDocument();
     expect(sendLoginOtp).not.toHaveBeenCalled();
@@ -90,6 +96,7 @@ describe('LoginPage', () => {
     login.mockResolvedValue({ status: 'authenticated', user: mockUser });
 
     renderLogin();
+    await openEmailForm(user);
 
     await user.type(screen.getByLabelText(/Email/i), 'alice@example.com');
     await user.type(screen.getByLabelText(/^Password/i), 'secret');
@@ -115,6 +122,7 @@ describe('LoginPage', () => {
     const user = userEvent.setup();
     vi.mocked(sendLoginOtp).mockRejectedValue(new Error('Invalid credentials'));
     renderLogin();
+    await openEmailForm(user);
     await user.type(screen.getByLabelText(/Email/i), 'alice@example.com');
     await user.type(screen.getByLabelText(/^Password/i), 'bad');
     await user.click(screen.getByRole('button', { name: /Continue/i }));
@@ -146,6 +154,7 @@ describe('LoginPage', () => {
       email_otp_sent: true,
     });
     renderLogin();
+    await openEmailForm(user);
     await user.type(screen.getByLabelText(/Email/i), 'alice@example.com');
     await user.type(screen.getByLabelText(/^Password/i), 'secret');
     await user.click(screen.getByRole('button', { name: /Show password/i }));
@@ -175,6 +184,7 @@ describe('LoginPage', () => {
     login.mockRejectedValue(new Error('bad otp'));
 
     renderLogin('/login?redirect=/explore');
+    await openEmailForm(user);
     await user.type(screen.getByLabelText(/Email/i), 'alice@example.com');
     await user.type(screen.getByLabelText(/^Password/i), 'secret');
     await user.click(screen.getByRole('button', { name: /Continue/i }));

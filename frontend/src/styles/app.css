@@ -2915,3 +2915,126 @@ a.home-hero__title:hover { text-decoration: underline; }
   .agent-waiting__spinner { animation: none; }
   .agent-waiting__label::after { animation: none; content: '…'; }
 }
+
+/* Sign-in screen: brand panel beside the form, stacked on narrow screens. */
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.login-aside {
+  background: var(--panel-bg);
+  color: var(--panel-ink);
+  border-right: 1px solid var(--border);
+  padding: 56px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+}
+
+.login-aside__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-aside__glyph {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  display: grid;
+  place-items: center;
+}
+
+.login-aside__name {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.login-aside__headline {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: inherit;
+}
+
+.login-aside__points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+  line-height: 1.45;
+}
+
+.login-aside__points li {
+  opacity: 0.92;
+  font-size: 15px;
+}
+
+.login-aside__points strong {
+  font-weight: 600;
+}
+
+.login-aside__icon {
+  display: inline-flex;
+  vertical-align: -3px;
+  margin-right: 6px;
+}
+
+
+.login-main {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+}
+
+.login-theme {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.login-card {
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+  padding: 40px 36px;
+}
+
+@media (max-width: 860px) {
+  .login-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .login-aside {
+    padding: 32px 24px;
+    gap: 14px;
+  }
+
+  .login-aside__headline {
+    font-size: 22px;
+  }
+
+  .login-aside__points {
+    display: none;
+  }
+
+  .login-main {
+    padding: 32px 16px;
+  }
+
+  .login-card {
+    padding: 28px 22px;
+  }
+}

@@ -63,6 +63,8 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<Step>('credentials');
+  // On the credentials step: pick SSO or email first, then the email form appears.
+  const [method, setMethod] = useState<'choose' | 'email'>('choose');
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -321,21 +323,46 @@ export function LoginPage() {
     : stepItems.filter((x) => x.id !== 'role');
 
   return (
-    <div
-      className="signin"
-      style={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        padding: 24,
-        background: 'var(--bg)',
-        position: 'relative',
-      }}
-    >
+    <div className="login-shell">
+      <aside className="login-aside" aria-label="About IdeaKonnekt">
+        <div className="login-aside__brand">
+          <span className="login-aside__glyph" aria-hidden="true">
+            <Icon name="logo" size={22} />
+          </span>
+          <span className="login-aside__name">IdeaKonnekt</span>
+        </div>
+        <h2 className="login-aside__headline">
+          Konnekt. Kollaborate. Kreate.
+        </h2>
+        <ul className="login-aside__points">
+          <li>
+            <span className="login-aside__icon" aria-hidden="true">
+              <Icon name="users" size={16} />
+            </span>
+            <strong>Bring ideas together</strong> — Collaborate with your team
+            and shape better ideas.
+          </li>
+          <li>
+            <span className="login-aside__icon" aria-hidden="true">
+              <Icon name="check" size={16} />
+            </span>
+            <strong>Turn discussions into decisions</strong> — Capture feedback
+            and create clear, actionable outcomes.
+          </li>
+          <li>
+            <span className="login-aside__icon" aria-hidden="true">
+              <Icon name="arrowRight" size={16} />
+            </span>
+            <strong>Move ideas into action</strong> — Track progress and follow
+            through from concept to delivery.
+          </li>
+        </ul>
+      </aside>
+
+      <div className="login-main">
       <button
         type="button"
-        className="btn btn--ghost btn--icon"
-        style={{ position: 'absolute', top: 24, right: 24 }}
+        className="btn btn--ghost btn--icon login-theme"
         aria-label="Toggle theme"
         onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
       >
@@ -343,25 +370,11 @@ export function LoginPage() {
       </button>
 
       <div
-        className="card"
+        className="card login-card"
         style={{
           width: step === 'role' ? 'min(560px, 100%)' : 'min(440px, 100%)',
-          padding: '40px 36px',
-          boxShadow: 'var(--shadow-2)',
         }}
       >
-        <div
-          className="signin__brand"
-          style={{ justifyContent: 'center', marginBottom: 28 }}
-        >
-          <span className="brand__glyph" aria-hidden="true">
-            <Icon name="logo" size={18} />
-          </span>
-          <span className="brand__text">
-            <span className="brand__name">IdeaKonnekt</span>
-            <span className="brand__sub">IdeaKonnekt</span>
-          </span>
-        </div>
 
         {step !== 'success' ? (
           <div
@@ -420,12 +433,61 @@ export function LoginPage() {
           </div>
         ) : null}
 
-        {step === 'credentials' && (
-          <form onSubmit={handleCredentials} noValidate>
-            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        {step === 'credentials' && method === 'choose' && (
+          <div className="stack" style={{ gap: 12 }}>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
               <h1 style={{ fontSize: 28 }}>Log in</h1>
               <p className="muted" style={{ marginTop: 6 }}>
-                Sign in to IdeaKonnekt
+                Choose how you want to sign in
+              </p>
+            </div>
+            {microsoftEnabled ? (
+              <button
+                type="button"
+                className="btn btn--primary btn--block"
+                disabled={busy}
+                onClick={startMicrosoftSignIn}
+                style={{ height: 48, gap: 10 }}
+              >
+                <MicrosoftMark size={18} />
+                Sign in with SSO
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn--block"
+              disabled={busy}
+              onClick={() => {
+                setSsoError('');
+                setMethod('email');
+              }}
+              style={{ height: 48, gap: 10 }}
+            >
+              <Icon name="mail" size={16} />
+              Sign in with email
+            </button>
+            {ssoError ? (
+              <div style={{ marginTop: 8 }}>
+                <FieldError message={ssoError} />
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {step === 'credentials' && method === 'email' && (
+          <form onSubmit={handleCredentials} noValidate>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              style={{ marginBottom: 12, paddingLeft: 0 }}
+              onClick={() => setMethod('choose')}
+            >
+              <Icon name="arrowLeft" size={14} /> Back
+            </button>
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+              <h1 style={{ fontSize: 28 }}>Log in with email</h1>
+              <p className="muted" style={{ marginTop: 6 }}>
+                Enter your username and password
               </p>
             </div>
 
@@ -492,47 +554,6 @@ export function LoginPage() {
               {!busy ? <Icon name="arrowRight" size={16} /> : null}
             </button>
 
-            {microsoftEnabled ? (
-              <>
-                <div
-                  className="row"
-                  style={{
-                    alignItems: 'center',
-                    gap: 12,
-                    margin: '20px 0 16px',
-                  }}
-                  aria-hidden="true"
-                >
-                  <span
-                    style={{
-                      flex: 1,
-                      height: 1,
-                      background: 'var(--border)',
-                    }}
-                  />
-                  <span className="muted small" style={{ letterSpacing: '0.06em' }}>
-                    OR
-                  </span>
-                  <span
-                    style={{
-                      flex: 1,
-                      height: 1,
-                      background: 'var(--border)',
-                    }}
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="btn btn--block"
-                  disabled={busy}
-                  onClick={startMicrosoftSignIn}
-                  style={{ height: 44, gap: 10 }}
-                >
-                  <MicrosoftMark size={18} />
-                  Sign in with Microsoft
-                </button>
-              </>
-            ) : null}
 
             {ssoError ? (
               <div style={{ marginTop: 16 }}>
@@ -779,6 +800,7 @@ export function LoginPage() {
             </p>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
