@@ -179,7 +179,8 @@ describe('NewsPage', () => {
   it('renders insights: repos, paper counts and themes', async () => {
     renderPage();
     expect(await screen.findByText('org/agent-kit')).toBeTruthy();
-    expect(screen.getByText(/★ 1,234 · Python/)).toBeTruthy();
+    // The star is an icon now, so match the count and language text only.
+    expect(screen.getByText(/1,234\s*·\s*Python/)).toBeTruthy();
     expect(screen.getByText('Robotics')).toBeTruthy();
     expect(screen.getByText('agents')).toBeTruthy();
   });
