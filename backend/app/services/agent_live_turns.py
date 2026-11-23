@@ -1,4 +1,4 @@
-"""Live Idea Hub chat/agent turns via AI Studio ``runs/execute``.
+"""Live KonnektIdea chat/agent turns via AI Studio ``runs/execute``.
 
 When ``SIMULATE_AGENTS=false`` and AI Studio env is configured, Submit assist,
 Help, Idea Optimizer, and Review Intelligence call Kompass agents over HTTP.

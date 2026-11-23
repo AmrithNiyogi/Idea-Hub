@@ -53,7 +53,7 @@ class TeamsWebhookProvider:
             label="Channel label (optional)",
             required=False,
             secret=False,
-            placeholder="Idea Hub announcements",
+            placeholder="KonnektIdea announcements",
             help_text="Friendly name shown in Integrations (not sent to Teams).",
         ),
     ]
@@ -85,7 +85,7 @@ class TeamsWebhookProvider:
             "title": payload.title,
             "sections": [
                 {
-                    "activityTitle": "Idea Hub",
+                    "activityTitle": "KonnektIdea",
                     "text": (payload.description or "")[:2000] or payload.title,
                     "facts": [
                         {"name": "Idea", "value": payload.idea_id},
@@ -98,7 +98,7 @@ class TeamsWebhookProvider:
                 [
                     {
                         "@type": "OpenUri",
-                        "name": "Open in Idea Hub",
+                        "name": "Open in KonnektIdea",
                         "targets": [
                             {"os": "default", "uri": payload.idea_url}
                         ],
@@ -191,7 +191,7 @@ def build_meeting_card(
         potential.append(
             {
                 "@type": "OpenUri",
-                "name": "Open in Idea Hub",
+                "name": "Open in KonnektIdea",
                 "targets": [{"os": "default", "uri": idea_url}],
             }
         )
@@ -204,7 +204,7 @@ def build_meeting_card(
         "title": title,
         "sections": [
             {
-                "activityTitle": "Idea Hub · team meeting",
+                "activityTitle": "KonnektIdea · team meeting",
                 "facts": facts,
                 "markdown": True,
             }

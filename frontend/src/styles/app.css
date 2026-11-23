@@ -337,7 +337,7 @@ a.nav-item[aria-current='page'] {
 }
 
 /* Help chat widget — structure from aistudio-chatbot-ui-v2 DotAgent;
-   colors/fonts from Idea Hub tokens (no purple-on-white invent). */
+   colors/fonts from KonnektIdea tokens (no purple-on-white invent). */
 .ik-chat {
   position: fixed;
   right: 20px;
@@ -1497,7 +1497,7 @@ a.nav-item[aria-current='page'] {
   }
 }
 
-/* —— Groups / channels (Discord nav + WhatsApp chat, Idea Hub tokens) —— */
+/* —— Groups / channels (Discord nav + WhatsApp chat, KonnektIdea tokens) —— */
 .grp-page {
   display: flex;
   flex-direction: column;

@@ -134,7 +134,7 @@ class HelpTurnIn(BaseModel):
         ...,
         min_length=1,
         max_length=2000,
-        description="User question about Idea Hub (no secrets).",
+        description="User question about KonnektIdea (no secrets).",
     )
     conversation_id: Optional[str] = Field(
         default=None,

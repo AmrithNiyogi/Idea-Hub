@@ -487,7 +487,7 @@ class TrackerService:
     async def _email_user_map(
         self, emails: list[str]
     ) -> dict[str, uuid.UUID]:
-        """Map lowercased emails → Idea Hub user ids (best-effort)."""
+        """Map lowercased emails → KonnektIdea user ids (best-effort)."""
         clean = sorted(
             {e.strip().lower() for e in emails if (e or "").strip()}
         )
@@ -676,7 +676,7 @@ class TrackerService:
 
     def _default_description(self, idea: Any) -> str:
         parts = [
-            "Created from Idea Hub.",
+            "Created from KonnektIdea.",
             f"Title: {getattr(idea, 'title', '')}",
             f"Status: {getattr(idea, 'status', '')}",
         ]

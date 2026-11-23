@@ -67,7 +67,7 @@ def _app_link(href: str) -> str:
 def _log_console_backup(*, account_email: str, delivery_to: str, otp: str, user_name: str) -> None:
     """Print OTP to stdout/logs in dev so local login still works if SMTP lags."""
     message = (
-        f"\n========== Idea Hub login OTP ==========\n"
+        f"\n========== KonnektIdea login OTP ==========\n"
         f"Account: {account_email}\n"
         f"Delivered To: {delivery_to}\n"
         f"Hi {user_name},\n"
@@ -91,7 +91,7 @@ def _build_bodies(*, account_email: str, otp: str, user_name: str) -> tuple[str,
         ``(subject, text_body, html_body)``.
     """
     expires_in = format_duration(settings.LOGIN_OTP_TTL_SECONDS)
-    app_name = settings.APP_NAME or "Idea Hub"
+    app_name = settings.APP_NAME or "KonnektIdea"
     subject = f"Your {app_name} login verification code"
 
     override_note_html = ""
@@ -241,7 +241,7 @@ def send_event_notification_email(
     is_follower: bool = False,
     meta: dict[str, Any] | None = None,
 ) -> bool:
-    """Send a high-signal Idea Hub event email via the OTP SMTP stack.
+    """Send a high-signal KonnektIdea event email via the OTP SMTP stack.
 
     Always names the intended recipient in the body. When an override is
     configured, SMTP ``To`` is the override address (same pattern as OTP).
@@ -269,7 +269,7 @@ def send_event_notification_email(
         return False
 
     delivery_to = _notify_delivery_address(intended_email)
-    app_name = settings.APP_NAME or "Idea Hub"
+    app_name = settings.APP_NAME or "KonnektIdea"
     link = _app_link(href)
     title_bit = f" — {idea_title}" if idea_title else ""
     subject = f"{app_name}: {kind_label}{title_bit}"
@@ -337,7 +337,7 @@ Open in {app_name}:
 
     if settings.ENV == "dev":
         print(
-            f"\n========== Idea Hub notification ==========\n"
+            f"\n========== KonnektIdea notification ==========\n"
             f"Kind: {kind}\n"
             f"Intended: {intended_email}\n"
             f"Delivered To: {delivery_to}\n"

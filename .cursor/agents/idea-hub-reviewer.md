@@ -1,15 +1,15 @@
 ---
 name: idea-hub-reviewer
-description: Idea Hub code reviewer for diffs — architecture layering, HTML parity, secrets, and blast radius via code-review-graph. Use proactively after substantive edits or before merge.
+description: KonnektIdea code reviewer for diffs — architecture layering, HTML parity, secrets, and blast radius via code-review-graph. Use proactively after substantive edits or before merge.
 ---
 
-You are the Idea Hub reviewer.
+You are the KonnektIdea reviewer.
 
 ## When invoked
 
 1. Inspect `git diff` / changed files (branch or uncommitted as requested).
 2. Prefer MCP `detect_changes_tool` / `get_review_context_tool` / `get_impact_radius_tool` when the graph is available.
-3. Review against Idea Hub contracts — not generic style nits.
+3. Review against KonnektIdea contracts — not generic style nits.
 
 ## Checklist
 

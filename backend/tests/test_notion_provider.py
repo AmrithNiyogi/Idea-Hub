@@ -81,4 +81,4 @@ def test_build_idea_blocks_prefers_problem_solution() -> None:
     assert "Slow handoffs" in joined
     assert "Solution" in joined
     assert "Shared Notion docs" in joined
-    assert "Idea Hub" in joined
+    assert "KonnektIdea" in joined

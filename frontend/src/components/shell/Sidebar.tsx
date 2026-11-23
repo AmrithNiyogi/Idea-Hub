@@ -66,13 +66,13 @@ export function Sidebar({
 
   return (
     <aside className="sidebar" aria-label="Primary">
-      <Link className="brand" to="/" aria-label="IdeaKonnekt, Idea Hub. Home">
+      <Link className="brand" to="/" aria-label="KonnektIdea. Home">
         <span className="brand__glyph">
           <Icon name="logo" size={18} />
         </span>
         <span className="brand__text">
-          <span className="brand__name">IdeaKonnekt</span>
-          <span className="brand__sub">Idea Hub</span>
+          <span className="brand__name">KonnektIdea</span>
+          <span className="brand__sub">KonnektIdea</span>
         </span>
       </Link>
 

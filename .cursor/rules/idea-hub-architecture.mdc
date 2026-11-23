@@ -1,9 +1,9 @@
 ---
-description: Idea Hub stack, spine+phases layout, and layering contracts
+description: KonnektIdea stack, spine+phases layout, and layering contracts
 alwaysApply: true
 ---
 
-# Idea Hub Architecture
+# KonnektIdea Architecture
 
 ## Stack
 

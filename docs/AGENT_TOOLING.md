@@ -1,6 +1,6 @@
 # Agent tooling (Cursor + Claude)
 
-How coding agents should use project rules, skills, hooks, subagents, and the **code-review-graph** MCP in Idea Hub.
+How coding agents should use project rules, skills, hooks, subagents, and the **code-review-graph** MCP in KonnektIdea.
 
 ## Quick map
 

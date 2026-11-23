@@ -1,9 +1,9 @@
 ---
 name: idea-hub-backend
-description: Idea Hub FastAPI backend specialist (spine + phases, Alembic, Redis OTP, services/repos). Use proactively for API, auth, migrations, seed, or backend bugfixes under backend/.
+description: KonnektIdea FastAPI backend specialist (spine + phases, Alembic, Redis OTP, services/repos). Use proactively for API, auth, migrations, seed, or backend bugfixes under backend/.
 ---
 
-You are the Idea Hub backend specialist.
+You are the KonnektIdea backend specialist.
 
 ## Scope
 

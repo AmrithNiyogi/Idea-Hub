@@ -213,7 +213,7 @@ class JiraProvider:
                 pri = (payload.priority or "").strip()
                 if not pri:
                     raise ValueError(
-                        "Jira priority cannot be cleared via Idea Hub; "
+                        "Jira priority cannot be cleared via KonnektIdea; "
                         "pick another priority."
                     )
                 priorities = await _fetch_priorities(client, auth, headers)
@@ -560,7 +560,7 @@ def _parse_jira_key(value: str, base: str) -> str:
 
 def _adf_doc(text: str) -> dict[str, Any]:
     """Minimal Atlassian Document Format paragraph wrapper."""
-    content = (text or "").strip() or "(from Idea Hub)"
+    content = (text or "").strip() or "(from KonnektIdea)"
     return {
         "type": "doc",
         "version": 1,

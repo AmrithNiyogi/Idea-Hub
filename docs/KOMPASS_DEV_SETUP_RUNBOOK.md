@@ -1,8 +1,8 @@
-# Idea Konnekt → Kompass Dev setup runbook
+# KonnektIdea → Kompass Dev setup runbook
 
 Follow this in **Kompass Dev**. Order matters. Checkboxes are for you.
 
-**Primary pattern: Workflows** = `Input` → `API` (Idea Konnekt data) → `LLM` (Prompt Engine text/chat) → `Adapter` → `Output`.
+**Primary pattern: Workflows** = `Input` → `API` (KonnektIdea data) → `LLM` (Prompt Engine text/chat) → `Adapter` → `Output`.
 
 **Secondary:** Smart Agents / Agentic Team only where tool loops or multi-stage Ideathon autonomy help.
 
@@ -14,10 +14,10 @@ Sources: Features deck, [`docs/discovery/04_ai_kompass.md`](discovery/04_ai_komp
 
 ## Rules that never change
 
-1. Kompass returns **proposals (JSON)**. Idea Konnekt is system of record for status, scores, awards, points overrides.
+1. Kompass returns **proposals (JSON)**. KonnektIdea is system of record for status, scores, awards, points overrides.
 2. Workflow **API nodes are read-only**. No write APIs from Kompass into decisions/awards.
 3. Anonymous ideas: strip author from API payloads and Brain docs.
-4. Human gates stay in **Idea Konnekt UI** (not Kompass HITL as SoR).
+4. Human gates stay in **KonnektIdea UI** (not Kompass HITL as SoR).
 5. Two prompt kinds — do not mix:
    - **Workflow LLM node** → Prompt Engine `text` or `chat` **with** `{{variables}}`
    - **Smart Agent / Team** → Prompt Engine `agent` **with no** `{{variables}}`
@@ -27,7 +27,7 @@ Sources: Features deck, [`docs/discovery/04_ai_kompass.md`](discovery/04_ai_komp
 ## Architecture (what you are building)
 
 ```text
-Idea Konnekt (event / button)
+KonnektIdea (event / button)
         │
         ▼
  Kompass Workflow (Flows A–E)     ← primary invoke target
@@ -36,7 +36,7 @@ Idea Konnekt (event / button)
         ├── most assistants: LLM only (data from API or Input)
         └── Ideathon: Team node or Subflow of agents (optional)
 
-* API = Idea Konnekt /internal/agents/* (Vault: IDEAKONNEKT_API_KEY)
+* API = KonnektIdea /internal/agents/* (Vault: IDEAKONNEKT_API_KEY)
 ```
 
 | Assistant | Kompass form | Data | Prompt |
@@ -56,7 +56,7 @@ Do **not** register custom agent tools for the six workflow assistants if every 
 ## Step 0 — Preconditions
 
 - [ ] Dev tenant; Prompt Engine + Workflow Weaver + Agentic Engine reachable
-- [ ] Idea Konnekt (or mock) reachable from Kompass workers
+- [ ] KonnektIdea (or mock) reachable from Kompass workers
 - [ ] Vault / env: `IDEAKONNEKT_BASE`, `IDEAKONNEKT_API_KEY`
 - [ ] Models in tenant catalog (Haiku/Flash, Sonnet, Pro)
 
@@ -98,7 +98,7 @@ Optional: Part B also has agent twins of the six above if you later drop an **Ag
 
 ---
 
-## Step 2 — Idea Konnekt read APIs (for Workflow API nodes)
+## Step 2 — KonnektIdea read APIs (for Workflow API nodes)
 
 Same paths whether called as API nodes or (later) agent tools. **Read-only.**
 
@@ -145,17 +145,17 @@ Build in **Workflow Weaver**. Default graph shape:
 
 ```text
 Input (JSON)
-  → API … (0..N Idea Konnekt reads)
+  → API … (0..N KonnektIdea reads)
   → LLM (prompt slug from Step 1.1; map {{vars}} from Input/API outputs)
   → Adapter (force/parse JSON schema)
   → Output
 ```
 
-Guardrails: attach on LLM output (and on API results that carry user text). Human approval stays in Idea Konnekt after Output.
+Guardrails: attach on LLM output (and on API results that carry user text). Human approval stays in KonnektIdea after Output.
 
 ### Flow A — Assist on submit (`ideakonnekt-flow-assist-submit`)
 
-Trigger: Idea Konnekt `idea.submitted` / draft assist.
+Trigger: KonnektIdea `idea.submitted` / draft assist.
 
 ```text
 Input { idea_id, idea fields… }
@@ -174,7 +174,7 @@ Input { idea_id, idea fields… }
 
 ### Flow B — Overdue / stale nudge (`ideakonnekt-flow-workflow-nudge`)
 
-Trigger: Idea Konnekt scheduler / page compute (SLA already done).
+Trigger: KonnektIdea scheduler / page compute (SLA already done).
 
 ```text
 Input { ideaId, condition, daysInStage, slaDays, ideaTitle, targetUserId, … }
@@ -243,7 +243,7 @@ Team:
 
 | Field | Value |
 |-------|--------|
-| Name | Idea Konnekt Ideathon |
+| Name | KonnektIdea Ideathon |
 | Slug | `ideakonnekt-ideathon` |
 | Topology | Sequential |
 | Nodes | `ideathon-cluster` → `ideathon-rank` → `ideathon-pitch` |
@@ -289,15 +289,15 @@ Smoke table:
 
 ---
 
-## Step 8 — Idea Konnekt later
+## Step 8 — KonnektIdea later
 
 1. Ship `/internal/agents/*` read APIs for real.
 2. `AgentGateway` invokes **workflow** ids (not raw agents) for A/B/C/E; Team/Flow D for Ideathon.
-3. Validate Output JSON against Idea Konnekt schemas; fail → no suggestion.
-4. Persist `AgentRun` + approval gates in Idea Konnekt.
+3. Validate Output JSON against KonnektIdea schemas; fail → no suggestion.
+4. Persist `AgentRun` + approval gates in KonnektIdea.
 5. Brain sync on submit / decision / implement.
 
-Orchestrator = deterministic router in Idea Konnekt (not a Kompass agent).
+Orchestrator = deterministic router in KonnektIdea (not a Kompass agent).
 
 ---
 

@@ -14,7 +14,7 @@ The Ideathon agents (Cluster, Rank, Pitch) are **agent** prompts, not workflow p
 - **Placeholders** are `{{name}}`. A node's input maps from the Input node (`{{input.<field>}}`) or from an earlier node's output (`{{<node>.<field>}}`). ASSUMPTION: this is the syntax the workflow engine resolves for node inputs; verify on the first run.
 - **Read APIs** are the internal Hub routes listed in `KOMPASS_DEV_SETUP_RUNBOOK.md` Step 2. They are not built yet (see "Open items"). Until they exist, use a mock that returns the sample shape.
 - **Guardrails** sit on each `llm` node's output, and on any `api` result that carries user text (runbook Step 7).
-- **Human approval** stays in the Idea Hub after `output`. No flow writes to the database.
+- **Human approval** stays in the KonnektIdea after `output`. No flow writes to the database.
 
 ---
 

@@ -1,4 +1,4 @@
-# Idea Hub — Frontend (spine)
+# KonnektIdea — Frontend (spine)
 
 Vite + React 18 + TypeScript. Cookie JWT auth mirrors Kompass admin (email+password → OTP → login).
 

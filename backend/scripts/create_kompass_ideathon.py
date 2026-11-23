@@ -15,7 +15,7 @@ Environment (never commit values):
   KOMPASS_GATEWAY_URL     API gateway origin (default: staging)
   KOMPASS_TENANT_ID       tenant header (default: devtest)
   KOMPASS_ACCESS_TOKEN    bearer token from staging login (required with --apply)
-  HUB_PUBLIC_API_BASE     public Idea Hub API base the tools call (needed for --create-tools-agents)
+  HUB_PUBLIC_API_BASE     public KonnektIdea API base the tools call (needed for --create-tools-agents)
 
 Usage:
   python scripts/create_kompass_ideathon.py                  # dry run
@@ -43,7 +43,7 @@ AGENT_NAMES = {
     "ideathon-rank": "Ideathon Rank",
     "ideathon-pitch": "Ideathon Pitch",
 }
-TEAM_NAME = "Idea Konnekt Ideathon"
+TEAM_NAME = "KonnektIdea Ideathon"
 FLOW_NAME = "Ideathon Pipeline"
 ORDER = ["ideathon-cluster", "ideathon-rank", "ideathon-pitch"]
 
@@ -54,7 +54,7 @@ ORDER = ["ideathon-cluster", "ideathon-rank", "ideathon-pitch"]
 
 
 def tools(hub_base: str) -> list[dict[str, Any]]:
-    """Custom HTTP tools the Ideathon agents call back into the Idea Hub."""
+    """Custom HTTP tools the Ideathon agents call back into the KonnektIdea."""
     common_headers = {"Accept": "application/json", "X-Authorization": TOOL_AUTH_HEADER}
     return [
         {

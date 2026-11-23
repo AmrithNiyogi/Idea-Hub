@@ -1,6 +1,6 @@
 # Authenticator-app MFA (TOTP)
 
-Idea Hub supports **TOTP authenticator MFA** alongside the existing **email OTP** login path. Microsoft SSO is unchanged and still skips OTP/TOTP.
+KonnektIdea supports **TOTP authenticator MFA** alongside the existing **email OTP** login path. Microsoft SSO is unchanged and still skips OTP/TOTP.
 
 ## SSO-only accounts (no MFA)
 

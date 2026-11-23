@@ -1,4 +1,4 @@
-# AGENTS.md — Idea Hub
+# AGENTS.md — KonnektIdea
 
 Short briefing for Cursor / Claude coding agents.
 

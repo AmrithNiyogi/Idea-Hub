@@ -290,7 +290,7 @@ async def seed_groups(session: AsyncSession) -> dict[str, str]:
                     name=RUNBOOK_GROUP_NAME,
                     description=(
                         "Delivery chat for the auto-draft runbooks idea. "
-                        "Linked from Idea Hub."
+                        "Linked from KonnektIdea."
                     ),
                     idea_id=runbook_idea.id,
                     created_by=marcus.id,

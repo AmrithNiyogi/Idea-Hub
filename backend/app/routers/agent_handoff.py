@@ -1,4 +1,4 @@
-"""Authenticated downloads for Idea Hub → coding-agent skill packs."""
+"""Authenticated downloads for KonnektIdea → coding-agent skill packs."""
 
 from __future__ import annotations
 

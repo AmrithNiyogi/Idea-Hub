@@ -444,7 +444,7 @@ def _build_idea_blocks(payload: CreateIssuePayload) -> list[dict[str, Any]]:
         blocks.extend(_blocks_from_markdown(body))
 
     if idea_url:
-        blocks.append(_heading_block("Idea Hub"))
+        blocks.append(_heading_block("KonnektIdea"))
         blocks.append(
             _paragraph_block(
                 idea_url,

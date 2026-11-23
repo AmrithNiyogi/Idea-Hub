@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Idea Hub backend (FastAPI). Build context: backend/
+# KonnektIdea backend (FastAPI). Build context: backend/
 #   docker build -t ideahub-api backend/
 
 FROM python:3.11-slim AS builder
