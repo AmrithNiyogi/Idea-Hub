@@ -36,6 +36,8 @@ export interface PromptOptions {
   title: string;
   message?: ReactNode;
   label: string;
+  /** Styles the confirm button as destructive. */
+  danger?: boolean;
   confirmLabel?: string;
   cancelLabel?: string;
   placeholder?: string;
@@ -245,7 +247,7 @@ function DialogView({ active, onClose }: DialogViewProps) {
           </button>
           <button
             type="submit"
-            className={`btn ${active.kind === 'confirm' && active.options.danger ? 'btn--danger' : 'btn--primary'}`}
+            className={`btn ${active.options.danger ? 'btn--danger' : 'btn--primary'}`}
             disabled={confirmDisabled}
           >
             {confirmLabel}

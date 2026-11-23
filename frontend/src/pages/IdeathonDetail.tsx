@@ -1377,7 +1377,7 @@ export function IdeathonDetailPage() {
               type="button"
               className="btn btn--primary"
               disabled={busy}
-              onClick={() => {
+              onClick={async () => {
                 const label =
                   ITH_PHASES.find((p) => p.id === next)?.label ?? next;
                 if (
