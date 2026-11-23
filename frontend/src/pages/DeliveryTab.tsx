@@ -15,6 +15,7 @@ import { fmtDate, relTime } from '../utils/format';
 import type { DeliveryDetail } from '../types/delivery';
 import type { Idea } from '../types/idea';
 import type { User } from '../types/auth';
+import { useDialog } from '../components/DialogProvider';
 
 const CONTRIB_ROLES = [
   'Builder',
@@ -64,6 +65,7 @@ function plural(n: number, one: string, many?: string) {
 type Props = { idea: Idea };
 
 export function DeliveryTab({ idea }: Props) {
+  const dialog = useDialog();
   const { user: me } = useAuth();
   const [data, setData] = useState<DeliveryDetail | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -154,7 +156,14 @@ export function DeliveryTab({ idea }: Props) {
     let reason = '';
     if (!approve) {
       reason =
-        window.prompt('Reason for declining (min 10 chars)') || '';
+        (await dialog.prompt({
+          title: 'Decline request',
+          label: 'Reason for declining (min 10 characters)',
+          minLength: 10,
+          multiline: true,
+          confirmLabel: 'Decline',
+          danger: true,
+        })) ?? '';
       if (reason.trim().length < 10) {
         setError('A reason of at least 10 characters is required.');
         return;
@@ -238,7 +247,13 @@ export function DeliveryTab({ idea }: Props) {
   }
 
   async function onRemoveContributor(userId: string) {
-    if (!window.confirm('Remove this contributor from the delivery team?'))
+    if (
+      !(await dialog.confirm({
+        title: 'Remove this contributor from the delivery team?',
+        confirmLabel: 'Remove',
+        danger: true,
+      }))
+    )
       return;
     setBusy(true);
     try {
@@ -253,7 +268,13 @@ export function DeliveryTab({ idea }: Props) {
 
   async function onVerify(entryId: string) {
     const note =
-      window.prompt('What did you check? (min 10 characters)') || '';
+      (await dialog.prompt({
+        title: 'Verify impact',
+        label: 'What did you check? (min 10 characters)',
+        minLength: 10,
+        multiline: true,
+        confirmLabel: 'Verify',
+      })) ?? '';
     if (note.trim().length < 10) return;
     setBusy(true);
     try {

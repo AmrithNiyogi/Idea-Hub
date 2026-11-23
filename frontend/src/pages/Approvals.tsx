@@ -10,10 +10,12 @@ import { ideasApi } from '../api/ideas';
 import { Icon } from '../components/Icons';
 import type { HoursRequest, Pool } from '../types/delivery';
 import type { Idea } from '../types/idea';
+import { useDialog } from '../components/DialogProvider';
 
 type Row = HoursRequest & { idea?: Idea | null };
 
 export function ApprovalsPage() {
+  const dialog = useDialog();
   const [pending, setPending] = useState<Row[]>([]);
   const [recent, setRecent] = useState<Row[]>([]);
   const [pool, setPool] = useState<Pool | null>(null);
@@ -76,7 +78,14 @@ export function ApprovalsPage() {
     let reason = '';
     if (!approve) {
       reason =
-        window.prompt('Reason for declining (min 10 characters)') || '';
+        (await dialog.prompt({
+          title: 'Decline request',
+          label: 'Reason for declining (min 10 characters)',
+          minLength: 10,
+          multiline: true,
+          confirmLabel: 'Decline',
+          danger: true,
+        })) ?? '';
       if (reason.trim().length < 10) {
         setError('A reason of at least 10 characters is required to decline.');
         return;

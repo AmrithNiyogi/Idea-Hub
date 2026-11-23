@@ -26,6 +26,7 @@ import type { User } from '../types/auth';
 import type { Category, Comment, Effort, Idea } from '../types/idea';
 import type { CollabRequest } from '../types/phase456';
 import type { Group } from '../types/groups';
+import { useDialog } from '../components/DialogProvider';
 
 type Tab =
   | 'overview'
@@ -85,6 +86,7 @@ const IDEA_STAGES: JourneyStage[] = [
 ];
 
 export function IdeaDetailPage() {
+  const dialog = useDialog();
   const { id = '' } = useParams();
   const [search, setSearch] = useSearchParams();
   const { user } = useAuth();
@@ -258,7 +260,15 @@ export function IdeaDetailPage() {
   };
 
   const withdraw = async () => {
-    if (!idea || !confirm('Withdraw this idea?')) return;
+    if (!idea) return;
+    if (
+      !(await dialog.confirm({
+        title: 'Withdraw this idea?',
+        confirmLabel: 'Withdraw',
+        danger: true,
+      }))
+    )
+      return;
     setBusy(true);
     try {
       const updated = await ideasApi.withdraw(idea.id, 'Withdrawn by author');

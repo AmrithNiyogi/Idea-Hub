@@ -43,6 +43,7 @@ import type {
   TallyRow,
 } from '../types/ideathon';
 import type { User } from '../types/auth';
+import { useDialog } from '../components/DialogProvider';
 
 const TABS = ['submissions', 'shortlist', 'pitch', 'results', 'handoff'] as const;
 type TabId = (typeof TABS)[number];
@@ -309,6 +310,7 @@ function usePitchTimers(ids: string[]) {
 }
 
 export function IdeathonDetailPage() {
+  const dialog = useDialog();
   const { id = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const { user } = useAuth();
@@ -783,11 +785,14 @@ export function IdeathonDetailPage() {
               votingClosedAt={it.voting_closed_at}
               org={isOrg && it.phase === 'pitch' && !it.voting_closed_at}
               busy={busy}
-              onClose={() => {
+              onClose={async () => {
                 if (
-                  window.confirm(
-                    'Close voting? Panel scores and audience votes are locked.',
-                  )
+                  await dialog.confirm({
+                    title: 'Close voting?',
+                    message: 'Panel scores and audience votes are locked.',
+                    confirmLabel: 'Close voting',
+                    danger: true,
+                  })
                 ) {
                   void run(async () => {
                     await ideathonsApi.closeVoting(it.id);
@@ -1089,11 +1094,14 @@ export function IdeathonDetailPage() {
                   type="button"
                   className="btn btn--primary"
                   disabled={busy || !winSel.length}
-                  onClick={() => {
+                  onClick={async () => {
                     if (
-                      window.confirm(
-                        `Confirm ${winSel.length === 2 ? '2 winners' : 'the winner'}? This cannot be undone.`,
-                      )
+                      await dialog.confirm({
+                        title: `Confirm ${winSel.length === 2 ? '2 winners' : 'the winner'}?`,
+                        message: 'This cannot be undone.',
+                        confirmLabel: 'Confirm winners',
+                        danger: true,
+                      })
                     ) {
                       void run(async () => {
                         await ideathonsApi.confirmWinners(it.id, winSel);
@@ -1223,12 +1231,14 @@ export function IdeathonDetailPage() {
                       type="button"
                       className="btn btn--primary"
                       disabled={busy}
-                      onClick={() => {
+                      onClick={async () => {
                         const text = (hoDrafts[iid] ?? draftDefault).trim();
                         if (
-                          window.confirm(
-                            'Send to the hackathon backlog? This is a simulated handoff inside Idea Hub.',
-                          )
+                          await dialog.confirm({
+                            title: 'Send to the hackathon backlog?',
+                            message: 'This is a simulated handoff inside Idea Hub.',
+                            confirmLabel: 'Send',
+                          })
                         ) {
                           void run(async () => {
                             await ideathonsApi.sendHandoff(
@@ -1371,9 +1381,11 @@ export function IdeathonDetailPage() {
                 const label =
                   ITH_PHASES.find((p) => p.id === next)?.label ?? next;
                 if (
-                  window.confirm(
-                    `Advance to ${label}? Phases cannot be skipped.`,
-                  )
+                  await dialog.confirm({
+                    title: `Advance to ${label}?`,
+                    message: 'Phases cannot be skipped.',
+                    confirmLabel: 'Advance',
+                  })
                 ) {
                   void run(async () => {
                     await ideathonsApi.advance(it.id);
@@ -1393,11 +1405,13 @@ export function IdeathonDetailPage() {
               type="button"
               className="btn btn--primary"
               disabled={busy || !!it.completed_at}
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  window.confirm(
-                    'Mark this ideathon complete? It moves to Past.',
-                  )
+                  await dialog.confirm({
+                    title: 'Mark this ideathon complete?',
+                    message: 'It moves to Past.',
+                    confirmLabel: 'Mark complete',
+                  })
                 ) {
                   void run(async () => {
                     await ideathonsApi.complete(it.id);

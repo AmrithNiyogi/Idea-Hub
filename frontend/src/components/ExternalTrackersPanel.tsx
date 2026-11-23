@@ -14,6 +14,7 @@ import type {
   IdeaTrackerLink,
   TrackerProvider,
 } from '../types/trackers';
+import { useDialog } from './DialogProvider';
 
 const LINKABLE = new Set(['accepted', 'prototype', 'implemented']);
 const CREATABLE = new Set(['accepted', 'prototype']);
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export function ExternalTrackersPanel({ idea, canManage }: Props) {
+  const dialog = useDialog();
   const [providers, setProviders] = useState<TrackerProvider[]>([]);
   const [effective, setEffective] = useState<EffectiveConnection[]>([]);
   const [links, setLinks] = useState<IdeaTrackerLink[]>([]);
@@ -120,7 +122,14 @@ export function ExternalTrackersPanel({ idea, canManage }: Props) {
 
   async function onUnlink(linkId: string) {
     if (!canManage) return;
-    if (!window.confirm('Remove this link? The remote task is not deleted.')) {
+    if (
+      !(await dialog.confirm({
+        title: 'Remove this link?',
+        message: 'The remote task is not deleted.',
+        confirmLabel: 'Remove',
+        danger: true,
+      }))
+    ) {
       return;
     }
     setBusy(true);
