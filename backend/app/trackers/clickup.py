@@ -25,6 +25,7 @@ from app.trackers.base import (
     RemoteTask,
     UpdateTaskPayload,
 )
+from app.utils.jsonish import as_dict
 
 _API = "https://api.clickup.com/api/v2"
 
@@ -135,7 +136,7 @@ class ClickUpProvider:
             external_id=task_id,
             url=url,
             key=task_id,
-            raw=data if isinstance(data, dict) else {},
+            raw=as_dict(data),
         )
 
     async def resolve_existing(
@@ -313,7 +314,7 @@ def _task_from_clickup(
     assignable: Optional[list[RemoteAssignee]] = None,
 ) -> RemoteTask:
     task_id = str(data.get("id") or fallback_id)
-    status_obj = data.get("status") if isinstance(data.get("status"), dict) else {}
+    status_obj = as_dict(data.get("status"))
     status_name = str(status_obj.get("status") or "")
     assignees = _assignees_from_clickup_users(data.get("assignees") or [])
     url = str(data.get("url") or f"https://app.clickup.com/t/{task_id}")
@@ -359,7 +360,7 @@ def _task_from_clickup(
         status_options=options,
         priority_options=list(_CLICKUP_PRIORITIES),
         editable_fields=list(_EDITABLE),
-        raw=data if isinstance(data, dict) else {},
+        raw=as_dict(data),
     )
 
 
@@ -428,7 +429,7 @@ async def _fetch_list_members(
         if resp.status_code >= 400:
             return []
         data = resp.json() or {}
-        team = data.get("team") if isinstance(data.get("team"), dict) else data
+        team = as_dict(data.get("team")) or as_dict(data)
         rows = []
         for row in team.get("members") or []:
             if isinstance(row, dict) and isinstance(row.get("user"), dict):

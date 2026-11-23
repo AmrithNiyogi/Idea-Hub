@@ -23,6 +23,7 @@ from app.trackers.base import (
     RemoteTask,
     UpdateTaskPayload,
 )
+from app.utils.jsonish import as_dict
 
 _JIRA_EDITABLE = ["status", "title", "priority", "due_date", "assignees"]
 _JIRA_FIELDS = "summary,status,assignee,issuetype,priority,duedate"
@@ -141,7 +142,7 @@ class JiraProvider:
             external_id=issue_id or key,
             url=url,
             key=key or issue_id,
-            raw=data if isinstance(data, dict) else {},
+            raw=as_dict(data),
         )
 
     async def resolve_existing(
@@ -259,7 +260,7 @@ class JiraProvider:
                 if not status_name:
                     raise ValueError("Jira status cannot be empty.")
                 options = await _fetch_transitions(client, auth, headers, key)
-                match = next(
+                transition = next(
                     (
                         o
                         for o in options
@@ -268,7 +269,7 @@ class JiraProvider:
                     ),
                     None,
                 )
-                if not match:
+                if not transition:
                     names = ", ".join(o.name for o in options) or "(none)"
                     raise ValueError(
                         f"No Jira transition to '{status_name}'. "
@@ -278,7 +279,7 @@ class JiraProvider:
                     f"/rest/api/3/issue/{key}/transitions",
                     auth=auth,
                     headers=headers,
-                    json={"transition": {"id": match.id}},
+                    json={"transition": {"id": transition.id}},
                 )
                 if tr.status_code >= 400:
                     raise ValueError(
@@ -334,13 +335,13 @@ async def _fetch_transitions(
     for row in data.get("transitions") or []:
         if not isinstance(row, dict):
             continue
-        to = row.get("to") if isinstance(row.get("to"), dict) else {}
+        to = as_dict(row.get("to"))
         name = str(to.get("name") or row.get("name") or "").strip()
         tid = str(row.get("id") or "")
         if not name or name.lower() in seen:
             continue
         seen.add(name.lower())
-        cat = to.get("statusCategory") if isinstance(to.get("statusCategory"), dict) else {}
+        cat = as_dict(to.get("statusCategory"))
         out.append(
             RemoteStatusOption(
                 id=tid,
@@ -433,22 +434,18 @@ def _task_from_jira(
     priorities: list[RemotePriorityOption] | None = None,
     assignable: list[RemoteAssignee] | None = None,
 ) -> RemoteTask:
-    fields = data.get("fields") if isinstance(data.get("fields"), dict) else {}
+    fields = as_dict(data.get("fields"))
     issue_key = str(data.get("key") or "")
     issue_id = str(data.get("id") or issue_key)
-    status_obj = fields.get("status") if isinstance(fields.get("status"), dict) else {}
+    status_obj = as_dict(fields.get("status"))
     status_name = str(status_obj.get("name") or "")
     status_cat = (
-        status_obj.get("statusCategory")
-        if isinstance(status_obj.get("statusCategory"), dict)
-        else {}
+        as_dict(status_obj.get("statusCategory"))
     )
     assignees: list[RemoteAssignee] = []
     assignee = fields.get("assignee")
     if isinstance(assignee, dict) and assignee:
-        avatars = assignee.get("avatarUrls") if isinstance(
-            assignee.get("avatarUrls"), dict
-        ) else {}
+        avatars = as_dict(assignee.get("avatarUrls"))
         assignees.append(
             RemoteAssignee(
                 id=str(assignee.get("accountId") or ""),
@@ -469,7 +466,7 @@ def _task_from_jira(
             ),
             *options,
         ]
-    pri_obj = fields.get("priority") if isinstance(fields.get("priority"), dict) else {}
+    pri_obj = as_dict(fields.get("priority"))
     pri_name = str(pri_obj.get("name") or "")
     pri_id = str(pri_obj.get("id") or "")
     pri_color = str(pri_obj.get("statusColor") or "")
@@ -510,7 +507,7 @@ def _task_from_jira(
         status_options=options,
         priority_options=priority_options,
         editable_fields=list(_JIRA_EDITABLE),
-        raw=data if isinstance(data, dict) else {},
+        raw=as_dict(data),
     )
 
 

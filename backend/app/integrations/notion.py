@@ -31,6 +31,7 @@ from app.trackers.base import (
     RemoteTask,
     UpdateTaskPayload,
 )
+from app.utils.jsonish import as_dict
 
 _API = "https://api.notion.com/v1"
 _NOTION_VERSION = "2022-06-28"
@@ -127,17 +128,15 @@ class NotionProvider:
             if me.status_code >= 400:
                 raise ValueError(f"Notion auth failed: {_safe_detail(me)}")
             me_data = me.json()
-            bot = me_data if isinstance(me_data, dict) else {}
+            bot = as_dict(me_data)
             bot_name = str(bot.get("name") or "").strip()
             if not bot_name:
-                bot_obj = bot.get("bot") if isinstance(bot.get("bot"), dict) else {}
+                bot_obj = as_dict(bot.get("bot"))
                 owner = (
-                    bot_obj.get("owner")
-                    if isinstance(bot_obj.get("owner"), dict)
-                    else {}
+                    as_dict(bot_obj.get("owner"))
                 )
                 user = (
-                    owner.get("user") if isinstance(owner.get("user"), dict) else {}
+                    as_dict(owner.get("user"))
                 )
                 bot_name = str(user.get("name") or "Notion integration").strip()
 
@@ -278,7 +277,7 @@ class NotionProvider:
             external_id=page_id,
             url=url,
             key=page_id,
-            raw=data if isinstance(data, dict) else {},
+            raw=as_dict(data),
         )
 
     async def resolve_existing(
@@ -324,7 +323,7 @@ class NotionProvider:
             url=url,
             key=page_id,
             editable_fields=["title", "append_content"],
-            raw=data if isinstance(data, dict) else {},
+            raw=as_dict(data),
         )
 
     async def update_task(
@@ -605,7 +604,7 @@ def _plain_title(title_arr: Any) -> str:
         if plain:
             parts.append(str(plain))
             continue
-        text = block.get("text") if isinstance(block.get("text"), dict) else {}
+        text = as_dict(block.get("text"))
         if text.get("content"):
             parts.append(str(text["content"]))
     return "".join(parts).strip()
