@@ -26,7 +26,7 @@ the creator as owner.
 | Idea detail → Team card | **Open group** if linked, or **Create group** |
 
 Chat UX mixes Discord (group + `#channel` switcher, topic) with WhatsApp
-(bubbles, timestamps, sticky bottom composer). Styling uses Idea Hub tokens
+(bubbles, timestamps, sticky bottom composer). Styling uses KonnektIdea tokens
 (`.grp-*`, `.ts-*`) — not Discord/WhatsApp brand colors.
 
 ## Who can post

@@ -17,6 +17,7 @@ import { Pill } from '../components/ui/Pill';
 import { ROLE_ORDER, roleLabel, sortRoles } from '../constants/roles';
 import type { Role, User } from '../types/auth';
 import type { AdminConfig } from '../types/phase456';
+import { useDialog } from '../components/DialogProvider';
 
 type Tab =
   | 'categories'
@@ -52,6 +53,7 @@ function userLabel(u: User | undefined, id: string): string {
 }
 
 export function AdminPage() {
+  const dialog = useDialog();
   const { user } = useAuth();
   const active = user?.active_role ?? user?.primary_role;
   const [tab, setTab] = useState<Tab>('categories');
@@ -236,9 +238,12 @@ export function AdminPage() {
 
   const reset = async () => {
     if (
-      !confirm(
-        'Reset demo data? All changes will be replaced by the original demo data.',
-      )
+      !(await dialog.confirm({
+        title: 'Reset demo data?',
+        message: 'All changes will be replaced by the original demo data.',
+        confirmLabel: 'Reset',
+        danger: true,
+      }))
     )
       return;
     setBusy(true);
@@ -350,9 +355,12 @@ export function AdminPage() {
           )?.detail;
           if (detail?.needs_confirm) {
             const panels = (detail.panels || []).join(', ');
-            const ok = confirm(
-              `Remove the Reviewer role?\n\n${target.name} will also be removed from these review panels: ${panels}. Ideas already in their queue stay with the panel.`,
-            );
+            const ok = await dialog.confirm({
+              title: 'Remove the Reviewer role?',
+              message: `${target.name} will also be removed from these review panels: ${panels}. Ideas already in their queue stay with the panel.`,
+              confirmLabel: 'Remove role',
+              danger: true,
+            });
             if (!ok) return;
             await adminApi.removeUserRole(target.id, role, true);
             return;
@@ -362,15 +370,18 @@ export function AdminPage() {
       }
     }, `${roleLabel(role)} role removed from ${target.name}.`);
 
-  const toggleActive = (target: AdminUser) => {
+  const toggleActive = async (target: AdminUser) => {
     if (user?.id === target.id) {
       fail(new Error('You cannot disable or enable your own account.'));
       return;
     }
     if (target.is_active) {
-      const ok = confirm(
-        `Disable ${target.name}?\n\n${target.email}\n\nThey will not be able to sign in (password or Microsoft SSO) until re-enabled.`,
-      );
+      const ok = await dialog.confirm({
+        title: `Disable ${target.name}?`,
+        message: `${target.email}\n\nThey will not be able to sign in (password or Microsoft SSO) until re-enabled.`,
+        confirmLabel: 'Disable',
+        danger: true,
+      });
       if (!ok) return;
       void run(async () => {
         await adminApi.disableUser(target.id);
@@ -382,19 +393,20 @@ export function AdminPage() {
     }, `${target.name} enabled.`);
   };
 
-  const deleteAccount = (target: AdminUser) => {
+  const deleteAccount = async (target: AdminUser) => {
     if (user?.id === target.id) {
       fail(new Error('You cannot delete your own account.'));
       return;
     }
-    const typed = window.prompt(
-      `Delete ${target.name} permanently?\n\nThis cannot be undone. Type their email to confirm:\n${target.email}`,
-    );
-    if (typed === null) return;
-    if (typed.trim().toLowerCase() !== target.email.trim().toLowerCase()) {
-      fail(new Error('Email did not match — account was not deleted.'));
-      return;
-    }
+    // The dialog only enables Delete once the email is typed correctly.
+    const ok = await dialog.confirm({
+      title: `Delete ${target.name} permanently?`,
+      message: 'This cannot be undone.',
+      requireText: target.email,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     void run(async () => {
       try {
         await adminApi.deleteUser(target.id, false);
@@ -407,9 +419,12 @@ export function AdminPage() {
           )?.detail;
           if (detail?.needs_confirm) {
             const panels = (detail.panels || []).join(', ');
-            const ok = confirm(
-              `Delete ${target.name}?\n\nThey will also be removed from these review panels: ${panels}.`,
-            );
+            const ok = await dialog.confirm({
+              title: `Delete ${target.name}?`,
+              message: `They will also be removed from these review panels: ${panels}.`,
+              confirmLabel: 'Delete',
+              danger: true,
+            });
             if (!ok) return;
             await adminApi.deleteUser(target.id, true);
             return;

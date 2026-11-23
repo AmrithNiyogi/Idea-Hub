@@ -1,5 +1,5 @@
 /**
- * Axios client for Idea Hub spine APIs.
+ * Axios client for KonnektIdea spine APIs.
  *
  * Uses credentials:include (withCredentials) so httpOnly JWT cookies are sent.
  * On 401, attempts a single refresh then retries the original request.

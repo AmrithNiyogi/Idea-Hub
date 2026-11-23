@@ -1,7 +1,7 @@
 /**
  * Modal cropper for profile avatars — square crop → Confirm exports JPEG/PNG File.
  *
- * Uses Idea Hub `.modal*` classes and react-easy-crop for pan/zoom.
+ * Uses KonnektIdea `.modal*` classes and react-easy-crop for pan/zoom.
  */
 
 import { useCallback, useEffect, useId, useState } from 'react';

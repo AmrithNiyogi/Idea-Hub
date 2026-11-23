@@ -1,4 +1,4 @@
-# Idea Hub — Phase 2 + Phase 3 (Delivery, Ideathons, Recognition, Profiles)
+# KonnektIdea — Phase 2 + Phase 3 (Delivery, Ideathons, Recognition, Profiles)
 
 Additive modules built alongside the Phase 1 spine. **Do not treat this package as a standalone app** — mount it into the spine FastAPI + Vite React apps.
 

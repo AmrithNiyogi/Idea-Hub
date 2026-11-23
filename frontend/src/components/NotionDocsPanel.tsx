@@ -17,6 +17,7 @@ import type {
   EffectiveConnection,
   IdeaTrackerLink,
 } from '../types/trackers';
+import { useDialog } from './DialogProvider';
 
 const LINKABLE = new Set(['accepted', 'prototype', 'implemented']);
 const CREATABLE = new Set(['accepted', 'prototype']);
@@ -37,11 +38,12 @@ function ideaBodyMarkdown(idea: Idea): string {
   if (solution) {
     parts.push('## Solution', solution, '');
   }
-  parts.push(`Synced from Idea Hub · ${new Date().toISOString().slice(0, 10)}`);
+  parts.push(`Synced from KonnektIdea · ${new Date().toISOString().slice(0, 10)}`);
   return parts.join('\n').trim();
 }
 
 export function NotionDocsPanel({ idea, canManage }: Props) {
+  const dialog = useDialog();
   const [effective, setEffective] = useState<EffectiveConnection | null>(null);
   const [links, setLinks] = useState<IdeaTrackerLink[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -161,7 +163,14 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
 
   async function onUnlink(linkId: string) {
     if (!canManage) return;
-    if (!window.confirm('Remove this Notion link? The page is not deleted.')) {
+    if (
+      !(await dialog.confirm({
+        title: 'Remove this Notion link?',
+        message: 'The page is not deleted.',
+        confirmLabel: 'Remove',
+        danger: true,
+      }))
+    ) {
       return;
     }
     setBusy(true);

@@ -1,9 +1,9 @@
 ---
 name: idea-hub-code-review-graph
-description: Build, update, and query the Idea Hub code-review-graph MCP for call graphs, blast radius, and reviews. Use when exploring relationships, reviewing diffs, or after major structural changes.
+description: Build, update, and query the KonnektIdea code-review-graph MCP for call graphs, blast radius, and reviews. Use when exploring relationships, reviewing diffs, or after major structural changes.
 ---
 
-# code-review-graph for Idea Hub
+# code-review-graph for KonnektIdea
 
 ## MCP
 

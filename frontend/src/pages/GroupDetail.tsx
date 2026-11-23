@@ -31,10 +31,12 @@ import type {
   GroupMessage,
   GroupMcpConnection,
 } from '../types/groups';
+import { useDialog } from '../components/DialogProvider';
 
 type SidePanel = 'none' | 'meeting' | 'mcp' | 'members';
 
 export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
+  const dialog = useDialog();
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const [search, setSearch] = useSearchParams();
@@ -290,7 +292,14 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   }
 
   async function onRemoveMember(userId: string, name: string) {
-    if (!window.confirm(`Remove ${name} from “${group?.name}”?`)) return;
+    if (
+      !(await dialog.confirm({
+        title: `Remove ${name} from “${group?.name}”?`,
+        confirmLabel: 'Remove',
+        danger: true,
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -304,7 +313,15 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   }
 
   async function onLeave() {
-    if (!me || !window.confirm(`Leave “${group?.name}”?`)) return;
+    if (!me) return;
+    if (
+      !(await dialog.confirm({
+        title: `Leave “${group?.name}”?`,
+        confirmLabel: 'Leave',
+        danger: true,
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -318,9 +335,12 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
 
   async function onDeleteGroup() {
     if (
-      !window.confirm(
-        `Delete “${group?.name}”? It disappears for every member and pending invites are cancelled.`,
-      )
+      !(await dialog.confirm({
+        title: `Delete “${group?.name}”?`,
+        message: 'It disappears for every member and pending invites are cancelled.',
+        confirmLabel: 'Delete',
+        danger: true,
+      }))
     ) {
       return;
     }

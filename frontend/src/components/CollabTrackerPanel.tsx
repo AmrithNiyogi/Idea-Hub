@@ -13,6 +13,7 @@ import { fmtDate, relTime } from '../utils/format';
 import type { Idea } from '../types/idea';
 import type { User } from '../types/auth';
 import type { CollabRequest, Tracker } from '../types/phase456';
+import { useDialog } from './DialogProvider';
 
 const MS_TRACKABLE = [
   'submitted',
@@ -88,6 +89,7 @@ function isOverdue(dueAt: string | null | undefined, status: string) {
 type Props = { idea: Idea };
 
 export function CollabTrackerPanel({ idea }: Props) {
+  const dialog = useDialog();
   const { user: me } = useAuth();
   const [reqs, setReqs] = useState<CollabRequest[]>([]);
   const [tracker, setTracker] = useState<Tracker | null>(null);
@@ -261,13 +263,29 @@ export function CollabTrackerPanel({ idea }: Props) {
   async function decide(id: string, accept: boolean) {
     let note = '';
     if (!accept) {
-      note = window.prompt('Note for the requester (min 10 characters)') || '';
+      note =
+        (await dialog.prompt({
+          title: 'Decline request',
+          label: 'Note for the requester (min 10 characters)',
+          minLength: 10,
+          multiline: true,
+          confirmLabel: 'Decline',
+          danger: true,
+        })) ?? '';
       if (note.trim().length < 10) {
         setError('A note of at least 10 characters is required to decline.');
         return;
       }
     } else {
-      note = window.prompt('A word of welcome (optional)') || '';
+      const welcome = await dialog.prompt({
+        title: 'Accept request',
+        label: 'A word of welcome (optional)',
+        multiline: true,
+        confirmLabel: 'Accept',
+      });
+      // Cancelling the dialog keeps the request pending.
+      if (welcome === null) return;
+      note = welcome;
     }
     setBusy(true);
     try {
@@ -295,9 +313,15 @@ export function CollabTrackerPanel({ idea }: Props) {
   async function setMsStatus(id: string, to: string) {
     let blocker = '';
     if (to === 'blocked') {
-      blocker =
-        window.prompt('What is blocking this? (min 5 characters)') || '';
-      if (blocker.trim().length < 5) return;
+      const entered = await dialog.prompt({
+        title: 'Mark as blocked',
+        label: 'What is blocking this? (min 5 characters)',
+        minLength: 5,
+        multiline: true,
+        confirmLabel: 'Mark blocked',
+      });
+      if (entered === null) return;
+      blocker = entered;
     }
     setBusy(true);
     try {
@@ -726,15 +750,15 @@ export function CollabTrackerPanel({ idea }: Props) {
               <input
                 type="checkbox"
                 checked={looking}
-                onChange={(e) => {
+                onChange={async (e) => {
                   const on = e.target.checked;
                   if (on) {
-                    const skills =
-                      window.prompt(
-                        'Skills wanted (optional)',
-                        skillsWanted,
-                      ) ?? '';
-                    setSkillsWanted(skills);
+                    const skills = await dialog.prompt({
+                      title: 'Skills wanted',
+                      label: 'Skills wanted (optional)',
+                      defaultValue: skillsWanted,
+                    });
+                    if (skills !== null) setSkillsWanted(skills);
                   }
                   setLooking(on);
                 }}

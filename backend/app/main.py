@@ -1,4 +1,4 @@
-"""Idea Hub FastAPI application entrypoint."""
+"""KonnektIdea FastAPI application entrypoint."""
 
 from __future__ import annotations
 
@@ -34,11 +34,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     uploads = uploads_root()
     (uploads / "avatars").mkdir(parents=True, exist_ok=True)
     (uploads / "group-avatars").mkdir(parents=True, exist_ok=True)
-    logger.info("Idea Hub API starting (env=%s)", settings.ENV)
+    logger.info("KonnektIdea API starting (env=%s)", settings.ENV)
     yield
     close_redis()
     await dispose_engine()
-    logger.info("Idea Hub API stopped")
+    logger.info("KonnektIdea API stopped")
 
 
 app = FastAPI(

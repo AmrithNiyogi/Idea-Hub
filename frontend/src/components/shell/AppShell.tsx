@@ -37,7 +37,7 @@ function pageTitle(pathname: string): string {
   if (pathname.startsWith('/problems/')) return 'Problem';
   if (pathname.startsWith('/groups/')) return 'Group';
   if (pathname.startsWith('/dms/')) return 'Message';
-  return 'Idea Hub';
+  return 'KonnektIdea';
 }
 
 export function AppShell() {
@@ -81,7 +81,7 @@ export function AppShell() {
 
   const title = pageTitle(location.pathname);
   useEffect(() => {
-    document.title = `${title} | Idea Hub`;
+    document.title = `${title} | KonnektIdea`;
   }, [title]);
 
   const appClass = [

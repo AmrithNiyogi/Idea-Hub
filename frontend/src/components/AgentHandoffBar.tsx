@@ -1,5 +1,5 @@
 /**
- * Copy / download Idea Hub → Cursor / Claude Code handoff packs.
+ * Copy / download KonnektIdea → Cursor / Claude Code handoff packs.
  *
  * Fetches GET /ideas/{id}/agent-context (auth required) and exposes
  * tool-tailored prompts, downloadable context.md, and the installable

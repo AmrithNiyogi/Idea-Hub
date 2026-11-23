@@ -1,4 +1,4 @@
-# Idea Hub — Frontend Architecture Proposal (Agent 3, Discovery)
+# KonnektIdea — Frontend Architecture Proposal (Agent 3, Discovery)
 
 Status: proposal only. No application code written. Library behaviours that I have not verified are marked "verify in current docs". Line counts and volumes are my own estimates, not measurements.
 

@@ -1,6 +1,6 @@
-# Idea Hub — Decision Log
+# KonnektIdea — Decision Log
 
-This log records the significant product, technical, architectural and design decisions taken during the Idea Hub discovery phase, together with the agent recommendations behind them, rejected options, scope changes, technical constraints, known limitations and open questions. It is maintained throughout the project and is not written retrospectively. Each entry is dated when it was recorded. Entries D-001 to D-020 were recorded before any code was written; build and test status is recorded from D-021 onwards.
+This log records the significant product, technical, architectural and design decisions taken during the KonnektIdea discovery phase, together with the agent recommendations behind them, rejected options, scope changes, technical constraints, known limitations and open questions. It is maintained throughout the project and is not written retrospectively. Each entry is dated when it was recorded. Entries D-001 to D-020 were recorded before any code was written; build and test status is recorded from D-021 onwards.
 
 - Maintained by: Agent 6 (documentation agent, Haiku tier)
 - Last updated: 2026-11-16
@@ -203,8 +203,8 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 - Context: 16 pages of Kompass staging documentation were read. External invocation, triggers/webhooks, human-approval steps and structured-output enforcement were not found in those pages. The founder notes that the staging documentation omits some features.
 - Problem being addressed: None recorded.
 - Options considered: Attempt a live integration; or simulate and stay integration-ready.
-- Agent recommendations: Agent 4 recommended that all MVP agents be simulated (deterministic JavaScript over mock data, no network, no LLM), with an `AgentGateway` adapter boundary and human approval held in Idea Hub.
-- Final decision: No live Kompass call in the MVP. Future mapping uses only documented concepts (Smart Agents, Agentic Teams, Workflows and their components, AI Brain, Guardrails, Traces). Approval state lives in Idea Hub. The app shows an integration map with a permanent "Not connected to Kompass" notice. Eleven questions for the Kompass team are listed in `04_ai_kompass.md`.
+- Agent recommendations: Agent 4 recommended that all MVP agents be simulated (deterministic JavaScript over mock data, no network, no LLM), with an `AgentGateway` adapter boundary and human approval held in KonnektIdea.
+- Final decision: No live Kompass call in the MVP. Future mapping uses only documented concepts (Smart Agents, Agentic Teams, Workflows and their components, AI Brain, Guardrails, Traces). Approval state lives in KonnektIdea. The app shows an integration map with a permanent "Not connected to Kompass" notice. Eleven questions for the Kompass team are listed in `04_ai_kompass.md`.
 - Reasoning: None recorded beyond the context above.
 - Impact on the application: Integration map screen; permanent "Not connected to Kompass" notice; no live calls.
 - Dependencies: Q8 (Kompass team to answer the eleven integration questions).
@@ -350,7 +350,7 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 - Decision ID: D-019
 - Date: 2026-11-15
 - Topic: Project name
-- Context: The working name in the project is "Idea Hub".
+- Context: The working name in the project is "KonnektIdea".
 - Problem being addressed: None recorded.
 - Options considered: "Project Polaris" (proposed); alternatives Lodestar and Kindle.
 - Agent recommendations: None recorded.
@@ -386,9 +386,9 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 - Problem being addressed: None recorded.
 - Options considered: None recorded.
 - Agent recommendations: None recorded.
-- Final decision: Proceed on the defaults proposed in the discovery plan: leadership approves hours from a pool; anonymous author hidden from all roles; timelines 3/10/14 working days as config defaults; provisional design tokens; working name "Polaris" shown as "Idea Hub · Polaris".
+- Final decision: Proceed on the defaults proposed in the discovery plan: leadership approves hours from a pool; anonymous author hidden from all roles; timelines 3/10/14 working days as config defaults; provisional design tokens; working name "Polaris" shown as "KonnektIdea · Polaris".
 - Reasoning: None of the open questions block phases 1–3; all defaults are reversible.
-- Impact on the application: The application shows the working name "Idea Hub · Polaris"; anonymous authors are hidden from all roles; timelines are config defaults.
+- Impact on the application: The application shows the working name "KonnektIdea · Polaris"; anonymous authors are hidden from all roles; timelines are config defaults.
 - Dependencies: Q1–Q7 remain open.
 - Status: Accepted (provisional)
 
@@ -719,7 +719,7 @@ Each decision entry uses the same fields. "None recorded" means the source notes
 - Problem being addressed: None recorded.
 - Options considered: Adopt the supplied file as the new base, or take only its design layer into the current build.
 - Agent recommendations: None recorded.
-- Final decision: Take only the design layer. Integrated: the tokens block, which the supplied file states was taken from the Dotkonnekt Design System artifact `tokens.css` (read 2026-11-16), including its documented deviations for text contrast; Geist and Geist Mono embedded as subsetted woff2 so the file makes no network requests (the Google Fonts link was removed); the official Dotkonnekt logo mark and wordmark in the sidebar; pill-shaped buttons with a black primary button (white in dark theme); wider letter-spacing on eyebrow labels, navigation labels and table headers; press and reduced-motion behaviour on buttons. Added by the orchestrator: values for ten token names that exist only in the current build (four extra category colours and six chart series colours), derived from the same colour ramps and marked as derived. Not taken: the supplied file's own insights, agent log and admin screens, because the current build already has fuller versions. The sidebar subtitle now reads "Idea Hub" as in the supplied file, instead of "Idea Hub · Polaris".
+- Final decision: Take only the design layer. Integrated: the tokens block, which the supplied file states was taken from the Dotkonnekt Design System artifact `tokens.css` (read 2026-11-16), including its documented deviations for text contrast; Geist and Geist Mono embedded as subsetted woff2 so the file makes no network requests (the Google Fonts link was removed); the official Dotkonnekt logo mark and wordmark in the sidebar; pill-shaped buttons with a black primary button (white in dark theme); wider letter-spacing on eyebrow labels, navigation labels and table headers; press and reduced-motion behaviour on buttons. Added by the orchestrator: values for ten token names that exist only in the current build (four extra category colours and six chart series colours), derived from the same colour ramps and marked as derived. Not taken: the supplied file's own insights, agent log and admin screens, because the current build already has fuller versions. The sidebar subtitle now reads "KonnektIdea" as in the supplied file, instead of "KonnektIdea · Polaris".
 - Reasoning: The current build contains phases 4–6 and later features that the supplied file lacks.
 - Impact on the application: `idea-hub.html` is now 960,682 bytes; build 0.8.1-dotkonnekt-design; schema version unchanged at 6. Verification: loaded from file:// with no page or console errors and no network requests; both fonts reported as loaded; self-check clean; the orchestrator viewed twelve screens in light theme and twelve in dark theme at reduced size. Limitation: the orchestrator did not verify the token values against the design system artifact itself, which it could not read; the icons remain hand-drawn and are not the official set. This supersedes the provisional-token status in D-010.
 - Dependencies: None recorded.

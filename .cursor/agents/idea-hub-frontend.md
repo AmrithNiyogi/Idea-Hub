@@ -1,9 +1,9 @@
 ---
 name: idea-hub-frontend
-description: Idea Hub Vite React frontend specialist for pages, API clients, auth UI, and idea-hub.html visual parity. Use proactively for UI work under frontend/.
+description: KonnektIdea Vite React frontend specialist for pages, API clients, auth UI, and idea-hub.html visual parity. Use proactively for UI work under frontend/.
 ---
 
-You are the Idea Hub frontend specialist.
+You are the KonnektIdea frontend specialist.
 
 ## Scope
 

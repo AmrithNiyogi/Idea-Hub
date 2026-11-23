@@ -1,4 +1,4 @@
-# Idea Hub — Discovery Plan (consolidated)
+# KonnektIdea — Discovery Plan (consolidated)
 
 **Date:** 15 November 2026 · **Phase:** Discovery complete, awaiting founder review · **Status:** No application code has been written.
 
@@ -23,7 +23,7 @@ Limitation: this environment lets me choose the Sonnet or Haiku tier for a subag
 
 | Source | Status |
 |---|---|
-| Idea Hub brief (project doc) | Read in full. |
+| KonnektIdea brief (project doc) | Read in full. |
 | Kompass documentation (staging site) | 16 pages read. Workflow, component, smart agent, agentic team and AI Brain concepts are verified. How an external app invokes Kompass, triggers, webhooks, approval steps and structured output are **not documented** in what we read. |
 | Dotkonnekt design system artifact | **Only the file inventory could be read.** Font families, colour families, token groups and the Kompass UI kit's component names are verified. Every exact value (hex, spacing, radius, type size) is unread. |
 | Repo folder | Empty git repository. |
@@ -32,7 +32,7 @@ Limitation: this environment lets me choose the Sonnet or Haiku tier for a subag
 
 ## 1. Analysis of the original requirements
 
-**The core insight.** Idea Hub is a reply guarantee, not an idea box. The brief says so itself: people stop submitting when ideas disappear. Ideathons, recognition and AI all amplify that loop. Every design choice is tested against one question: can the submitter see, right now, where their idea is, who owns the next move, and why a decision was made?
+**The core insight.** KonnektIdea is a reply guarantee, not an idea box. The brief says so itself: people stop submitting when ideas disappear. Ideathons, recognition and AI all amplify that loop. Every design choice is tested against one question: can the submitter see, right now, where their idea is, who owns the next move, and why a decision was made?
 
 **Explicit in the brief:** four categories; a five-field template; drafts, co-authors, anonymous option, attachments; similar-idea check while typing; upvotes, comments, volunteer, follow; agent thread summaries; the five-stage flow with category panels, three scoring criteria and mandatory written reasons; innovation time; a status board; ideathons with pitch day and a hackathon link; credit, impact tracking, quarterly and annual awards.
 
@@ -232,21 +232,21 @@ Each follows trigger → retrieve context → analyse → delegate → recommend
 
 The MVP makes **no live Kompass call**. The table shows where Kompass would fit, and what is still unknown.
 
-| Idea Hub need | Kompass concept | Documented? | Open question |
+| KonnektIdea need | Kompass concept | Documented? | Open question |
 |---|---|---|---|
 | Text-analysis agents (Intelligence, Enhancement, Review, Recognition, Analytics) | Smart Agents (system prompt, model, tools, guardrails, memory) | Yes | Can output be constrained to a schema? |
 | Ideathon pipeline (group, brief, pitch) | Agentic Team (sequential / hierarchical) | Yes | How is a team invoked externally? |
 | Multi-step flows A–E | Workflows using Input, Agent, LLM, Adapter, Conditional, API, Subflow, Guardrails, Output | Components yes | — |
-| Starting a workflow from Idea Hub | Input component (String or JSON) | Component yes; **external invocation not documented** | Endpoint, authentication, request and response format |
+| Starting a workflow from KonnektIdea | Input component (String or JSON) | Component yes; **external invocation not documented** | Endpoint, authentication, request and response format |
 | Structured results | Agent → Adapter | Adapter needed for JSON: yes; validation: no | Does Adapter validate or only reshape? |
 | Idea and decision corpus | AI Brain collections | Yes | Programmatic ingestion and deletion |
-| Fetching live Idea Hub data | API component with Vault secrets | Yes (outbound calls) | Network path to an Idea Hub API |
+| Fetching live KonnektIdea data | API component with Vault secrets | Yes (outbound calls) | Network path to an KonnektIdea API |
 | Protecting anonymous submissions | Guardrails (PII, prompt injection; custom) | Yes | Effectiveness for author-identifying text |
 | Agent activity log | Traces | Yes | Readable by an external app? |
 | Human approval | — | **Not found** | Any pause/approve primitive? |
 | Scheduled checks and event triggers | — | **Not found** | Webhooks or schedulers? |
 
-**Design consequence:** approval state, approver and audit trail are Idea Hub records regardless of what Kompass offers. Idea Hub fixes its own input envelope, output schemas and run record; the transport to Kompass is a replaceable engine behind `AgentGateway`.
+**Design consequence:** approval state, approver and audit trail are KonnektIdea records regardless of what Kompass offers. KonnektIdea fixes its own input envelope, output schemas and run record; the transport to Kompass is a replaceable engine behind `AgentGateway`.
 
 **In the MVP UI:** `#/agents` shows the agent registry, every simulated run, and an integration map with "Simulated" and "Planned" chips and a permanent "Not connected to Kompass" notice. The 11 questions for the Kompass team are listed in `discovery/04_ai_kompass.md`, section 6.
 
@@ -319,6 +319,6 @@ Each phase ends with the file runnable, the handler audit clean and the phase's 
 2. **Anonymous ideas:** can anyone (reviewers, admins) see the author? Is escrow-and-reveal for credit acceptable?
 3. **Timelines:** may I ship pickup 3 / decision 10 / stale 14 days as editable defaults?
 4. **Impact verification:** self-reported, or confirmed by a second person?
-5. **Audience:** internal staff only, or also customers seeing Idea Hub as a Kompass reference? This sets how prominent the Kompass map is.
+5. **Audience:** internal staff only, or also customers seeing KonnektIdea as a Kompass reference? This sets how prominent the Kompass map is.
 6. **Design tokens:** can you export `tokens.css` (or `colors_and_type.css`) and the logo SVG from the design system artifact into the repo?
 7. **Name:** Project Polaris, or another?

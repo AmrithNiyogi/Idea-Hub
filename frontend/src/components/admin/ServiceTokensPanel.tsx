@@ -4,6 +4,7 @@
  */
 import { useEffect, useState, type FormEvent } from 'react';
 import { serviceTokensApi, type ServiceToken } from '../../api/serviceTokens';
+import { useDialog } from '../DialogProvider';
 
 const EXPIRY_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '', label: 'Never' },
@@ -17,6 +18,7 @@ function when(iso: string | null): string {
 }
 
 export function ServiceTokensPanel() {
+  const dialog = useDialog();
   const [rows, setRows] = useState<ServiceToken[]>([]);
   const [name, setName] = useState('');
   const [expiry, setExpiry] = useState('');
@@ -58,7 +60,14 @@ export function ServiceTokensPanel() {
   }
 
   async function onRevoke(row: ServiceToken) {
-    if (!window.confirm(`Revoke "${row.name}"? Anything using it stops working immediately.`)) {
+    if (
+      !(await dialog.confirm({
+        title: `Revoke "${row.name}"?`,
+        message: 'Anything using it stops working immediately.',
+        confirmLabel: 'Revoke',
+        danger: true,
+      }))
+    ) {
       return;
     }
     setError(null);
@@ -85,7 +94,7 @@ export function ServiceTokensPanel() {
       <div>
         <div className="eyebrow eyebrow--plain">Service tokens</div>
         <p className="muted small">
-          For Kompass tools and workflows that call the Idea Hub. A token works on the agent read
+          For Kompass tools and workflows that call the KonnektIdea. A token works on the agent read
           routes only, not on user routes. Revoke a token to stop it at once.
         </p>
       </div>

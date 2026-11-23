@@ -1,4 +1,4 @@
-# Idea Hub → Cursor / Claude Code agent handoff
+# KonnektIdea → Cursor / Claude Code agent handoff
 
 Turn a reviewed idea into a paste-ready context pack so a coding agent can start building. The pack is **self-contained** (full markdown + idea UUID + API URL). An optional **skill** can re-fetch live context later.
 
@@ -96,7 +96,7 @@ Anonymous ideas redact author identity in the pack. `context.md` (`markdown`) in
 
 ## Cursor / Claude skill (repo developers)
 
-Canonical copies for people working **inside** the Idea Hub checkout:
+Canonical copies for people working **inside** the KonnektIdea checkout:
 
 - `.cursor/skills/idea-hub-pull-idea/SKILL.md`
 - `.claude/skills/idea-hub-pull-idea/SKILL.md`
@@ -110,7 +110,7 @@ Idea example: `b5b832b7-1c1c-4618-a09f-02e5c55c82d6` (Structured handoff checkli
 
 1. Local stack up: API `:8000`, UI `:5173`, signed in.
 2. Open `/ideas/b5b832b7-1c1c-4618-a09f-02e5c55c82d6`.
-3. **Copy for Cursor** → paste into Cursor Agent in Idea Hub or a product repo → confirm the prompt contains the UUID + API URL + problem/solution.
+3. **Copy for Cursor** → paste into Cursor Agent in KonnektIdea or a product repo → confirm the prompt contains the UUID + API URL + problem/solution.
 4. **Download skill** → unzip at a scratch repo root → confirm both skill paths exist → ask the agent to use `idea-hub-pull-idea` with that UUID.
 5. **Download context.md** → open the file → confirm **Build with an agent** section lists real install paths (not a dead skill mention).
 

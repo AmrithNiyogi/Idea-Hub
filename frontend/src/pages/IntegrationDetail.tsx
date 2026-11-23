@@ -16,8 +16,10 @@ import type {
   IntegrationProvider,
   TrackerConnection,
 } from '../types/trackers';
+import { useDialog } from '../components/DialogProvider';
 
 export function IntegrationDetailPage() {
+  const dialog = useDialog();
   const { providerId = '' } = useParams<{ providerId: string }>();
   const [searchParams] = useSearchParams();
   const focusOrg = searchParams.get('scope') === 'organization';
@@ -122,7 +124,13 @@ export function IntegrationDetailPage() {
 
   async function onDisconnectPersonal() {
     if (!provider || !personal) return;
-    if (!window.confirm(`Disconnect your ${provider.display_name} connection?`)) {
+    if (
+      !(await dialog.confirm({
+        title: `Disconnect your ${provider.display_name} connection?`,
+        confirmLabel: 'Disconnect',
+        danger: true,
+      }))
+    ) {
       return;
     }
     setBusy(true);
@@ -142,9 +150,11 @@ export function IntegrationDetailPage() {
   async function onDisconnectOrg() {
     if (!provider || !orgConnection) return;
     if (
-      !window.confirm(
-        `Remove the organization default for ${provider.display_name}?`,
-      )
+      !(await dialog.confirm({
+        title: `Remove the organization default for ${provider.display_name}?`,
+        confirmLabel: 'Remove',
+        danger: true,
+      }))
     ) {
       return;
     }

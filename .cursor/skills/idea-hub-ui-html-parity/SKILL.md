@@ -1,6 +1,6 @@
 ---
 name: idea-hub-ui-html-parity
-description: Port Idea Hub UI from idea-hub.html into the Vite React app while preserving design tokens, layout, and status styling. Use when building or restyling pages, components, CSS, or when the user asks for HTML prototype parity.
+description: Port KonnektIdea UI from idea-hub.html into the Vite React app while preserving design tokens, layout, and status styling. Use when building or restyling pages, components, CSS, or when the user asks for HTML prototype parity.
 ---
 
 # UI parity with idea-hub.html
@@ -30,7 +30,7 @@ Persistent constraints (always follow): **`.cursor/rules/idea-hub-frontend-parit
 - [ ] List/row surfaces for catalogs (Integrations, Tracker) — not generic card grids
 - [ ] New CSS scoped (e.g. `.trk-*`); no global bleed; do not misuse bare `.check` as a box
 - [ ] Empty / loading / error states fit existing patterns
-- [ ] No divergent AI-slop chrome; keep Idea Hub brand tokens
+- [ ] No divergent AI-slop chrome; keep KonnektIdea brand tokens
 
 ## Anti-patterns
 

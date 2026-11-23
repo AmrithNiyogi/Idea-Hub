@@ -28,7 +28,7 @@ interface Step {
 function stepsFor(canReview: boolean): Step[] {
   const steps: Step[] = [
     {
-      title: 'Welcome to Idea Hub',
+      title: 'Welcome to KonnektIdea',
       body: 'Ideas move from shaping to review, build and recognition. The sidebar follows that order, so you can see where you are in the journey. This guide walks you through each part, one page at a time.',
       to: '/',
       pageLabel: 'Open Home',
@@ -146,7 +146,7 @@ export function GuideTour() {
   };
 
   return (
-    <aside className="guide" aria-label="Idea Hub guide">
+    <aside className="guide" aria-label="KonnektIdea guide">
       <div className="guide__head">
         <span className="guide__count">
           Step {index + 1} of {steps.length}

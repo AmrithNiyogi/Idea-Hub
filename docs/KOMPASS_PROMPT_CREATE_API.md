@@ -1,4 +1,4 @@
-# Create Idea Konnekt prompts via API Gateway
+# Create KonnektIdea prompts via API Gateway
 
 Ready bodies: [`KOMPASS_PROMPT_CREATE_PAYLOADS.json`](KOMPASS_PROMPT_CREATE_PAYLOADS.json)  
 (12 prompts, `status: "active"`, labels `latest` + `production`, human-readable names).  
@@ -19,21 +19,21 @@ UI hosts the product; **create prompts against the API Gateway**, not the admin 
 Display `name` (what you see in Prompt Engine):
 
 ```text
-IdeaKonnekt - WF Idea Intelligence
-IdeaKonnekt - WF Idea Enhancement
-IdeaKonnekt - WF Submit Assist
-IdeaKonnekt - WF Idea Optimizer
-IdeaKonnekt - WF Review Intelligence
-IdeaKonnekt - WF Help Guide
-IdeaKonnekt - WF Innovation Workflow
-IdeaKonnekt - WF Recognition
-IdeaKonnekt - WF Innovation Analytics
-IdeaKonnekt - Ideathon Cluster
-IdeaKonnekt - Ideathon Rank
-IdeaKonnekt - Ideathon Pitch
+KonnektIdea - WF Idea Intelligence
+KonnektIdea - WF Idea Enhancement
+KonnektIdea - WF Submit Assist
+KonnektIdea - WF Idea Optimizer
+KonnektIdea - WF Review Intelligence
+KonnektIdea - WF Help Guide
+KonnektIdea - WF Innovation Workflow
+KonnektIdea - WF Recognition
+KonnektIdea - WF Innovation Analytics
+KonnektIdea - Ideathon Cluster
+KonnektIdea - Ideathon Rank
+KonnektIdea - Ideathon Pitch
 ```
 
-Pattern: `IdeaKonnekt - WF <Role>` for workflow LLM prompts; `IdeaKonnekt - Ideathon <Stage>` for agent prompts.
+Pattern: `KonnektIdea - WF <Role>` for workflow LLM prompts; `KonnektIdea - Ideathon <Stage>` for agent prompts.
 
 Slug (auto from name): lowercase, spaces→`-`, strip other chars → e.g. `ideakonnekt-wf-idea-intelligence`. Use that slug in Workflow LLM nodes / agent `prompt_slug`.
 
@@ -72,16 +72,16 @@ Needs permission `PROMPT_CREATE`.
 
 | Prompt name | modelName |
 |-------------|-----------|
-| IdeaKonnekt - WF Innovation Workflow | `claude_4_5_haiku` |
-| IdeaKonnekt - WF Recognition | `claude_4_5_haiku` |
-| IdeaKonnekt - WF Help Guide | `claude_4_5_haiku` |
-| IdeaKonnekt - WF Idea Intelligence | `claude_4_6_sonnet` |
-| IdeaKonnekt - WF Idea Enhancement | `claude_4_6_sonnet` |
-| IdeaKonnekt - WF Submit Assist | `claude_4_6_sonnet` |
-| IdeaKonnekt - WF Idea Optimizer | `claude_4_6_sonnet` |
-| IdeaKonnekt - WF Review Intelligence | `claude_4_6_sonnet` |
-| IdeaKonnekt - WF Innovation Analytics | `claude_4_6_sonnet` |
-| IdeaKonnekt - Ideathon * | `claude_4_6_sonnet` |
+| KonnektIdea - WF Innovation Workflow | `claude_4_5_haiku` |
+| KonnektIdea - WF Recognition | `claude_4_5_haiku` |
+| KonnektIdea - WF Help Guide | `claude_4_5_haiku` |
+| KonnektIdea - WF Idea Intelligence | `claude_4_6_sonnet` |
+| KonnektIdea - WF Idea Enhancement | `claude_4_6_sonnet` |
+| KonnektIdea - WF Submit Assist | `claude_4_6_sonnet` |
+| KonnektIdea - WF Idea Optimizer | `claude_4_6_sonnet` |
+| KonnektIdea - WF Review Intelligence | `claude_4_6_sonnet` |
+| KonnektIdea - WF Innovation Analytics | `claude_4_6_sonnet` |
+| KonnektIdea - Ideathon * | `claude_4_6_sonnet` |
 
 Gemini alts: Fast → `gemini_2_5_flash`; Heavy → `gemini_2_5_pro`.
 
@@ -144,12 +144,12 @@ Expect **201**. **409** = name/slug already exists.
 
 ### Verify in UI
 
-Open https://kompass-admin-ui-staging.dotkonnekt.com/ → tenant **devtest** → Prompts → filter `IdeaKonnekt`.
+Open https://kompass-admin-ui-staging.dotkonnekt.com/ → tenant **devtest** → Prompts → filter `KonnektIdea`.
 
 Or:
 
 ```bash
-curl -sS "$GW/api/v1/prompts?q=IdeaKonnekt&limit=20" \
+curl -sS "$GW/api/v1/prompts?q=KonnektIdea&limit=20" \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-Tenant-ID: $TENANT" | jq .
 ```
@@ -178,7 +178,7 @@ curl -X POST "$GW/api/v2/runs/execute" \
 }'
 ```
 
-Idea Hub maps surfaces → env agent ids (`AISTUDIO_AGENT_*`) and proxies
+KonnektIdea maps surfaces → env agent ids (`AISTUDIO_AGENT_*`) and proxies
 server-side — see [`AGENT_SIMULATION.md`](AGENT_SIMULATION.md). Do **not** put
 `X-Authorization` in the browser Help widget.
 
@@ -186,15 +186,15 @@ server-side — see [`AGENT_SIMULATION.md`](AGENT_SIMULATION.md). Do **not** put
 
 | name (UI) | slug (auto) | type | temp | model | Hub route / execute env |
 |-----------|-------------|------|------|-------|-------------------------|
-| IdeaKonnekt - WF Idea Intelligence | `ideakonnekt-wf-idea-intelligence` | text | 0.20 | `claude_4_6_sonnet` | `/agents/run` |
-| IdeaKonnekt - WF Idea Enhancement | `ideakonnekt-wf-idea-enhancement` | text | 0.30 | `claude_4_6_sonnet` | `/agents/run` |
-| IdeaKonnekt - WF Submit Assist | `ideakonnekt-wf-submit-assist` | text | 0.40 | `claude_4_6_sonnet` | `/simulate/submit-assist` · `AISTUDIO_AGENT_SUBMIT_ASSIST` |
-| IdeaKonnekt - WF Idea Optimizer | `ideakonnekt-wf-idea-optimizer` | text | 0.35 | `claude_4_6_sonnet` | `/simulate/idea-optimize` · `AISTUDIO_AGENT_IDEA_OPTIMIZER` |
-| IdeaKonnekt - WF Review Intelligence | `ideakonnekt-wf-review-intelligence` | text | 0.10 | `claude_4_6_sonnet` | `/agents/run` · `AISTUDIO_AGENT_REVIEW_INTELLIGENCE` |
-| IdeaKonnekt - WF Help Guide | `ideakonnekt-wf-help-guide` | text | 0.20 | `claude_4_5_haiku` | `/simulate/help` · `AISTUDIO_AGENT_HELP` |
-| IdeaKonnekt - WF Innovation Workflow | `ideakonnekt-wf-innovation-workflow` | text | 0.25 | `claude_4_5_haiku` | `/agents/run` |
-| IdeaKonnekt - WF Recognition | `ideakonnekt-wf-recognition` | text | 0.20 | `claude_4_5_haiku` | `/agents/run` |
-| IdeaKonnekt - WF Innovation Analytics | `ideakonnekt-wf-innovation-analytics` | text | 0.25 | `claude_4_6_sonnet` | `/agents/run` |
-| IdeaKonnekt - Ideathon Cluster | `ideakonnekt-ideathon-cluster` | agent | 0.20 | `claude_4_6_sonnet` | planned |
-| IdeaKonnekt - Ideathon Rank | `ideakonnekt-ideathon-rank` | agent | 0.15 | `claude_4_6_sonnet` | planned |
-| IdeaKonnekt - Ideathon Pitch | `ideakonnekt-ideathon-pitch` | agent | 0.35 | `claude_4_6_sonnet` | planned |
+| KonnektIdea - WF Idea Intelligence | `ideakonnekt-wf-idea-intelligence` | text | 0.20 | `claude_4_6_sonnet` | `/agents/run` |
+| KonnektIdea - WF Idea Enhancement | `ideakonnekt-wf-idea-enhancement` | text | 0.30 | `claude_4_6_sonnet` | `/agents/run` |
+| KonnektIdea - WF Submit Assist | `ideakonnekt-wf-submit-assist` | text | 0.40 | `claude_4_6_sonnet` | `/simulate/submit-assist` · `AISTUDIO_AGENT_SUBMIT_ASSIST` |
+| KonnektIdea - WF Idea Optimizer | `ideakonnekt-wf-idea-optimizer` | text | 0.35 | `claude_4_6_sonnet` | `/simulate/idea-optimize` · `AISTUDIO_AGENT_IDEA_OPTIMIZER` |
+| KonnektIdea - WF Review Intelligence | `ideakonnekt-wf-review-intelligence` | text | 0.10 | `claude_4_6_sonnet` | `/agents/run` · `AISTUDIO_AGENT_REVIEW_INTELLIGENCE` |
+| KonnektIdea - WF Help Guide | `ideakonnekt-wf-help-guide` | text | 0.20 | `claude_4_5_haiku` | `/simulate/help` · `AISTUDIO_AGENT_HELP` |
+| KonnektIdea - WF Innovation Workflow | `ideakonnekt-wf-innovation-workflow` | text | 0.25 | `claude_4_5_haiku` | `/agents/run` |
+| KonnektIdea - WF Recognition | `ideakonnekt-wf-recognition` | text | 0.20 | `claude_4_5_haiku` | `/agents/run` |
+| KonnektIdea - WF Innovation Analytics | `ideakonnekt-wf-innovation-analytics` | text | 0.25 | `claude_4_6_sonnet` | `/agents/run` |
+| KonnektIdea - Ideathon Cluster | `ideakonnekt-ideathon-cluster` | agent | 0.20 | `claude_4_6_sonnet` | planned |
+| KonnektIdea - Ideathon Rank | `ideakonnekt-ideathon-rank` | agent | 0.15 | `claude_4_6_sonnet` | planned |
+| KonnektIdea - Ideathon Pitch | `ideakonnekt-ideathon-pitch` | agent | 0.35 | `claude_4_6_sonnet` | planned |

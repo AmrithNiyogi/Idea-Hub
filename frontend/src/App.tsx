@@ -4,6 +4,7 @@ import { AuthProvider } from './auth/AuthProvider';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { AppShell } from './components/shell/AppShell';
 import { ToastProvider } from './components/ToastProvider';
+import { DialogProvider } from './components/DialogProvider';
 import { LoginPage } from './pages/Login';
 import { HomePage } from './pages/Home';
 import { ExplorePage } from './pages/Explore';
@@ -19,6 +20,7 @@ export function App() {
 
   return (
     <ToastProvider>
+      <DialogProvider>
       <AuthProvider>
         <BrowserRouter>
           <ScrollToTop />
@@ -45,6 +47,7 @@ export function App() {
           </Routes>
         </BrowserRouter>
       </AuthProvider>
+      </DialogProvider>
     </ToastProvider>
   );
 }

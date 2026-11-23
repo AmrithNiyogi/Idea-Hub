@@ -1,4 +1,4 @@
-# Idea Konnekt: code analysis notes (internal, do not share)
+# KonnektIdea: code analysis notes (internal, do not share)
 
 Analysed at commit 94c9930 on `main`, 2026-11-22. Every claim below comes from reading the code, not the older prototype docs.
 

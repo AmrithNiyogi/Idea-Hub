@@ -1,6 +1,6 @@
 /**
- * Idea Hub Help chat widget — UX adapted from aistudio-chatbot-ui-v2
- * (DotAgent launcher + panel). Calls Idea Hub ``/agents/simulate/help``
+ * KonnektIdea Help chat widget — UX adapted from aistudio-chatbot-ui-v2
+ * (DotAgent launcher + panel). Calls KonnektIdea ``/agents/simulate/help``
  * (simulate or live runs/execute via backend) and echoes ``conversation_id``.
  */
 
@@ -30,7 +30,7 @@ const WELCOME: Msg = {
   id: 'welcome',
   role: 'assistant',
   text:
-    'Hi — I am the Idea Hub help guide. Ask about Submit, Review, roles, Explore, Admin, or SSO/MFA. I never need passwords or OTP codes.',
+    'Hi — I am the KonnektIdea help guide. Ask about Submit, Review, roles, Explore, Admin, or SSO/MFA. I never need passwords or OTP codes.',
   links: [
     { label: 'Submit', href: '/submit' },
     { label: 'Review', href: '/review' },
@@ -165,7 +165,7 @@ export function HelpChatFab() {
               />
               <div className="ik-chat__title-wrap">
                 <h2 className="ik-chat__title" id={titleId}>
-                  Idea Hub Help
+                  KonnektIdea Help
                 </h2>
                 <span className="ik-chat__mode">{modeLabel}</span>
               </div>

@@ -1,4 +1,4 @@
-"""Schemas for Idea Hub → agent handoff (Cursor / Claude Code).
+"""Schemas for KonnektIdea → agent handoff (Cursor / Claude Code).
 
 These payloads are intended for pasting into coding agents. They must never
 include secrets, credentials, emails, or OTP material — only product context

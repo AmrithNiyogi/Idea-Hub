@@ -35,7 +35,7 @@ NEWS_CATEGORY_SOURCES: dict[str, str] = {
 }
 
 NEWS_HTTP_TIMEOUT: float = 20.0
-NEWS_USER_AGENT: str = "IdeaHub-Newsletter/1.0"
+NEWS_USER_AGENT: str = "KonnektIdea-Newsletter/1.0"
 
 ARXIV_API_URL: str = "https://export.arxiv.org/api/query"
 # arXiv asks clients to leave about 3 seconds between requests.
