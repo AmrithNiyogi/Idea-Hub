@@ -13,9 +13,11 @@ export interface TeamFieldsProps {
   /** Optional team name, stored on the idea. */
   teamName: string;
   githubUrl: string;
+  demoUrl: string;
   onCoAuthorsChange: (ids: string[]) => void;
   onTeamNameChange: (value: string) => void;
   onGithubUrlChange: (value: string) => void;
+  onDemoUrlChange: (value: string) => void;
 }
 
 export function TeamFields({
@@ -23,9 +25,11 @@ export function TeamFields({
   coAuthorIds,
   teamName,
   githubUrl,
+  demoUrl,
   onCoAuthorsChange,
   onTeamNameChange,
   onGithubUrlChange,
+  onDemoUrlChange,
 }: TeamFieldsProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<User[]>([]);
@@ -113,6 +117,8 @@ export function TeamFields({
   const githubTrimmed = githubUrl.trim();
   const githubInvalid =
     githubTrimmed.length > 0 && !GITHUB_REPO_PATTERN.test(githubTrimmed);
+  const demoTrimmed = demoUrl.trim();
+  const demoInvalid = demoTrimmed.length > 0 && !/^https:\/\/[^\s/]+\.\S+$/.test(demoTrimmed);
 
   return (
     <div className="stack">
@@ -191,6 +197,27 @@ export function TeamFields({
           onChange={(e) => onTeamNameChange(e.target.value)}
           placeholder="For example: Night Owls"
         />
+      </div>
+
+      <div className="field">
+        <label htmlFor="sf-demo">Live project link (optional)</label>
+        <input
+          className="input"
+          id="sf-demo"
+          type="url"
+          maxLength={300}
+          value={demoUrl}
+          onChange={(e) => onDemoUrlChange(e.target.value)}
+          placeholder="https://your-prototype.example.com"
+          aria-invalid={demoInvalid}
+        />
+        {demoInvalid ? (
+          <div className="hint" role="alert">
+            Use a secure link that starts with https://.
+          </div>
+        ) : (
+          <div className="hint">Where people can see the working prototype.</div>
+        )}
       </div>
 
       <div className="field">

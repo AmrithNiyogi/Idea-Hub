@@ -25,6 +25,7 @@ const empty: IdeaWrite = {
   co_author_ids: [],
   team_name: '',
   github_url: '',
+  demo_url: '',
 };
 
 const CAT_HELP: Record<string, string> = {
@@ -261,6 +262,7 @@ export function SubmitPage() {
           co_author_ids: idea.co_author_ids ?? [],
           team_name: idea.team_name ?? '',
           github_url: idea.github_url ?? '',
+          demo_url: idea.demo_url ?? '',
         });
       })
       .catch((e) => setError(e instanceof Error ? e.message : 'Draft not found'));
@@ -441,11 +443,16 @@ export function SubmitPage() {
       setError('GitHub link must look like https://github.com/owner/repo.');
       return;
     }
+    const demo = (form.demo_url ?? '').trim();
+    if (demo && !/^https:\/\/[^\s/]+\.\S+$/.test(demo)) {
+      setError('Live project link must start with https://.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const idea = await ideasApi.submit(
-        { ...form, title: form.title.trim(), github_url: github },
+        { ...form, title: form.title.trim(), github_url: github, demo_url: demo },
         draftId,
       );
       if (ideathonId) {
@@ -901,9 +908,11 @@ export function SubmitPage() {
             coAuthorIds={form.co_author_ids ?? []}
             teamName={form.team_name ?? ''}
             githubUrl={form.github_url ?? ''}
+            demoUrl={form.demo_url ?? ''}
             onCoAuthorsChange={(ids) => set('co_author_ids', ids)}
             onTeamNameChange={(v) => set('team_name', v)}
             onGithubUrlChange={(v) => set('github_url', v)}
+            onDemoUrlChange={(v) => set('demo_url', v)}
           />
 
           <label className="switch">

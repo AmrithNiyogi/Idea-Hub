@@ -20,6 +20,8 @@ function renderFields(overrides: Partial<Parameters<typeof TeamFields>[0]> = {})
     coAuthorIds: [] as string[],
     teamName: '',
     githubUrl: '',
+    demoUrl: '',
+    onDemoUrlChange: vi.fn(),
     onCoAuthorsChange: vi.fn(),
     onTeamNameChange: vi.fn(),
     onGithubUrlChange: vi.fn(),

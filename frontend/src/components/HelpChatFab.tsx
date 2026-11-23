@@ -8,6 +8,7 @@ import { FormEvent, KeyboardEvent, useEffect, useId, useRef, useState } from 're
 import { Link } from 'react-router-dom';
 import { agentsApi } from '../api/agents';
 import { Icon } from './Icons';
+import { ChatReply } from './ChatReply';
 
 type Msg = {
   id: string;
@@ -31,11 +32,7 @@ const WELCOME: Msg = {
   id: 'welcome',
   role: 'assistant',
   text:
-    'Hi — I am the IdeaKonnekt help guide. Ask about Submit, Review, roles, Explore, Admin, or SSO/MFA. I never need passwords or OTP codes.',
-  links: [
-    { label: 'Submit', href: '/submit' },
-    { label: 'Review', href: '/review' },
-  ],
+    'Hi — I am the IdeaKonnekt help guide. Ask about Submit, Review, Roles, Explore, and more!',
   at: new Date(0),
 };
 
@@ -202,10 +199,16 @@ export function HelpChatFab() {
                   </div>
                   <div className="ik-chat__msg-text">
                     {m.loading ? <span className="ik-chat__loading-dot" /> : null}
-                    {m.text}
+                    {!m.loading && m.role === 'assistant' ? (
+                      <ChatReply text={m.text} />
+                    ) : (
+                      m.text
+                    )}
                   </div>
                   {m.role === 'assistant' && m.followups?.length && !busy ? (
-                    <div className="ik-chat__starters" aria-label="Suggested follow-up questions">
+                    <div className="ik-chat__also">
+                      <span className="ik-chat__also-label">Also asked</span>
+                      <div className="ik-chat__starters" aria-label="Also asked">
                       {m.followups.map((q) => (
                         <button
                           key={q}
@@ -216,20 +219,26 @@ export function HelpChatFab() {
                           {q}
                         </button>
                       ))}
+                      </div>
                     </div>
                   ) : null}
                   {m.links?.length ? (
-                    <div className="ik-chat__links">
-                      {m.links.map((l) => (
-                        <Link
-                          key={l.href}
-                          className="ik-chat__link"
-                          to={l.href}
-                          onClick={() => setOpen(false)}
-                        >
-                          {l.label}
-                        </Link>
-                      ))}
+                    <div className="ik-chat__redirect">
+                      <p className="ik-chat__redirect-note">
+                        Click here to redirect to the page:
+                      </p>
+                      <div className="ik-chat__links">
+                        {m.links.map((l) => (
+                          <Link
+                            key={l.href}
+                            className="ik-chat__link"
+                            to={l.href}
+                            onClick={() => setOpen(false)}
+                          >
+                            {l.label}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -238,6 +247,7 @@ export function HelpChatFab() {
           </div>
 
           <div className="ik-chat__input">
+            {msgs.length <= 1 ? (
             <div className="ik-chat__starters">
               {STARTERS.map((s) => (
                 <button
@@ -251,6 +261,7 @@ export function HelpChatFab() {
                 </button>
               ))}
             </div>
+            ) : null}
             <form className="ik-chat__form" onSubmit={onSubmit}>
               <textarea
                 ref={inputRef}

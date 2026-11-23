@@ -538,6 +538,14 @@ export function IdeaDetailPage() {
               <span>{idea.team_name}</span>
             </>
           ) : null}
+          {idea.demo_url ? (
+            <>
+              <span className="muted">Live project</span>
+              <a href={idea.demo_url} target="_blank" rel="noreferrer">
+                {idea.demo_url.replace(/^https:\/\//, '')}
+              </a>
+            </>
+          ) : null}
           {idea.github_url ? (
             <>
               <span className="muted">Code</span>

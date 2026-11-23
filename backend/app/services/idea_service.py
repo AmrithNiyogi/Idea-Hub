@@ -60,6 +60,7 @@ def _apply_fields(idea: Idea, data: IdeaWrite) -> None:
     idea.co_author_ids = _clean_co_authors(idea, data.co_author_ids)
     idea.team_name = data.team_name
     idea.github_url = data.github_url
+    idea.demo_url = data.demo_url
     idea.updated_at = _now()
 
 

@@ -9,6 +9,7 @@ import re
 
 from pydantic import BaseModel, Field, field_validator
 
+HTTPS_URL = re.compile(r"^https://[^\s/]+\.[^\s]+$")
 GITHUB_REPO_URL = re.compile(r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$")
 
 
@@ -27,6 +28,7 @@ class IdeaWrite(BaseModel):
     co_author_ids: list[UUID] = Field(default_factory=list)
     team_name: str | None = Field(default=None, max_length=120)
     github_url: str | None = Field(default=None, max_length=300)
+    demo_url: str | None = Field(default=None, max_length=300)
 
     @field_validator("team_name")
     @classmethod
@@ -34,6 +36,17 @@ class IdeaWrite(BaseModel):
         """Blank team names are stored as no team name."""
         cleaned = (v or "").strip()
         return cleaned or None
+
+    @field_validator("demo_url")
+    @classmethod
+    def check_demo_url(cls, v: str | None) -> str | None:
+        """Accept an empty value or a secure link to the live project."""
+        cleaned = (v or "").strip()
+        if not cleaned:
+            return None
+        if not HTTPS_URL.match(cleaned):
+            raise ValueError("Live project link must start with https://")
+        return cleaned
 
     @field_validator("github_url")
     @classmethod
@@ -123,6 +136,7 @@ class IdeaOut(BaseModel):
     co_author_ids: list[UUID] = Field(default_factory=list)
     team_name: str | None = None
     github_url: str | None = None
+    demo_url: str | None = None
     owner_id: UUID | None = None
     status: str
     is_draft: bool = False

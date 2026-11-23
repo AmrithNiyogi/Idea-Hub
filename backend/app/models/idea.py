@@ -81,6 +81,7 @@ class Idea(Base):
     )
     team_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     github_url: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    demo_url: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
     submitted_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

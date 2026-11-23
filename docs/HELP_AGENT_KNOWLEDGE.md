@@ -120,6 +120,7 @@ Submitting requires a title, a category, a problem, a solution, who benefits and
 - **Teammates:** search for people who worked on the idea. They are added as **co-authors** straight away, so they can edit and link the idea. Use this for everyone who really worked on it.
 - **Team name:** optional, free text (up to 120 characters).
 - **GitHub repository:** optional, one link in the form `https://github.com/owner/repo`. One repository per idea.
+- **Live project link:** optional, a secure `https://` link to a working prototype or demo, so people can try it. Shown on the idea page.
 
 ### Anonymous submissions
 Tick **Submit anonymously** to hide your name from everyone, including reviewers, on the idea and in discussion. You still see it as yours.
