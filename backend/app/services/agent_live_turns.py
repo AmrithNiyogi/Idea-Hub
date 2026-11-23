@@ -52,6 +52,7 @@ async def submit_assist_turn(
     message: str,
     awaiting_field: Optional[str] = None,
     conversation_id: Optional[str] = None,
+    taxonomy: Optional[list[dict[str, Any]]] = None,
 ) -> dict[str, Any]:
     """Run Submit assist via Kompass or fall back to local simulation.
 
@@ -74,15 +75,20 @@ async def submit_assist_turn(
 
     agent_id = studio.resolve_kompass_agent_id("submit-assist")
     if not agent_id:
-        raise HTTPException(
-            status_code=503,
-            detail="AISTUDIO_AGENT_SUBMIT_ASSIST is not configured.",
+        # No live agent yet: keep the chat working on the local simulation, and say so.
+        out = simulate.submit_assist_turn(
+            draft=draft, message=message, awaiting_field=awaiting_field
         )
+        out["simulated"] = True
+        if conversation_id:
+            out["conversation_id"] = conversation_id
+        return out
 
     payload = {
         "draft": draft or {},
         "message": message or "",
         "awaiting_field": awaiting_field,
+        "taxonomy": taxonomy or [],
     }
     try:
         result = await studio.execute_run(

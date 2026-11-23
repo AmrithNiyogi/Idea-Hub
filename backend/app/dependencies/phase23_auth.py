@@ -83,14 +83,14 @@ async def get_actor(
         pass
 
     if not x_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=(
-                "Not authenticated. Pass credentials (cookies) or "
-                "X-User-Id (UUID) and optional X-Roles / X-Active-Role "
-                "headers for local Phase 2+3 testing."
-            ),
-        )
+        # Say which case it is, so a tool caller can see whether a token arrived at all.
+        from app.dependencies.auth import _extract_access_token
+
+        if not _extract_access_token(request):
+            detail = "No access token received (cookie or X-Authorization header)."
+        else:
+            detail = "The access token was received but is invalid or expired. Sign in again."
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
     try:
         uid = uuid.UUID(x_user_id)
     except ValueError as exc:

@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.user import User
-from app.services import auth_service
+from app.services import auth_service, service_token_service
 
 logger = logging.getLogger("idea_hub.deps.auth")
 
@@ -49,7 +49,11 @@ def _extract_access_token(request: Request) -> str | None:
     auth = request.headers.get("Authorization")
     if auth and auth.lower().startswith("bearer "):
         return auth[7:].strip()
-    return None
+    # Agent tools (Kompass) send the signed-in user's token as X-Authorization.
+    tool_token = (request.headers.get("X-Authorization") or "").strip()
+    if tool_token.lower().startswith("bearer "):
+        tool_token = tool_token[7:].strip()
+    return tool_token or None
 
 
 async def resolve_user_from_request(
@@ -61,7 +65,8 @@ async def resolve_user_from_request(
         CurrentUser when a valid access token is present; otherwise None.
     """
     token = _extract_access_token(request)
-    if not token:
+    if not token or service_token_service.is_service_token(token):
+        # Service tokens are for agent reads only (see get_agent_caller), never for user routes.
         return None
     try:
         payload = auth_service.decode_token(token, "access")
@@ -117,6 +122,37 @@ async def get_optional_user(
     return await resolve_user_from_request(request, session)
 
 
+async def get_agent_caller(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> str:
+    """Caller for agent-internal reads: a signed-in user, or a live service token.
+
+    Returns:
+        A label for the caller ("user:<id>" or "service:<name>"), for logs.
+
+    Raises:
+        HTTPException: 401 when the credential is missing, unknown, revoked or expired.
+    """
+    token = _extract_access_token(request)
+    if service_token_service.is_service_token(token):
+        row = await service_token_service.verify(session, token or "")
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Service token is invalid, expired or revoked.",
+            )
+        return f"service:{row.name}"
+    user = await resolve_user_from_request(request, session)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    return f"user:{user.id}"
+
+
+RequireAgentCaller = Annotated[str, Depends(get_agent_caller)]
 RequireUser = Annotated[CurrentUser, Depends(get_current_user)]
 OptionalUser = Annotated[CurrentUser | None, Depends(get_optional_user)]
 DbSession = Annotated[AsyncSession, Depends(get_db)]

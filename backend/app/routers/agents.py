@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
+from sqlalchemy import select
 from fastapi import APIRouter, Query
 
 from app.db.session_deps import DbSession
@@ -26,6 +27,7 @@ from app.schemas.agents import (
     SubmitAssistTurnOut,
 )
 from app.services.agent_gateway import AgentGateway
+from app.models.category import Category
 from app.services import agent_live_turns as live_turns
 
 router = APIRouter(prefix="/agents", tags=["agents"])
@@ -166,14 +168,24 @@ async def answer_question(
 async def submit_assist_turn(
     body: SubmitAssistTurnIn,
     actor: RequireActor,
+    session: DbSession,
 ) -> SubmitAssistTurnOut:
     """Run one Submit assist turn for the authenticated author."""
     _ = actor
+    categories = (
+        await session.execute(
+            select(Category).where(Category.enabled.is_(True)).order_by(Category.slug)
+        )
+    ).scalars().all()
+    taxonomy = [
+        {"slug": c.slug, "label": c.label, "description": c.description} for c in categories
+    ]
     out = await live_turns.submit_assist_turn(
         draft=body.draft,
         message=body.message,
         awaiting_field=body.awaiting_field,
         conversation_id=body.conversation_id,
+        taxonomy=taxonomy,
     )
     return SubmitAssistTurnOut.model_validate(out)
 

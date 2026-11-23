@@ -43,6 +43,8 @@ def test_hub_agent_env_keys_cover_surfaces() -> None:
         "coding-agent-build",
         "ideathon-rank",
         "ideathon-pitch",
+        "ideathon-cluster",
+        "ideathon-draft",
     }
 
 
@@ -102,12 +104,11 @@ async def test_execute_run_posts_expected_body(monkeypatch: pytest.MonkeyPatch) 
     )
     assert out.success is True
     assert out.conversation_id == "c-9"
-    assert captured["url"].endswith("/api/v2/runs/execute")
+    assert captured["url"].endswith("/api/v1/agents/help-agent/execute")
     assert captured["headers"]["X-Tenant-ID"] == "devtest"
     assert captured["headers"]["project-slug"] == "idea-hub"
-    assert captured["headers"]["X-Authorization"] == "tool-tok"
+    assert captured["headers"]["X-Authorization"] == "Bearer tool-tok"
     assert captured["json"] == {
-        "agent_id": "help-agent",
-        "input": "How do I submit?",
-        "conversation_id": "c-prev",
+        "task": "How do I submit?",
+        "session_id": "c-prev",
     }

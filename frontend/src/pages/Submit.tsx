@@ -4,6 +4,7 @@ import { ideasApi } from '../api/ideas';
 import { agentsApi } from '../api/agents';
 import { Icon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
+import { EnhancePanel, type EnhanceField } from '../components/submit/EnhancePanel';
 import { EFFORT_LABELS, TAG_VOCAB } from '../constants/status';
 import type { Category, Effort, IdeaWrite } from '../types/idea';
 
@@ -92,6 +93,7 @@ export function SubmitPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [similar, setSimilar] = useState<SimilarHit[]>([]);
   const [assistNote, setAssistNote] = useState<string | null>(null);
+  const [assistLive, setAssistLive] = useState<boolean | null>(null);
   const assistTimer = useRef<number | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const formRef = useRef(form);
@@ -100,6 +102,7 @@ export function SubmitPage() {
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
+  const [chatLive, setChatLive] = useState<boolean | null>(null);
   const [awaitingField, setAwaitingField] = useState<string | null>(null);
   const [assistConversationId, setAssistConversationId] = useState<
     string | null
@@ -196,6 +199,7 @@ export function SubmitPage() {
       .submitAssist({ draft: draftPayload(empty), message: '' })
       .then((turn) => {
         setChat([{ role: 'assistant', text: turn.reply }]);
+        setChatLive(!turn.simulated);
         setAwaitingField(turn.awaiting_field);
         if (turn.conversation_id) setAssistConversationId(turn.conversation_id);
       })
@@ -266,6 +270,7 @@ export function SubmitPage() {
             out.similarIdeas ||
             []) as SimilarHit[];
           setSimilar(Array.isArray(hits) ? hits.slice(0, 4) : []);
+          setAssistLive(!run.simulated);
           const missing = out.missing_fields || out.missingFields;
           if (Array.isArray(missing) && missing.length) {
             setAssistNote(
@@ -315,6 +320,7 @@ export function SubmitPage() {
         awaiting_field: awaitingField,
         conversation_id: assistConversationId,
       });
+      setChatLive(!turn.simulated);
       const labels =
         turn.patches && Object.keys(turn.patches).length
           ? applyPatches(turn.patches)
@@ -473,7 +479,7 @@ export function SubmitPage() {
             <div className="row" style={{ gap: 8 }}>
               <Icon name="spark" size={16} />
               <strong>Submit assistant</strong>
-              <span className="pill pill--agent">Simulated — Kompass soon</span>
+              <span className="pill pill--agent">{chatLive ? 'Live — Kompass' : 'Simulated'}</span>
             </div>
             <button
               type="button"
@@ -490,7 +496,7 @@ export function SubmitPage() {
               <div className="agent__head">
                 <Icon name="message" size={16} />
                 <span className="agent__name">Idea chat</span>
-                <span className="agent__kind">Simulated</span>
+                <span className="agent__kind">{chatLive ? 'Live' : 'Simulated'}</span>
               </div>
               <div className="agent__body">
                 <div className="sf-chat__log" role="log" aria-live="polite">
@@ -580,7 +586,12 @@ export function SubmitPage() {
 
           {similar.length ? (
             <div className="stack stack--sm" style={{ marginTop: 12 }}>
-              <h4 style={{ margin: 0 }}>Similar ideas</h4>
+              <div className="row row--between" style={{ alignItems: 'center' }}>
+                <h4 style={{ margin: 0 }}>Similar ideas</h4>
+                {assistLive !== null ? (
+                  <span className="pill pill--agent">{assistLive ? 'Live' : 'Simulated'}</span>
+                ) : null}
+              </div>
               {similar.map((s, idx) => {
                 const sid = String(s.idea_id || s.id || idx);
                 const shared = s.shared_terms || s.sharedTerms || [];
@@ -608,6 +619,13 @@ export function SubmitPage() {
               })}
             </div>
           ) : null}
+
+          <EnhancePanel
+            draft={form}
+            onApply={(f: EnhanceField, text: string) =>
+              setForm((prev) => ({ ...prev, [f]: text }))
+            }
+          />
 
           <div className="card card--tight" style={{ marginTop: 12 }}>
             <h4 style={{ marginTop: 0 }}>Checklist</h4>

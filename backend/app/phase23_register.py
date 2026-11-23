@@ -27,6 +27,7 @@ def include_phase23_routers(app: "FastAPI", *, prefix: str = "/api/v1") -> None:
         Registers four routers on ``app``. Safe to call once at startup.
     """
     from app.routers import (
+        agent_internal,
         delivery,
         ideathon_agents,
         ideathons,
@@ -39,6 +40,7 @@ def include_phase23_routers(app: "FastAPI", *, prefix: str = "/api/v1") -> None:
     app.include_router(delivery.router, prefix=prefix)
     app.include_router(ideathons.router, prefix=prefix)
     app.include_router(ideathon_agents.router, prefix=prefix)
+    app.include_router(agent_internal.router, prefix=prefix)
     app.include_router(recognition.router, prefix=prefix)
     app.include_router(profiles.router, prefix=prefix)
     app.include_router(trackers.router, prefix=prefix)

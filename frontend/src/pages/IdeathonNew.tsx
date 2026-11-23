@@ -7,6 +7,7 @@ import { usersApi } from '../api/users';
 import { useAuth } from '../auth/AuthProvider';
 import { Icon } from '../components/Icons';
 import { AgentBlock } from '../components/ui/AgentBlock';
+import { AgentWaiting } from '../components/ui/AgentWaiting';
 import { ORG_ROLES } from '../constants/ideathons';
 import type { User } from '../types/auth';
 
@@ -22,6 +23,10 @@ export function IdeathonNewPage() {
   const [title, setTitle] = useState('');
   const [theme, setTheme] = useState('');
   const [challenges, setChallenges] = useState('');
+  const [nameOptions, setNameOptions] = useState<string[]>([]);
+  const [drafting, setDrafting] = useState(false);
+  const [draftLive, setDraftLive] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
   const [sponsorId, setSponsorId] = useState('');
   const [startAt, setStartAt] = useState(() => {
     const d = new Date();
@@ -67,6 +72,22 @@ export function IdeathonNewPage() {
         </Link>
       </div>
     );
+  }
+
+  async function onDraft() {
+    setDrafting(true);
+    setDraftError(null);
+    try {
+      const res = await ideathonsApi.draftChallenges(theme.trim());
+      setNameOptions(res.names);
+      setChallenges(res.challenges.join('\n'));
+      setDraftLive(true);
+    } catch (err) {
+      setDraftLive(false);
+      setDraftError(err instanceof Error ? err.message : 'The Draft agent run failed.');
+    } finally {
+      setDrafting(false);
+    }
   }
 
   async function onSubmit(e: FormEvent) {
@@ -120,18 +141,6 @@ export function IdeathonNewPage() {
       <div className="ph5-two">
         <form className="card stack" onSubmit={onSubmit} noValidate>
           <div className="field">
-            <label htmlFor="ic-title">Name</label>
-            <input
-              className="input"
-              id="ic-title"
-              maxLength={80}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="For example: Customers First Challenge"
-              required
-            />
-          </div>
-          <div className="field">
             <label htmlFor="ic-theme">Theme</label>
             <input
               className="input"
@@ -142,6 +151,57 @@ export function IdeathonNewPage() {
               placeholder="A few words, for example: Delight the customer"
               required
             />
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button
+                className="btn btn--ghost"
+                type="button"
+                onClick={() => void onDraft()}
+                disabled={drafting || !theme.trim()}
+              >
+                <Icon name="spark" size={14} />{' '}
+                {drafting ? 'Drafting…' : 'Suggest with agent'}
+              </button>
+            </div>
+            {drafting ? <AgentWaiting label="Drafting names and challenges" /> : null}
+            {draftError ? (
+              <div className="notice notice--danger" role="alert">
+                <Icon name="alert" size={16} />
+                <span>{draftError}</span>
+              </div>
+            ) : null}
+          </div>
+          <div className="field">
+            <label htmlFor="ic-title">Name</label>
+            <input
+              className="input"
+              id="ic-title"
+              maxLength={80}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="For example: Customers First Challenge"
+              required
+            />
+            {nameOptions.length > 0 ? (
+              <div className="ic-names" role="radiogroup" aria-label="Suggested names">
+                <div className="hint">Pick one, or type your own above.</div>
+                {nameOptions.map((option) => {
+                  const selected = option === title;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      className={`ic-names__row${selected ? ' is-selected' : ''}`}
+                      onClick={() => setTitle(option)}
+                    >
+                      <span className="ic-names__dot" aria-hidden="true" />
+                      <span>{option}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
           <div className="field">
             <label htmlFor="ic-challenges">Challenge statements</label>
@@ -207,14 +267,16 @@ export function IdeathonNewPage() {
 
         <aside className="stack sticky">
           <AgentBlock
-            agent="Ideathon"
-            kind="Computed + templated"
-            how="Theme ideas come from strategic themes and active tags. Challenge wording is templated from your theme text. Nothing is applied until you press Apply — edit freely in the form."
+            agent="Ideathon Draft"
+            kind="Agent"
+            status={draftLive ? 'Live' : 'Not run'}
+            how="Suggests three or four names and challenge statements from your theme. Picking a name or the statements replaces what is in the form; nothing is created until you press Create ideathon. Edit freely."
           >
             <p className="muted small">
-              Type a theme and challenge statements on the left. Agent
-              suggestions for the idea pool are available in the full prototype;
-              this build uses the form you fill in.
+              Type a theme, then press Suggest with agent. You get up to four
+              names to pick from, or type your own. Challenge statements are
+              checked for length (20 to 300 characters, up to three) before
+              they reach the form.
             </p>
           </AgentBlock>
         </aside>

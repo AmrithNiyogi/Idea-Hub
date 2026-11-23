@@ -38,6 +38,7 @@ from app.models.collab import CollabRequest, TrackerCheckin, TrackerMilestone
 from app.models.notification import Notification
 from app.models.tracker import IdeaTrackerLink, TrackerConnection
 from app.models.news import NewsCategoryState, NewsItem
+from app.models.service_token import ServiceToken
 from app.models.groups import (
     GroupChannel,
     GroupInvite,
@@ -103,4 +104,5 @@ __all__ = [
     "TrackerMilestone",
     "User",
     "Vote",
+    "ServiceToken",
 ]

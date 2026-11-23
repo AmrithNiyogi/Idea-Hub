@@ -19,9 +19,11 @@ from fastapi import APIRouter, HTTPException, Request
 from app.constants.ideathon_constants import ORG_ROLES
 from app.db.session_deps import DbSession
 from app.dependencies.phase23_auth import Actor, RequireActor
-from app.schemas.ideathon_agents import AgentRunOut, PitchRunIn, RankRunIn
+from app.schemas.ideathon_agents import AgentRunOut, DraftRunIn, DraftRunOut, PitchRunIn, RankRunIn
 from app.services import aistudio_execute_client as studio
-from app.services import ideathon_pitch_service, ideathon_rank_service
+from app.services import ideathon_cluster_service, ideathon_pitch_service, ideathon_rank_service
+from app.services import ideathon_draft_service
+from app.services.aistudio_execute_client import parse_structured_result
 from app.services.ideathon_service import IdeathonService
 
 router = APIRouter(prefix="/ideathons", tags=["ideathons"])
@@ -60,6 +62,22 @@ def _to_out(result: studio.ExecuteResult) -> AgentRunOut:
         conversation_id=result.conversation_id,
         run_id=result.run_id,
     )
+
+
+@router.post(
+    "/{ideathon_id}/agents/cluster",
+    response_model=AgentRunOut,
+    summary="Run the Ideathon Cluster agent (proposal only)",
+)
+async def run_cluster(
+    ideathon_id: uuid.UUID, request: Request, session: DbSession, actor: RequireActor
+) -> AgentRunOut:
+    _require_organiser(actor)
+    _require_configured(ideathon_cluster_service.HUB_AGENT_KEY)
+    token = _caller_access_token(request)
+    await IdeathonService(session).get(ideathon_id)
+    result = await ideathon_cluster_service.propose_cluster(ideathon_id, tool_auth_token=token)
+    return _to_out(result)
 
 
 @router.post(
@@ -108,3 +126,29 @@ async def run_pitch(
         tool_auth_token=token,
     )
     return _to_out(result)
+
+
+@router.post(
+    "/agents/draft",
+    response_model=DraftRunOut,
+    summary="Run the Ideathon Draft agent for challenge wording (proposal only)",
+)
+async def run_draft(
+    body: DraftRunIn, request: Request, session: DbSession, actor: RequireActor
+) -> DraftRunOut:
+    _require_organiser(actor)
+    _require_configured(ideathon_draft_service.HUB_AGENT_KEY)
+    token = _caller_access_token(request)
+    existing = await ideathon_draft_service.existing_context(session)
+    result = await ideathon_draft_service.propose_draft(
+        body.theme, existing=existing, tool_auth_token=token
+    )
+    if not result.success:
+        raise HTTPException(502, result.error or "The Draft agent run failed.")
+    parsed = parse_structured_result(result.result)
+    challenges = ideathon_draft_service.usable_challenges(parsed)
+    if not challenges:
+        raise HTTPException(502, "The Draft agent returned no usable challenge statements.")
+    return DraftRunOut(
+        success=True, names=ideathon_draft_service.usable_names(parsed), challenges=challenges
+    )

@@ -1408,6 +1408,7 @@ export function IdeathonDetailPage() {
             ideathonId={it.id}
             panelWeight={PANEL_WEIGHT}
             audienceWeight={AUDIENCE_WEIGHT}
+            titles={Object.fromEntries([...ideas].map(([id, idea]) => [id, idea.title]))}
           />
         ) : null}
         {!isOrg && !it.completed_at ? (

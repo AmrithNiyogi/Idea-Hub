@@ -7,11 +7,14 @@ export function AgentBlock({
   agent,
   kind,
   how,
+  status = 'Simulated',
   children,
 }: {
   agent: string;
   kind: string;
   how: string;
+  /** Pill text. Defaults to "Simulated"; wired agents pass "Live" or "Not run". */
+  status?: string;
   children?: ReactNode;
 }) {
   return (
@@ -19,7 +22,7 @@ export function AgentBlock({
       <div className="agent__head">
         <Icon name="spark" size={16} />
         <span className="agent__name">{agent}</span>
-        <span className="pill pill--agent">Simulated</span>
+        <span className="pill pill--agent">{status}</span>
         <span className="agent__kind">{kind}</span>
       </div>
       <div className="agent__body">{children}</div>

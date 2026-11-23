@@ -25,6 +25,7 @@ from typing import Any, Optional
 import httpx
 
 from app.config.settings import settings
+from app.utils.debug_log import log_outgoing_run
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,9 @@ HUB_AGENT_ENV_KEYS: dict[str, str] = {
     "review-intelligence": "AISTUDIO_AGENT_REVIEW_INTELLIGENCE",
     "coding-agent-build": "AISTUDIO_AGENT_CODING_BUILD",
     "ideathon-rank": "AISTUDIO_AGENT_IDEATHON_RANK",
+    "ideathon-cluster": "AISTUDIO_AGENT_IDEATHON_CLUSTER",
     "ideathon-pitch": "AISTUDIO_AGENT_IDEATHON_PITCH",
+    "ideathon-draft": "AISTUDIO_AGENT_IDEATHON_DRAFT",
 }
 
 
@@ -127,7 +130,8 @@ def build_execute_headers(tool_auth_token: str | None = None) -> dict[str, str]:
     }
     token = (tool_auth_token or settings.AISTUDIO_TOOL_AUTH_TOKEN or "").strip()
     if token:
-        headers["X-Authorization"] = token
+        # The engine forwards this to tools as `Authorization`; the Hub reads only the Bearer form.
+        headers["X-Authorization"] = token if token.lower().startswith("bearer ") else f"Bearer {token}"
     return headers
 
 
@@ -277,6 +281,67 @@ def parse_structured_result(result: Any) -> dict[str, Any]:
     return parsed if isinstance(parsed, dict) else {}
 
 
+async def execute_flow(
+    *,
+    slug: str,
+    inputs: dict[str, Any],
+    timeout_seconds: Optional[float] = None,
+    tool_auth_token: Optional[str] = None,
+) -> ExecuteResult:
+    """POST ``/api/v1/flows/execute/{slug}`` and return the flow's output.
+
+    The flow's Output node sets the keys of ``result``. A run that did not complete,
+    or that reported errors, comes back as an unsuccessful ``ExecuteResult``.
+    """
+    if not aistudio_configured():
+        return ExecuteResult(success=False, error="AI Studio execute is not configured.")
+    if not (slug or "").strip():
+        return ExecuteResult(success=False, error="Workflow slug is empty.")
+
+    url = f"{_base_url()}/api/v1/flows/execute/{slug.strip()}"
+    body: dict[str, Any] = {"inputs": inputs}
+    timeout = timeout_seconds
+    if timeout is None:
+        timeout = float(settings.AISTUDIO_EXECUTE_TIMEOUT_SECONDS or 120)
+
+    headers = build_execute_headers(tool_auth_token)
+    log_outgoing_run(url, headers, body)
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        response = await client.post(url, headers=headers, json=body)
+
+    if response.status_code >= 400:
+        return ExecuteResult(
+            success=False,
+            error=_error_detail(response) or f"Flow execute failed: HTTP {response.status_code}",
+            raw=_safe_json(response),
+        )
+
+    payload = response.json() if response.content else {}
+    if not isinstance(payload, dict):
+        return ExecuteResult(success=False, error="Flow returned an unreadable reply.")
+    envelope = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+    status = str(envelope.get("status") or "completed").lower()
+    errors = envelope.get("errors") or []
+    if status != "completed" or errors:
+        detail = str(errors[0]) if errors else f"Flow ended with status: {status}"
+        return ExecuteResult(success=False, error=detail, raw=payload)
+    output = envelope.get("output")
+    if not isinstance(output, dict):
+        return ExecuteResult(success=False, error="Flow returned no output object.", raw=payload)
+    return ExecuteResult(
+        success=True,
+        result=output,
+        result_text=json.dumps(output, ensure_ascii=False),
+        raw=payload,
+    )
+
+
+def _input_text(payload: Any) -> str:
+    """Kompass expects the run ``input`` as a string; structured input goes as a JSON string."""
+    return payload if isinstance(payload, str) else json.dumps(payload)
+
+
 async def execute_run(
     *,
     agent_id: str,
@@ -316,19 +381,18 @@ async def execute_run(
     if not (agent_id or "").strip():
         return ExecuteResult(success=False, error="Kompass agent_id is empty.")
 
-    url = f"{_base_url()}/api/v2/runs/execute"
-    body: dict[str, Any] = {
-        "agent_id": agent_id.strip(),
-        "input": input_payload,
-    }
+    # Agent route, not runs/execute: only this one binds the caller's X-Authorization into tools.
+    url = f"{_base_url()}/api/v1/agents/{agent_id.strip()}/execute"
+    body: dict[str, Any] = {"task": _input_text(input_payload)}
     if conversation_id and str(conversation_id).strip():
-        body["conversation_id"] = str(conversation_id).strip()
+        body["session_id"] = str(conversation_id).strip()
 
     timeout = timeout_seconds
     if timeout is None:
         timeout = float(settings.AISTUDIO_EXECUTE_TIMEOUT_SECONDS or 120)
 
     headers = build_execute_headers(tool_auth_token)
+    log_outgoing_run(url, headers, body)
     logger.info(
         "aistudio execute agent_id=%s conversation=%s project_slug_set=%s",
         agent_id.strip(),
@@ -359,7 +423,10 @@ async def execute_run(
             )
 
         data = response.json() if response.content else {}
-        return normalize_execution_payload(data if isinstance(data, dict) else {})
+        normalized = normalize_execution_payload(data if isinstance(data, dict) else {})
+        # Agent execute replies carry no conversation id; echo the session the caller sent.
+        normalized.conversation_id = normalized.conversation_id or (conversation_id or None)
+        return normalized
 
 
 async def _poll_run(

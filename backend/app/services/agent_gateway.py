@@ -38,6 +38,7 @@ from app.schemas.agents import (
     ProposalDecisionOut,
 )
 from app.services import agent_heuristics as H
+from app.services import idea_enhancement_flow, idea_intelligence_flow
 
 
 def _now() -> datetime:
@@ -125,17 +126,29 @@ class AgentGateway:
         live = studio.use_live_execute()
 
         if body.agent_id == "idea-intelligence":
+            draft = idea or body.context.get("draft") or body.context
+            fallback_note = ""
+            if idea_intelligence_flow.flow_configured():
+                intelligence, error = await idea_intelligence_flow.run(draft)
+                if intelligence is not None:
+                    return (
+                        intelligence,
+                        "Live Idea Intelligence (Kompass workflow)",
+                        {},
+                        idea_intelligence_flow.ENGINE_LABEL,
+                        False,
+                    )
+                fallback_note = f" (live workflow failed: {error})"
             corpus = (
                 await self.session.execute(
                     select(Idea).where(Idea.status != "draft").limit(200)
                 )
             ).scalars().all()
             cats = (await self.session.execute(select(Category))).scalars().all()
-            draft = idea or body.context.get("draft") or body.context
             out = H.idea_intelligence(draft, corpus, cats)
             return (
                 out,
-                "Simulated Idea Intelligence: similar ideas + completeness",
+                "Simulated Idea Intelligence: similar ideas + completeness" + fallback_note,
                 {},
                 self.ENGINE,
                 True,
@@ -143,10 +156,23 @@ class AgentGateway:
 
         if body.agent_id == "idea-enhancement":
             draft = idea or body.context.get("draft") or body.context
+            field = idea_enhancement_flow.normalise_field(body.context.get("field"))
+            enh_fallback = ""
+            if idea_enhancement_flow.flow_configured():
+                enhancement, error = await idea_enhancement_flow.run(draft, field)
+                if enhancement is not None:
+                    return (
+                        enhancement,
+                        "Live Idea Enhancement (Kompass workflow)",
+                        {},
+                        idea_enhancement_flow.ENGINE_LABEL,
+                        False,
+                    )
+                enh_fallback = f" (live workflow failed: {error})"
             out = H.enhancement(draft)
             return (
                 out,
-                "Simulated Idea Enhancement suggestions",
+                "Simulated Idea Enhancement suggestions" + enh_fallback,
                 {
                     "required": True,
                     "role": "author",

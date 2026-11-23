@@ -30,6 +30,12 @@ export const ideathonsApi = {
       body: JSON.stringify({ weights }),
     }),
 
+  draftChallenges: (theme: string) =>
+    apiFetch<{ success: boolean; names: string[]; challenges: string[] }>('/ideathons/agents/draft', {
+      method: 'POST',
+      body: JSON.stringify({ theme }),
+    }),
+
   runPitch: (id: string, body: { stage: 'pitch' | 'handoff' | 'both' }) =>
     apiFetch<AgentRunResult>(`/ideathons/${id}/agents/pitch`, {
       method: 'POST',

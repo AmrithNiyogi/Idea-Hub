@@ -29,3 +29,17 @@ class AgentRunOut(BaseModel):
     conversation_id: Optional[str] = None
     run_id: Optional[str] = None
     error: Optional[str] = None
+
+
+class DraftRunIn(BaseModel):
+    """Theme the organiser typed on the create form; the Draft agent words challenges for it."""
+
+    theme: str = Field(min_length=1, max_length=200)
+
+
+class DraftRunOut(BaseModel):
+    """Name options and challenge statements proposed by the Draft agent. The organiser picks or types the name."""
+
+    success: bool
+    names: list[str] = Field(default_factory=list)
+    challenges: list[str] = Field(default_factory=list)

@@ -123,5 +123,6 @@ async def test_pitch_forwards_the_callers_token(monkeypatch: pytest.MonkeyPatch,
 
 def test_execute_headers_use_the_per_run_token_over_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "AISTUDIO_TOOL_AUTH_TOKEN", "fallback-token")
-    assert studio.build_execute_headers("caller-token")["X-Authorization"] == "caller-token"
-    assert studio.build_execute_headers()["X-Authorization"] == "fallback-token"
+    assert studio.build_execute_headers("caller-token")["X-Authorization"] == "Bearer caller-token"
+    assert studio.build_execute_headers()["X-Authorization"] == "Bearer fallback-token"
+    assert studio.build_execute_headers("Bearer already")["X-Authorization"] == "Bearer already"

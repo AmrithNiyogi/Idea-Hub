@@ -11,6 +11,7 @@ import {
 import { ApiError } from '../api/http';
 import { usersApi } from '../api/users';
 import { useAuth } from '../auth/AuthProvider';
+import { ServiceTokensPanel } from '../components/admin/ServiceTokensPanel';
 import { Icon } from '../components/Icons';
 import { Pill } from '../components/ui/Pill';
 import { ROLE_ORDER, roleLabel, sortRoles } from '../constants/roles';
@@ -24,6 +25,7 @@ type Tab =
   | 'scoring'
   | 'timelines'
   | 'points'
+  | 'service-tokens'
   | 'data';
 
 const COLOR_OPTIONS: Array<{ key: CategoryColorKey; label: string }> = [
@@ -315,6 +317,7 @@ export function AdminPage() {
     ['scoring', 'Scoring'],
     ['timelines', 'Timelines'],
     ['points', 'Points'],
+    ['service-tokens', 'Service tokens'],
     ['data', 'Data'],
   ];
 
@@ -450,6 +453,8 @@ export function AdminPage() {
           <span>{msg}</span>
         </div>
       ) : null}
+
+      {tab === 'service-tokens' ? <ServiceTokensPanel /> : null}
 
       {tab === 'people' ? (
         <div className="stack">
