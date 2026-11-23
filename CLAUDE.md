@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Workspace-wide rules (git, scope, verification) live in `../CLAUDE.md`; this file covers KonnektIdea only. If they conflict, this file wins.
+Workspace-wide rules (git, scope, verification) live in `../CLAUDE.md`; this file covers IdeaKonnekt only. If they conflict, this file wins.
 
 ## What this is
 
-Internal **KonnektIdea** (KonnektIdea): submit / explore / review ideas, plus phase features (ideathons, recognition, delivery, agents, insights, groups).
+Internal **IdeaKonnekt** (IdeaKonnekt): submit / explore / review ideas, plus phase features (ideathons, recognition, delivery, agents, insights, groups).
 
 | Area | Path | Stack |
 |------|------|-------|
@@ -65,7 +65,7 @@ Full Cursor rule: `.cursor/rules/idea-hub-frontend-parity.mdc` (applies to `fron
 - Prefer **list/row** patterns (Integrations, Tracker) over generic card grids for catalog/task surfaces
 - Status via chips/`StatusPill`, not raw browser selects when product patterns already use chips
 - Scope new CSS (`.trk-*`, `.integ-*`); never overload bare `.check` as an 18px box (it is a flex label row)
-- Preserve KonnektIdea brand tokens; avoid AI-slop extras (glow stacks, pill clusters, cream+serif terracotta, etc.)
+- Preserve IdeaKonnekt brand tokens; avoid AI-slop extras (glow stacks, pill clusters, cream+serif terracotta, etc.)
 
 ## Secrets
 

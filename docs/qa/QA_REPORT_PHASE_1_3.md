@@ -1,4 +1,4 @@
-# QA Report: KonnektIdea MVP, build phases 1-3
+# QA Report: IdeaKonnekt MVP, build phases 1-3
 Tester: Agent 5 (independent). File under test: /home/claude/build/idea-hub.html (not modified). Scripts: /home/claude/build/qa/. Chromium via Playwright, file://, fonts blocked, plus one fully offline pass.
 
 ## (a) Summary

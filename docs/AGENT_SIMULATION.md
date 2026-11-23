@@ -1,6 +1,6 @@
 # Agent simulation + AI Studio execute
 
-KonnektIdea ships **simulated** agents by default. When AI Studio / Kompass env is
+IdeaKonnekt ships **simulated** agents by default. When AI Studio / Kompass env is
 configured and `SIMULATE_AGENTS=false`, chat and review surfaces call the real
 **runs/execute** contract (same as chatbot-admin / DotAgent widget).
 
@@ -27,8 +27,8 @@ POST https://aistudio-apigateway-v2-staging.dotkonnekt.com/api/v2/runs/execute
 ```
 
 - Reply carries `conversation_id` — **echo it** on later turns for the same chat.
-- Sync JSON completion (200) or 202 + poll `GET /api/v2/runs/{run_id}` (KonnektIdea client polls like `aistudio-chatbot-ui-v2`).
-- SSE create/stream (`POST /api/v2/runs`) exists on the gateway but KonnektIdea uses **execute** only for now.
+- Sync JSON completion (200) or 202 + poll `GET /api/v2/runs/{run_id}` (IdeaKonnekt client polls like `aistudio-chatbot-ui-v2`).
+- SSE create/stream (`POST /api/v2/runs`) exists on the gateway but IdeaKonnekt uses **execute** only for now.
 
 Source of truth in AI Studio:
 
@@ -63,7 +63,7 @@ Expected structured agent outputs (when using JSON agents/prompts):
 | Idea optimizer | `reply`, `field_patches`, `focus_fields` |
 | Review intelligence | Same shape as heuristic `review_brief` (scores, decision lean, `target_id`) |
 
-If the agent returns plain text, KonnektIdea uses it as `reply` / wraps it.
+If the agent returns plain text, IdeaKonnekt uses it as `reply` / wraps it.
 
 ## What is stubbed today (default)
 
@@ -117,14 +117,14 @@ Implementation:
 
 ## Help FAB vs DotAgent widget
 
-| Copy from chatbot-admin / `aistudio-chatbot-ui-v2` | Adapt for KonnektIdea |
+| Copy from chatbot-admin / `aistudio-chatbot-ui-v2` | Adapt for IdeaKonnekt |
 |----------------------------------------------------|--------------------|
 | Launcher speech-bubble silhouette + brand mark | Use `/ideakonnect-mark.svg` (not `?` circle) |
-| Panel: header / message list / textarea / Send / Clear | React `HelpChatFab` + KonnektIdea tokens |
+| Panel: header / message list / textarea / Send / Clear | React `HelpChatFab` + IdeaKonnekt tokens |
 | `POST /api/v2/runs/execute` + optional `conversation_id` | Hub proxies via `/agents/simulate/help`; echo `conversation_id` |
 | Headers `X-Tenant-ID`, `project-slug` | Server-side only in `aistudio_execute_client` |
 | Optional `X-Authorization` for tools | Backend `.env` only — never in the browser widget |
-| Direct browser → gateway | Cookie-auth KonnektIdea API; keep secrets off the client |
+| Direct browser → gateway | Cookie-auth IdeaKonnekt API; keep secrets off the client |
 
 Entry component: `frontend/src/components/HelpChatFab.tsx` (mounted from `AppShell`).
 

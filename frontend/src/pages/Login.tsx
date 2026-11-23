@@ -358,8 +358,8 @@ export function LoginPage() {
             <Icon name="logo" size={18} />
           </span>
           <span className="brand__text">
-            <span className="brand__name">KonnektIdea</span>
-            <span className="brand__sub">KonnektIdea</span>
+            <span className="brand__name">IdeaKonnekt</span>
+            <span className="brand__sub">IdeaKonnekt</span>
           </span>
         </div>
 
@@ -425,7 +425,7 @@ export function LoginPage() {
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <h1 style={{ fontSize: 28 }}>Log in</h1>
               <p className="muted" style={{ marginTop: 6 }}>
-                Sign in to KonnektIdea
+                Sign in to IdeaKonnekt
               </p>
             </div>
 

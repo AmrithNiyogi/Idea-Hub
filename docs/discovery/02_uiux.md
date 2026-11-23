@@ -1,4 +1,4 @@
-# KonnektIdea — UI/UX and Design System Analysis (Agent 2, Discovery)
+# IdeaKonnekt — UI/UX and Design System Analysis (Agent 2, Discovery)
 
 Date: 2026-11-15. Analysis and design direction only. No application code. Verified facts and provisional assumptions are separated in section 6. Nothing here is an official Dotkonnekt value unless it is listed under "Verified".
 

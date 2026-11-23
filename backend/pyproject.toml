@@ -1,7 +1,7 @@
 [project]
 name = "idea-hub-backend"
 version = "0.1.0"
-description = "KonnektIdea Phase 1 spine — FastAPI + Postgres + Redis"
+description = "IdeaKonnekt Phase 1 spine — FastAPI + Postgres + Redis"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

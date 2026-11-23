@@ -1,6 +1,6 @@
 """Generic / self-built tracker via configurable webhook.
 
-This is the extension path for a tracker you develop later: point KonnektIdea at
+This is the extension path for a tracker you develop later: point IdeaKonnekt at
 your create-task HTTP endpoint. Auth is a single header value (Bearer, API key,
 or custom ``Authorization`` string).
 
@@ -56,7 +56,7 @@ class CustomWebhookProvider:
     id = "custom_webhook"
     display_name = "Custom tracker (webhook)"
     description = (
-        "Plug in a tracker you build later: KonnektIdea POSTs create-task JSON "
+        "Plug in a tracker you build later: IdeaKonnekt POSTs create-task JSON "
         "to your URL with an optional auth header. Use this until you ship a "
         "dedicated TrackerProvider class."
     )
@@ -95,7 +95,7 @@ class CustomWebhookProvider:
             label="Display name",
             required=False,
             placeholder="Our internal tracker",
-            help_text="Shown in KonnektIdea connection lists.",
+            help_text="Shown in IdeaKonnekt connection lists.",
         ),
     ]
 

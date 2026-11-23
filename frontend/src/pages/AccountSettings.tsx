@@ -651,6 +651,7 @@ export function AccountSettingsPage() {
         </section>
       ) : null}
 
+      {mfaAvailable ? (
       <form
         className="card"
         onSubmit={onChangePassword}
@@ -718,6 +719,28 @@ export function AccountSettingsPage() {
           </button>
         </div>
       </form>
+      ) : (
+        <section className="card" aria-label="Password managed by Microsoft">
+          <div className="card__head">
+            <h2>Password</h2>
+          </div>
+          <p className="muted" style={{ maxWidth: 520 }}>
+            Your account signs in with Microsoft, so your password is managed by
+            Microsoft and cannot be changed here. To change it, use your Microsoft
+            account settings.
+          </p>
+          <div style={{ marginTop: 12 }}>
+            <a
+              className="btn"
+              href="https://myaccount.microsoft.com/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open Microsoft account
+            </a>
+          </div>
+        </section>
+      )}
 
       {pendingCrop ? (
         <AvatarCropDialog

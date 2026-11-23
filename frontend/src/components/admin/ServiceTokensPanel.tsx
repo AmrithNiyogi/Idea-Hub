@@ -94,7 +94,7 @@ export function ServiceTokensPanel() {
       <div>
         <div className="eyebrow eyebrow--plain">Service tokens</div>
         <p className="muted small">
-          For Kompass tools and workflows that call the KonnektIdea. A token works on the agent read
+          For Kompass tools and workflows that call the IdeaKonnekt. A token works on the agent read
           routes only, not on user routes. Revoke a token to stop it at once.
         </p>
       </div>

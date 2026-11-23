@@ -1,4 +1,4 @@
-# AGENTS.md — KonnektIdea
+# AGENTS.md — IdeaKonnekt
 
 Short briefing for Cursor / Claude coding agents.
 

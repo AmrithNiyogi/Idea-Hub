@@ -79,7 +79,7 @@ class TrackerConnection(Base):
 
 
 class IdeaTrackerLink(Base):
-    """Link from an KonnektIdea idea to a remote tracker work item."""
+    """Link from an IdeaKonnekt idea to a remote tracker work item."""
 
     __tablename__ = "idea_tracker_links"
     __table_args__ = (

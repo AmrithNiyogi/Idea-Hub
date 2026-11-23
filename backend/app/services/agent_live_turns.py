@@ -1,4 +1,4 @@
-"""Live KonnektIdea chat/agent turns via AI Studio ``runs/execute``.
+"""Live IdeaKonnekt chat/agent turns via AI Studio ``runs/execute``.
 
 When ``SIMULATE_AGENTS=false`` and AI Studio env is configured, Submit assist,
 Help, Idea Optimizer, and Review Intelligence call Kompass agents over HTTP.
@@ -133,6 +133,30 @@ async def submit_assist_turn(
     return out
 
 
+MAX_FOLLOWUPS = 3
+
+
+def clean_followups(raw: Any) -> list[str]:
+    """Keep up to three non-empty, de-duplicated follow-up questions from an agent reply.
+
+    Args:
+        raw: The ``followups`` value from the agent's structured output.
+
+    Returns:
+        At most three question strings, in their original order.
+    """
+    if not isinstance(raw, list):
+        return []
+    out: list[str] = []
+    for item in raw:
+        text = str(item or "").strip()
+        if text and text not in out:
+            out.append(text)
+        if len(out) == MAX_FOLLOWUPS:
+            break
+    return out
+
+
 async def help_turn(
     *,
     message: str,
@@ -190,6 +214,7 @@ async def help_turn(
         "topic": topic,
         "reply": reply,
         "links": links,
+        "followups": clean_followups(structured.get("followups")),
     }
 
 

@@ -39,7 +39,7 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       /**
        * react-hooks v7 flags data-fetch / sync-from-props effects as errors.
-       * Existing KonnektIdea pages use that pattern heavily; keep as warn until
+       * Existing IdeaKonnekt pages use that pattern heavily; keep as warn until
        * pages are migrated (e.g. to routers loaders / query libraries).
        */
       'react-hooks/set-state-in-effect': 'warn',

@@ -237,7 +237,9 @@ export function SubmitPage() {
   }, []);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll the chat log itself. scrollIntoView would also scroll the page to the chat.
+    const log = chatEndRef.current?.closest<HTMLElement>('.sf-chat__log');
+    log?.scrollTo({ top: log.scrollHeight, behavior: 'smooth' });
   }, [chat, chatBusy]);
 
   useEffect(() => {

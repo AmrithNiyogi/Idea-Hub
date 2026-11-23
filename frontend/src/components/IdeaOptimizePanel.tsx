@@ -57,7 +57,9 @@ export function IdeaOptimizePanel({ idea, onApplyPatches }: Props) {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll the chat log itself. scrollIntoView would also scroll the page to the panel.
+    const log = endRef.current?.closest<HTMLElement>('.sf-chat__log');
+    log?.scrollTo({ top: log.scrollHeight, behavior: 'smooth' });
   }, [msgs, pending, busy]);
 
   useEffect(() => {

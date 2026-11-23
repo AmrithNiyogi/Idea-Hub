@@ -1,4 +1,4 @@
-# KonnektIdea — Backend (Phase 1 spine)
+# IdeaKonnekt — Backend (Phase 1 spine)
 
 FastAPI + Postgres + Redis. Auth mirrors Kompass admin (email+password → OTP → JWT cookies).
 

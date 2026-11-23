@@ -1,4 +1,4 @@
-# KonnektIdea — AI, Agentic Workflows and Kompass Integration Architecture (Discovery, Agent 4)
+# IdeaKonnekt — AI, Agentic Workflows and Kompass Integration Architecture (Discovery, Agent 4)
 
 Date: 2026-11-15. Status: discovery analysis, no application code. Source of Kompass facts: CONTEXT.md section 3 only. Anything not in its VERIFIED list is marked **UNVERIFIED** and appears in the gap list (section 6). Design-token values are out of scope and not asserted.
 
@@ -13,7 +13,7 @@ Date: 2026-11-15. Status: discovery analysis, no application code. Source of Kom
 
 ### Recommendation on the roster
 Keep the seven as the user-visible roster (the brief and master instructions name them), with three structural changes:
-- **Add a non-LLM Orchestrator** (called "KonnektIdea Orchestrator"), the event router and run recorder. It subscribes to events, selects agents, enforces the approval gates, and writes the agent run record. Making it explicitly deterministic keeps it honest and testable, and it is the seam where Kompass is later plugged in.
+- **Add a non-LLM Orchestrator** (called "IdeaKonnekt Orchestrator"), the event router and run recorder. It subscribes to events, selects agents, enforces the approval gates, and writes the agent run record. Making it explicitly deterministic keeps it honest and testable, and it is the seam where Kompass is later plugged in.
 - **Split Review Intelligence into two roles inside one agent card:** *Reviewer Brief* (summarise, risks) and *Review Integrity check* (bias/consistency, see section 8). The integrity check must be separable because it audits the reviewer-facing output.
 - **Treat Idea Intelligence and Idea Enhancement as one pipeline with two stages** ("Assist on submit"): Intelligence = classify, dedupe, completeness; Enhancement = improve text. They share inputs and appear in the same form, but keep two agent identities so traces stay legible and Kompass can later map them separately.
 - Do not add an eighth LLM-style agent. "Anonymity" is a **policy layer** (a Guardrails-style filter in the adapter), not an agent.
@@ -173,25 +173,25 @@ Rules: the simulation must be seeded and deterministic, same input gives same ou
 
 Mapping uses only verified concepts. Where a mapping depends on an unverified behaviour, the table says so.
 
-**Agent form:** Idea Intelligence, Idea Enhancement, Review Intelligence, Recognition, Analytics = **Smart Agents** (single-purpose, tools, guardrails, memory/AI Brain reference). Ideathon agent = candidate **Agentic Team** (clustering, drafting, pitch writing are separable roles; the docs describe Sequential/Hierarchical (and Parallel) patterns). Innovation Workflow = mostly deterministic and best left in KonnektIdea; Kompass is only needed for the draft-message and recommendation language.
+**Agent form:** Idea Intelligence, Idea Enhancement, Review Intelligence, Recognition, Analytics = **Smart Agents** (single-purpose, tools, guardrails, memory/AI Brain reference). Ideathon agent = candidate **Agentic Team** (clustering, drafting, pitch writing are separable roles; the docs describe Sequential/Hierarchical (and Parallel) patterns). Innovation Workflow = mostly deterministic and best left in IdeaKonnekt; Kompass is only needed for the draft-message and recommendation language.
 
 **Flows as Kompass Workflows (candidate designs):**
 - Flow A: Input (JSON idea) → Embedding/AI Brain lookup for similar ideas (Embedding is a verified Tools component; using it for this is our design) → Agent (Intelligence) → Adapter (string to JSON) → Conditional (duplicateRisk) → Agent (Enhancement) → Adapter → Output.
-- Flow B: Input → API (calls back to KonnektIdea to fetch context; the API component is verified for calling external HTTP) → Agent (Review Intelligence) → Adapter → Output.
-- Flow C/E: Input → Guardrails → Agent → Adapter → Output, with any KonnektIdea write-back performed by KonnektIdea after approval, not by the workflow.
+- Flow B: Input → API (calls back to IdeaKonnekt to fetch context; the API component is verified for calling external HTTP) → Agent (Review Intelligence) → Adapter → Output.
+- Flow C/E: Input → Guardrails → Agent → Adapter → Output, with any IdeaKonnekt write-back performed by IdeaKonnekt after approval, not by the workflow.
 - Flow D: Subflow chaining (cluster, brief, pitch), serial execution per verified Subflow behaviour.
-- MCP component: would only be used if KonnektIdea exposes an MCP server for tool access. Not required; optional later.
+- MCP component: would only be used if IdeaKonnekt exposes an MCP server for tool access. Not required; optional later.
 - Context component: session memory for multi-turn Enhancement dialogs.
 
-| KonnektIdea need | Kompass concept | Verified? | Open question |
+| IdeaKonnekt need | Kompass concept | Verified? | Open question |
 |---|---|---|---|
-| Run agent from KonnektIdea on an event | Workflow with Input node (type `init`, String/JSON) | Input node verified; external invocation **UNVERIFIED** | Endpoint, auth, request/response shape? |
+| Run agent from IdeaKonnekt on an event | Workflow with Input node (type `init`, String/JSON) | Input node verified; external invocation **UNVERIFIED** | Endpoint, auth, request/response shape? |
 | Smart agent for text analysis | Smart Agent with system prompt, guardrails, model | Verified | Can output be forced to a JSON schema? |
 | Structured JSON output | Agent → Adapter | Docs say JSON must pass through Adapter; schema enforcement **UNVERIFIED** | Does Adapter validate or only reshape? Failure behaviour? |
 | Idea corpus for similarity/RAG | AI Brain collection (Markdown/CSV/URL sources, chunked and embedded) | Verified concept; ingestion API/refresh **UNVERIFIED** | How to sync ideas continuously; per-collection access control? |
-| Fetch live KonnektIdea data | API component calls out | Verified (outbound) | Can workflows call a customer-hosted KonnektIdea API through Vault secrets (`{{vault.*}}`)? Likely, **confirm** |
+| Fetch live IdeaKonnekt data | API component calls out | Verified (outbound) | Can workflows call a customer-hosted IdeaKonnekt API through Vault secrets (`{{vault.*}}`)? Likely, **confirm** |
 | Anonymous-submission protection | Guardrails (PII, input and output) | Guardrails verified; effectiveness for anonymity **UNVERIFIED** | Custom guardrails for author-identifying style? |
-| Activity log of agent runs | Traces | Verified (ClickHouse-backed, cost analysis per docs) | Can KonnektIdea read traces via API and correlate with `runId`? |
+| Activity log of agent runs | Traces | Verified (ClickHouse-backed, cost analysis per docs) | Can IdeaKonnekt read traces via API and correlate with `runId`? |
 | Quality of agent outputs over time | Evals | Verified area; details not read | Can reviewer accept/reject feed Evals? |
 | Human approval | none | **UNVERIFIED**: no approval node found | See section 6 |
 | Event triggers, schedules (SLA ticks) | none | **UNVERIFIED** | Webhooks, schedulers? |
@@ -214,19 +214,19 @@ Mapping uses only verified concepts. Where a mapping depends on an unverified be
 6. Structured outputs: schema enforcement, Adapter semantics, retry on invalid JSON.
 7. Traces access via API; trace-to-run correlation; retention; redaction for anonymous content.
 8. AI Brain: programmatic ingestion, deletion (needed for right-to-erasure and withdrawn ideas), collection-level permissions.
-9. Tenant/role model: can KonnektIdea users map to Kompass roles, or does KonnektIdea call as a service identity?
+9. Tenant/role model: can IdeaKonnekt users map to Kompass roles, or does IdeaKonnekt call as a service identity?
 10. Whether Kompass can act as an MCP server; whether any pre-built idea-management agent exists.
 11. Data residency, model choices, cost per run, rate limits.
 
-**Adapter layer for the MVP (so nothing depends on the answers):** one interface `AgentGateway.run(agentName, event, context) -> Promise<AgentRun>`; the MVP implements it with `MockEngine` (the deterministic heuristics). The contract fixed in KonnektIdea is the **input envelope, the output schemas in section 1, and the AgentRun record**; transports (REST, async polling, SSE) are plug-in `KompassEngine` implementations later. Responses are validated against KonnektIdea's own schemas, with a fallback to "no suggestion" on failure so the app degrades safely. Every agent has a `engine` and `registryEntry` property so the UI can show which engine ran. Configuration includes a per-agent mapping field (`kompassRef`: null in MVP, "planned" label only).
+**Adapter layer for the MVP (so nothing depends on the answers):** one interface `AgentGateway.run(agentName, event, context) -> Promise<AgentRun>`; the MVP implements it with `MockEngine` (the deterministic heuristics). The contract fixed in IdeaKonnekt is the **input envelope, the output schemas in section 1, and the AgentRun record**; transports (REST, async polling, SSE) are plug-in `KompassEngine` implementations later. Responses are validated against IdeaKonnekt's own schemas, with a fallback to "no suggestion" on failure so the app degrades safely. Every agent has a `engine` and `registryEntry` property so the UI can show which engine ran. Configuration includes a per-agent mapping field (`kompassRef`: null in MVP, "planned" label only).
 
-**Human approval lives in KonnektIdea.** Regardless of Kompass answers, approval state, approver identity, and audit trail are KonnektIdea records: the agent returns a proposal; KonnektIdea stores it as `pending`; only a user action calls the execute step; Kompass workflows never write directly to decision, award or status fields. If Kompass later offers an approval node, it may be used for *notification*, but KonnektIdea remains the system of record.
+**Human approval lives in IdeaKonnekt.** Regardless of Kompass answers, approval state, approver identity, and audit trail are IdeaKonnekt records: the agent returns a proposal; IdeaKonnekt stores it as `pending`; only a user action calls the execute step; Kompass workflows never write directly to decision, award or status fields. If Kompass later offers an approval node, it may be used for *notification*, but IdeaKonnekt remains the system of record.
 
 ## 7. Kompass inside the MVP UI (honest presentation)
 
 - **Agent Registry / "Kompass integration map" screen** (admin and leadership): table of the 7 agents plus Orchestrator with columns: Agent, MVP engine ("Simulated, mock-heuristic-v1"), Planned Kompass concept (Smart Agent / Agentic Team / Workflow), Planned components (names from the verified list), Verification status chip (Verified concept / Invocation unverified), Open questions link.
 - A permanent banner: "Not connected to Kompass. All agent activity in this prototype is simulated." Status indicator values are fixed to "Simulated" and "Planned"; no green "connected" dot, no fake latency or token-cost numbers presented as Kompass metrics.
-- **Flow diagrams** per flow showing planned Kompass nodes in dashed outline versus KonnektIdea steps in solid, and approval gates in KonnektIdea.
+- **Flow diagrams** per flow showing planned Kompass nodes in dashed outline versus IdeaKonnekt steps in solid, and approval gates in IdeaKonnekt.
 - **Agent activity trace** drawer (from AgentRun) with a legend noting "In production this would be backed by Kompass Traces (planned, unverified how to access)".
 - Do not display Kompass logos in a way that implies a live product integration; text labels suffice. No invented Kompass agent names; only our own agent names appear.
 - A "Gap list" tab reproducing section 6 so stakeholders see what is unconfirmed.
@@ -241,7 +241,7 @@ Mapping uses only verified concepts. Where a mapping depends on an unverified be
 | Over-automation | Auto-sent reminders become noise; auto-points feel unfair; decisions seem machine-made. | Auto-apply whitelist (section 0); human-written reasons required; per-user notification caps; appeal path for points; admin kill switch per agent. |
 | Gaming | Authors write to the heuristic; point farming via co-author or upvote rings. | Points weighted to decisions and verified impact; caps; collaboration credit requires reviewer-confirmed contributions; rule table is public. |
 | Misrepresenting the prototype | Stakeholders mistake simulation for real AI or an existing Kompass integration. | Persistent labels, registry screen, documentation separating Implemented/Simulated/Planned/Unverified. |
-| Prompt injection and data leakage (production) | Idea text can contain instructions to the model. | Guardrails (prompt injection), structured outputs validated by KonnektIdea, no write access for agents. |
+| Prompt injection and data leakage (production) | Idea text can contain instructions to the model. | Guardrails (prompt injection), structured outputs validated by IdeaKonnekt, no write access for agents. |
 | Integration assumptions | Designs depend on unverified Kompass behaviour. | Gap list, adapter isolation, all Kompass mappings marked planned. |
 
 **Opinionated summary:** build the Orchestrator + `AgentRun` trace first, as it makes every AI feature visible and honest; make Similarity, Missing-field detection, SLA detection and Points the four genuinely computed features (they carry the demo); keep drafting features templated and labelled; keep every judgement human.

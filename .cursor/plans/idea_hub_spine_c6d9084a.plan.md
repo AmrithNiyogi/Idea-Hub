@@ -1,6 +1,6 @@
 ---
-name: KonnektIdea Spine
-overview: Scaffold `backend/` (FastAPI + Postgres + Redis) and `frontend/` (Vite + React + TS) from the HTML prototype, mirroring Kompass admin’s email+password → OTP → JWT cookie auth, shipping the KonnektIdea spine only (auth, users/roles, ideas lifecycle, explore/detail, engagement, review).
+name: IdeaKonnekt Spine
+overview: Scaffold `backend/` (FastAPI + Postgres + Redis) and `frontend/` (Vite + React + TS) from the HTML prototype, mirroring Kompass admin’s email+password → OTP → JWT cookie auth, shipping the IdeaKonnekt spine only (auth, users/roles, ideas lifecycle, explore/detail, engagement, review).
 todos:
   - id: infra
     content: Root docker-compose (Postgres+Redis), backend FastAPI scaffold, frontend Vite+React+TS scaffold, .env examples
@@ -23,4 +23,4 @@ todos:
 isProject: false
 ---
 
-# KonnektIdea — Spine foundation (auth + core lifecycle)
+# IdeaKonnekt — Spine foundation (auth + core lifecycle)

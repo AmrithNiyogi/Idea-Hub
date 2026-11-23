@@ -26,6 +26,7 @@ export type HelpTurn = {
   topic: string;
   reply: string;
   links: Array<{ label: string; href: string }>;
+  followups?: string[];
   notice: string;
   conversation_id?: string | null;
 };

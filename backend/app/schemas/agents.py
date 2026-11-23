@@ -134,7 +134,7 @@ class HelpTurnIn(BaseModel):
         ...,
         min_length=1,
         max_length=2000,
-        description="User question about KonnektIdea (no secrets).",
+        description="User question about IdeaKonnekt (no secrets).",
     )
     conversation_id: Optional[str] = Field(
         default=None,
@@ -149,6 +149,10 @@ class HelpTurnOut(BaseModel):
     topic: str
     reply: str
     links: list[HelpLinkOut] = Field(default_factory=list)
+    followups: list[str] = Field(
+        default_factory=list,
+        description="Up to three follow-up questions the user can send next.",
+    )
     notice: str = "Simulated — Kompass soon"
     conversation_id: Optional[str] = Field(
         default=None,

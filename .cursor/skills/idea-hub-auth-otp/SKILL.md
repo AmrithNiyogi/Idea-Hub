@@ -1,6 +1,6 @@
 ---
 name: idea-hub-auth-otp
-description: KonnektIdea JWT cookie auth with Redis OTP and SMTP delivery (Kompass-admin pattern). Use when changing login, OTP, cookies, auth dependencies, SMTP, or debugging send-login-otp / login failures.
+description: IdeaKonnekt JWT cookie auth with Redis OTP and SMTP delivery (Kompass-admin pattern). Use when changing login, OTP, cookies, auth dependencies, SMTP, or debugging send-login-otp / login failures.
 ---
 
 # Auth — OTP + JWT cookies

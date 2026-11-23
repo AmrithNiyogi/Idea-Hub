@@ -69,7 +69,7 @@ def _setup_key(user_id: str) -> str:
 
 
 def _otpauth_uri(*, secret: str, email: str) -> str:
-    issuer = settings.APP_NAME or "KonnektIdea"
+    issuer = settings.APP_NAME or "IdeaKonnekt"
     return pyotp.TOTP(secret).provisioning_uri(name=email, issuer_name=issuer)
 
 
