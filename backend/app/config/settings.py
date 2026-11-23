@@ -152,6 +152,8 @@ class Settings(BaseSettings):
     AISTUDIO_AGENT_SUBMIT_ASSIST: str = ""
     AISTUDIO_AGENT_HELP: str = ""
     AISTUDIO_AGENT_IDEA_OPTIMIZER: str = ""
+    AISTUDIO_AGENT_IDEATHON_RANK: str = ""  # Kompass agent id for ideakonnekt-ideathon-rank
+    AISTUDIO_AGENT_IDEATHON_PITCH: str = ""  # Kompass agent id for ideakonnekt-ideathon-pitch
     AISTUDIO_AGENT_REVIEW_INTELLIGENCE: str = ""
     AISTUDIO_AGENT_CODING_BUILD: str = Field(
         default="",

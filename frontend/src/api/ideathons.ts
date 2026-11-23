@@ -2,6 +2,7 @@
 
 import { apiFetch } from './client';
 import type {
+  AgentRunResult,
   Handoff,
   IdeathonCreateBody,
   IdeathonDetail,
@@ -22,6 +23,18 @@ export const ideathonsApi = {
 
   advance: (id: string) =>
     apiFetch<{ phase: string }>(`/ideathons/${id}/advance`, { method: 'POST' }),
+
+  runRank: (id: string, weights: Record<string, number>) =>
+    apiFetch<AgentRunResult>(`/ideathons/${id}/agents/rank`, {
+      method: 'POST',
+      body: JSON.stringify({ weights }),
+    }),
+
+  runPitch: (id: string, body: { stage: 'pitch' | 'handoff' | 'both' }) =>
+    apiFetch<AgentRunResult>(`/ideathons/${id}/agents/pitch`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   link: (id: string, ideaId: string) =>
     apiFetch<{ title: string }>(`/ideathons/${id}/link`, {

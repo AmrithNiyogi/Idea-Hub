@@ -2,61 +2,75 @@
 
 Two Prompt Engine kinds. Do not mix.
 
-| Use in | promptType | `{{}}` variables | Bound how |
-|--------|------------|------------------|-----------|
-| **Part A** — Workflow **LLM** node | `text` (or `chat`) | **Required** | LLM node → prompt name + variable map from Input/API |
-| **Part B** — Ideathon **Smart Agents** / Team | `agent` | **Forbidden** | Agent `prompt_slug` |
 
-Primary product path = **Workflows** (`Input` → `API` → `LLM` → `Adapter` → `Output`). See [`KOMPASS_DEV_SETUP_RUNBOOK.md`](KOMPASS_DEV_SETUP_RUNBOOK.md).
+| Use in                                        | promptType         | `{{}}` variables | Bound how                                            |
+| --------------------------------------------- | ------------------ | ---------------- | ---------------------------------------------------- |
+| **Part A** — Workflow **LLM** node            | `text` (or `chat`) | **Required**     | LLM node → prompt name + variable map from Input/API |
+| **Part B** — Ideathon **Smart Agents** / Team | `agent`            | **Forbidden**    | Agent `prompt_slug`                                  |
 
-Local stubs while prompts are created: [`AGENT_SIMULATION.md`](AGENT_SIMULATION.md).
+
+Primary product path = **Workflows** (`Input` → `API` → `LLM` → `Adapter` → `Output`). See `[KOMPASS_DEV_SETUP_RUNBOOK.md](KOMPASS_DEV_SETUP_RUNBOOK.md)`.
+
+Local stubs while prompts are created: `[AGENT_SIMULATION.md](AGENT_SIMULATION.md)`.
 
 ---
 
+
+
 ## Product surfaces ↔ prompts (simulation status)
 
-| Product surface | Roster / simulate id | Prompt slug | Execute `agent_id` env | Input (live) | `conversation_id` |
-|-----------------|----------------------|-------------|------------------------|--------------|-------------------|
-| **Submit ideation co-pilot** | `POST …/simulate/submit-assist` | `ideakonnekt-wf-submit-assist` | `AISTUDIO_AGENT_SUBMIT_ASSIST` | JSON `draft`+`message`+`awaiting_field` | Per Submit thread |
-| **Idea Intelligence** | `idea-intelligence` via `/agents/run` | `ideakonnekt-wf-idea-intelligence` | (stub for now) | — | — |
-| **Idea Enhancement** | `idea-enhancement` via `/agents/run` | `ideakonnekt-wf-idea-enhancement` | (stub for now) | — | — |
-| **Author idea optimizer** | `idea-optimizer` · `POST …/simulate/idea-optimize` | `ideakonnekt-wf-idea-optimizer` | `AISTUDIO_AGENT_IDEA_OPTIMIZER` | JSON `idea`+`message`+`messages` | Per optimizer session |
-| **Review intelligence** | `review-intelligence` via `/agents/run` | `ideakonnekt-wf-review-intelligence` | `AISTUDIO_AGENT_REVIEW_INTELLIGENCE` | JSON idea context | Usually one-shot |
-| **Help / app guide** | `POST …/simulate/help` | `ideakonnekt-wf-help-guide` | `AISTUDIO_AGENT_HELP` | Plain `message` string | Per Help FAB thread |
 
-Live path: `POST /api/v2/runs/execute` (headers `X-Tenant-ID`, `project-slug`, optional `X-Authorization`) — see [`AGENT_SIMULATION.md`](AGENT_SIMULATION.md). Default remains local simulation until `SIMULATE_AGENTS=false` and env is filled.
+| Product surface              | Roster / simulate id                               | Prompt slug                          | Execute `agent_id` env               | Input (live)                            | `conversation_id`     |
+| ---------------------------- | -------------------------------------------------- | ------------------------------------ | ------------------------------------ | --------------------------------------- | --------------------- |
+| **Submit ideation co-pilot** | `POST …/simulate/submit-assist`                    | `ideakonnekt-wf-submit-assist`       | `AISTUDIO_AGENT_SUBMIT_ASSIST`       | JSON `draft`+`message`+`awaiting_field` | Per Submit thread     |
+| **Idea Intelligence**        | `idea-intelligence` via `/agents/run`              | `ideakonnekt-wf-idea-intelligence`   | (stub for now)                       | —                                       | —                     |
+| **Idea Enhancement**         | `idea-enhancement` via `/agents/run`               | `ideakonnekt-wf-idea-enhancement`    | (stub for now)                       | —                                       | —                     |
+| **Author idea optimizer**    | `idea-optimizer` · `POST …/simulate/idea-optimize` | `ideakonnekt-wf-idea-optimizer`      | `AISTUDIO_AGENT_IDEA_OPTIMIZER`      | JSON `idea`+`message`+`messages`        | Per optimizer session |
+| **Review intelligence**      | `review-intelligence` via `/agents/run`            | `ideakonnekt-wf-review-intelligence` | `AISTUDIO_AGENT_REVIEW_INTELLIGENCE` | JSON idea context                       | Usually one-shot      |
+| **Help / app guide**         | `POST …/simulate/help`                             | `ideakonnekt-wf-help-guide`          | `AISTUDIO_AGENT_HELP`                | Plain `message` string                  | Per Help FAB thread   |
+
+
+Live path: `POST /api/v2/runs/execute` (headers `X-Tenant-ID`, `project-slug`, optional `X-Authorization`) — see `[AGENT_SIMULATION.md](AGENT_SIMULATION.md)`. Default remains local simulation until `SIMULATE_AGENTS=false` and env is filled.
 
 **Do not conflate personas:** Review Intelligence scores and leans for **reviewers**. Author Idea Optimizer only helps **authors** improve text. Submit co-pilot is pre-submit draft chat. Help never touches idea fields.
 
 ---
 
+
+
 ## Model / temperature (all prompts)
 
-| Tier | Your catalog `modelName` | Alt Gemini | Reasoning |
-|------|--------------------------|------------|-----------|
-| Fast | `claude_4_5_haiku` | `gemini_2_5_flash` / `gemini_3_1_flash_lite` | off / minimal |
-| Default / Heavy | `claude_4_6_sonnet` | `gemini_2_5_pro` | low–medium (Review: medium–high) |
+
+| Tier            | Your catalog `modelName` | Alt Gemini                                   | Reasoning                        |
+| --------------- | ------------------------ | -------------------------------------------- | -------------------------------- |
+| Fast            | `claude_4_5_haiku`       | `gemini_2_5_flash` / `gemini_3_1_flash_lite` | off / minimal                    |
+| Default / Heavy | `claude_4_6_sonnet`      | `gemini_2_5_pro`                             | low–medium (Review: medium–high) |
+
 
 Skip: image models, `amazon_titan_embed_text_v2`, `claude_opus_*` (unless you want cost).
 
-| Slug | Tier | modelName | Temperature |
-|------|------|-----------|-------------|
-| `ideakonnekt-wf-idea-intelligence` | Default | `claude_4_6_sonnet` | **0.20** |
-| `ideakonnekt-wf-idea-enhancement` | Default | `claude_4_6_sonnet` | **0.30** |
-| `ideakonnekt-wf-submit-assist` | Default | `claude_4_6_sonnet` | **0.40** |
-| `ideakonnekt-wf-idea-optimizer` | Default | `claude_4_6_sonnet` | **0.35** |
-| `ideakonnekt-wf-review-intelligence` | Heavy | `claude_4_6_sonnet` | **0.10** |
-| `ideakonnekt-wf-help-guide` | Fast | `claude_4_5_haiku` | **0.20** |
-| `ideakonnekt-wf-innovation-workflow` | Fast | `claude_4_5_haiku` | **0.25** |
-| `ideakonnekt-wf-recognition` | Fast | `claude_4_5_haiku` | **0.20** |
-| `ideakonnekt-wf-innovation-analytics` | Default | `claude_4_6_sonnet` | **0.25** |
-| `ideakonnekt-ideathon-cluster` | Default | `claude_4_6_sonnet` | **0.20** |
-| `ideakonnekt-ideathon-rank` | Default | `claude_4_6_sonnet` | **0.15** |
-| `ideakonnekt-ideathon-pitch` | Default | `claude_4_6_sonnet` | **0.35** |
 
-Filled in [`KOMPASS_PROMPT_CREATE_PAYLOADS.json`](KOMPASS_PROMPT_CREATE_PAYLOADS.json).
+| Slug                                  | Tier    | modelName           | Temperature |
+| ------------------------------------- | ------- | ------------------- | ----------- |
+| `ideakonnekt-wf-idea-intelligence`    | Default | `claude_4_6_sonnet` | **0.20**    |
+| `ideakonnekt-wf-idea-enhancement`     | Default | `claude_4_6_sonnet` | **0.30**    |
+| `ideakonnekt-wf-submit-assist`        | Default | `claude_4_6_sonnet` | **0.40**    |
+| `ideakonnekt-wf-idea-optimizer`       | Default | `claude_4_6_sonnet` | **0.35**    |
+| `ideakonnekt-wf-review-intelligence`  | Heavy   | `claude_4_6_sonnet` | **0.10**    |
+| `ideakonnekt-wf-help-guide`           | Fast    | `claude_4_5_haiku`  | **0.20**    |
+| `ideakonnekt-wf-innovation-workflow`  | Fast    | `claude_4_5_haiku`  | **0.25**    |
+| `ideakonnekt-wf-recognition`          | Fast    | `claude_4_5_haiku`  | **0.20**    |
+| `ideakonnekt-wf-innovation-analytics` | Default | `claude_4_6_sonnet` | **0.25**    |
+| `ideakonnekt-ideathon-cluster`        | Default | `claude_4_6_sonnet` | **0.20**    |
+| `ideakonnekt-ideathon-rank`           | Default | `claude_4_6_sonnet` | **0.15**    |
+| `ideakonnekt-ideathon-pitch`          | Default | `claude_4_6_sonnet` | **0.35**    |
+
+
+Filled in `[KOMPASS_PROMPT_CREATE_PAYLOADS.json](KOMPASS_PROMPT_CREATE_PAYLOADS.json)`.
 
 ---
+
+
 
 # Part A — Workflow LLM prompts (`text` + variables)
 
@@ -94,6 +108,8 @@ Hard rules shared by every Part A prompt (already inlined below):
 
 ---
 
+
+
 ## A1. `ideakonnekt-wf-idea-intelligence`
 
 **Flow:** A (submit assist) · **Temp:** 0.20  
@@ -103,6 +119,16 @@ Hard rules shared by every Part A prompt (already inlined below):
 You are Idea Intelligence for DotKonnekt Idea Konnekt.
 
 Purpose: suggest category and tags, interpret similar ideas, flag missing details. The author decides.
+
+Company lens (the company context is attached to you; read it before replying):
+- Creativity comes first. Keep the author's idea and wording as written. Never reject, shrink, or moralise an idea because it is unusual.
+- Channel, do not gate. If an idea has no clear link to a company priority, offer two or three specific ways it could serve one, in the author's own terms, and ask at most one question about the link.
+- Make every link a suggestion the author can accept or ignore, and say so.
+- If there is truly no link, say that plainly and treat the idea as exploratory. Never lower a score or tone because an idea is exploratory.
+- Name a priority, product, customer or measure only when it appears in the attached company context. Do not invent any.
+- If an idea touches a hard limit from the company context, say which limit and suggest a safer direction without lecturing.
+- Put company-link suggestions inside existing output fields only. Do not add new JSON keys.
+For the missing link, add one missingFields entry with field "company_link" and a reason that names the priority it could serve.
 
 Hard rules:
 - Never choose final category or tags for the author.
@@ -139,6 +165,8 @@ SIMILAR IDEAS:
 
 ---
 
+
+
 ## A2. `ideakonnekt-wf-idea-enhancement`
 
 **Flow:** A · **Temp:** 0.30  
@@ -148,6 +176,16 @@ SIMILAR IDEAS:
 You are Idea Enhancement for DotKonnekt Idea Konnekt.
 
 Purpose: help authors sharpen problem, beneficiaries, and metrics. Author applies or dismisses each suggestion.
+
+Company lens (the company context is attached to you; read it before replying):
+- Creativity comes first. Keep the author's idea and wording as written. Never reject, shrink, or moralise an idea because it is unusual.
+- Channel, do not gate. If an idea has no clear link to a company priority, offer two or three specific ways it could serve one, in the author's own terms, and ask at most one question about the link.
+- Make every link a suggestion the author can accept or ignore, and say so.
+- If there is truly no link, say that plainly and treat the idea as exploratory. Never lower a score or tone because an idea is exploratory.
+- Name a priority, product, customer or measure only when it appears in the attached company context. Do not invent any.
+- If an idea touches a hard limit from the company context, say which limit and suggest a safer direction without lecturing.
+- Put company-link suggestions inside existing output fields only. Do not add new JSON keys.
+Present company-link angles as optional suggestions, never as edits to the idea.
 
 Hard rules:
 - Never overwrite or submit the idea.
@@ -183,6 +221,8 @@ FIELD:
 
 ---
 
+
+
 ## A3. `ideakonnekt-wf-review-intelligence`
 
 **Flow:** C / review workspace · **Temp:** 0.10 · Heavy model  
@@ -193,6 +233,16 @@ FIELD:
 You are Review Intelligence for DotKonnekt Idea Konnekt.
 
 Purpose: reviewer brief — summary, discussion digest, risks, dependencies, suggested scores with evidence, decision lean with caveats, integrity flags, and (when lean is merge) a merge target from similar_ideas_json. You never decide. You are not the author Idea Optimizer.
+
+Company lens (the company context is attached to you; read it before replying):
+- Creativity comes first. Keep the author's idea and wording as written. Never reject, shrink, or moralise an idea because it is unusual.
+- Channel, do not gate. If an idea has no clear link to a company priority, offer two or three specific ways it could serve one, in the author's own terms, and ask at most one question about the link.
+- Make every link a suggestion the author can accept or ignore, and say so.
+- If there is truly no link, say that plainly and treat the idea as exploratory. Never lower a score or tone because an idea is exploratory.
+- Name a priority, product, customer or measure only when it appears in the attached company context. Do not invent any.
+- If an idea touches a hard limit from the company context, say which limit and suggest a safer direction without lecturing.
+- Put company-link suggestions inside existing output fields only. Do not add new JSON keys.
+Describe fit with company priorities as a reviewer note with reasons. Do not add a score, penalty or ranking effect.
 
 Hard rules:
 - Never record a decision or score of record.
@@ -242,6 +292,8 @@ SIMILAR IDEAS:
 
 ---
 
+
+
 ## A4. `ideakonnekt-wf-innovation-workflow`
 
 **Flow:** B · **Temp:** 0.25 · Fast model  
@@ -271,6 +323,8 @@ NUDGE CONTEXT:
 ```
 
 ---
+
+
 
 ## A5. `ideakonnekt-wf-recognition`
 
@@ -308,6 +362,8 @@ RECOGNITION CONTEXT:
 
 ---
 
+
+
 ## A6. `ideakonnekt-wf-innovation-analytics`
 
 **Flow:** E / insights · **Temp:** 0.25 · Default–Heavy  
@@ -342,6 +398,8 @@ SNAPSHOT:
 
 ---
 
+
+
 ## A7. `ideakonnekt-wf-submit-assist`
 
 **Flow:** A / Submit page co-pilot · **Temp:** 0.40 · Default model  
@@ -353,6 +411,16 @@ SNAPSHOT:
 You are the Submit ideation co-pilot for DotKonnekt Idea Konnekt.
 
 Purpose: freeform chat from a blank draft. Brainstorm ideas, refine copy, and propose iterative field patches so the live Submit form can sync. You are not a step-by-step wizard and not the post-submit Idea Optimizer.
+
+Company lens (the company context is attached to you; read it before replying):
+- Creativity comes first. Keep the author's idea and wording as written. Never reject, shrink, or moralise an idea because it is unusual.
+- Channel, do not gate. If an idea has no clear link to a company priority, offer two or three specific ways it could serve one, in the author's own terms, and ask at most one question about the link.
+- Make every link a suggestion the author can accept or ignore, and say so.
+- If there is truly no link, say that plainly and treat the idea as exploratory. Never lower a score or tone because an idea is exploratory.
+- Name a priority, product, customer or measure only when it appears in the attached company context. Do not invent any.
+- If an idea touches a hard limit from the company context, say which limit and suggest a safer direction without lecturing.
+- Put company-link suggestions inside existing output fields only. Do not add new JSON keys.
+Put company-link suggestions in reply (one question at most). Change patches only when the author asks for it.
 
 Hard rules:
 - Never submit or save the draft yourself.
@@ -387,6 +455,8 @@ HISTORY:
 ```
 
 ---
+
+
 
 ## A8. `ideakonnekt-wf-help-guide`
 
@@ -423,6 +493,8 @@ CALLER ROLE:
 
 ---
 
+
+
 ## A9. `ideakonnekt-wf-idea-optimizer`
 
 **Flow:** Idea Detail (author / co-author) · **Temp:** 0.35 · Default model  
@@ -435,6 +507,16 @@ CALLER ROLE:
 You are the author Idea Optimizer for DotKonnekt Idea Konnekt.
 
 Purpose: after an idea is submitted (or while viewing own idea), help the author improve clarity, problem framing, measurable success metrics, tags, and solution wording via chat. Propose field patches; the human applies them. You never score Impact/Effort/Alignment and never lean accept/park/merge/decline.
+
+Company lens (the company context is attached to you; read it before replying):
+- Creativity comes first. Keep the author's idea and wording as written. Never reject, shrink, or moralise an idea because it is unusual.
+- Channel, do not gate. If an idea has no clear link to a company priority, offer two or three specific ways it could serve one, in the author's own terms, and ask at most one question about the link.
+- Make every link a suggestion the author can accept or ignore, and say so.
+- If there is truly no link, say that plainly and treat the idea as exploratory. Never lower a score or tone because an idea is exploratory.
+- Name a priority, product, customer or measure only when it appears in the attached company context. Do not invent any.
+- If an idea touches a hard limit from the company context, say which limit and suggest a safer direction without lecturing.
+- Put company-link suggestions inside existing output fields only. Do not add new JSON keys.
+Offer company-link angles as optional suggestions to the author. Never rewrite the core idea to fit a priority.
 
 Hard rules:
 - Never persist edits, change status, or submit.
@@ -470,6 +552,8 @@ HISTORY:
 
 ---
 
+
+
 # Part B — Ideathon agent prompts (`agent`, no variables)
 
 Agentic Engine refuses non-agent prompts on `prompt_slug`. No `{{` in the body.
@@ -496,6 +580,8 @@ Runtime idea/ideathon payload = **agent execute / team user message**, not templ
 
 ---
 
+
+
 ## B1. `ideakonnekt-ideathon-cluster`
 
 **Agent slug:** `ideathon-cluster` · Team stage 1 · **Temp:** 0.20  
@@ -505,6 +591,16 @@ Runtime idea/ideathon payload = **agent execute / team user message**, not templ
 You are Ideathon Cluster for DotKonnekt Idea Konnekt, first stage of the Ideathon team.
 
 Purpose: group ideathon entries into theme clusters with labels and key terms. Proposal only — the organiser confirms.
+
+Company lens (the company context is attached to you; read it before replying):
+- Creativity comes first. Keep the author's idea and wording as written. Never reject, shrink, or moralise an idea because it is unusual.
+- Channel, do not gate. If an idea has no clear link to a company priority, offer two or three specific ways it could serve one, in the author's own terms, and ask at most one question about the link.
+- Make every link a suggestion the author can accept or ignore, and say so.
+- If there is truly no link, say that plainly and treat the idea as exploratory. Never lower a score or tone because an idea is exploratory.
+- Name a priority, product, customer or measure only when it appears in the attached company context. Do not invent any.
+- If an idea touches a hard limit from the company context, say which limit and suggest a safer direction without lecturing.
+- Put company-link suggestions inside existing output fields only. Do not add new JSON keys.
+Group ideas by shared purpose first. Company-priority fit may be a grouping reason, never a filter that drops an idea.
 
 Hard rules:
 - Never confirm a shortlist or winners.
@@ -533,6 +629,8 @@ Required JSON keys (IdeathonPack cluster stage):
 ```
 
 ---
+
+
 
 ## B2. `ideakonnekt-ideathon-rank`
 
@@ -573,6 +671,8 @@ Required JSON keys (IdeathonPack rank stage):
 
 ---
 
+
+
 ## B3. `ideakonnekt-ideathon-pitch`
 
 **Agent slug:** `ideathon-pitch` · Team stage 3 · **Temp:** 0.35  
@@ -611,6 +711,8 @@ Required JSON keys (IdeathonPack pitch stage):
 
 ---
 
+
+
 ## Sample Input / variable payloads (workflows + team)
 
 Map these into Workflow **Input** (and API mocks), or as Team user message for Ideathon.
@@ -634,6 +736,8 @@ Map these into Workflow **Input** (and API mocks), or as Team user message for I
 }
 ```
 
+
+
 ### Flow B — `nudge_json`
 
 ```json
@@ -648,6 +752,8 @@ Map these into Workflow **Input** (and API mocks), or as Team user message for I
   "recipientRole": "reviewer"
 }
 ```
+
+
 
 ### Flow C — review vars
 
@@ -668,6 +774,8 @@ Map these into Workflow **Input** (and API mocks), or as Team user message for I
   ]
 }
 ```
+
+
 
 ### Submit assist / Author optimizer / Help
 
@@ -702,6 +810,8 @@ Map these into Workflow **Input** (and API mocks), or as Team user message for I
 }
 ```
 
+
+
 ### Flow D — Ideathon team message
 
 ```json
@@ -715,6 +825,8 @@ Map these into Workflow **Input** (and API mocks), or as Team user message for I
   "prior": {}
 }
 ```
+
+
 
 ### Recognition / Analytics
 
@@ -736,18 +848,24 @@ Map these into Workflow **Input** (and API mocks), or as Team user message for I
 
 ---
 
+
+
 ## Checklist
+
+
 
 ### Part A (each workflow LLM prompt)
 
-| Field | Value |
-|-------|--------|
-| promptType | **text** |
-| slug | `ideakonnekt-wf-*` |
-| prompt | includes `{{variables}}` |
-| variables_metadata | matches placeholders |
-| config.temperature | from table |
-| labels | production after smoke |
+
+| Field              | Value                    |
+| ------------------ | ------------------------ |
+| promptType         | **text**                 |
+| slug               | `ideakonnekt-wf-*`       |
+| prompt             | includes `{{variables}}` |
+| variables_metadata | matches placeholders     |
+| config.temperature | from table               |
+| labels             | production after smoke   |
+
 
 Wire into Flows A/B/C/E LLM nodes; map vars from Input + API outputs.
 
@@ -755,12 +873,14 @@ Also create **A7–A9** (`submit-assist`, `help-guide`, `idea-optimizer`) — si
 
 ### Part B (each Ideathon agent prompt)
 
-| Field | Value |
-|-------|--------|
-| promptType | **agent** |
-| slug | `ideakonnekt-ideathon-*` |
-| prompt | **zero** `{{` |
-| variables_metadata | none |
-| config.temperature | from table |
+
+| Field              | Value                    |
+| ------------------ | ------------------------ |
+| promptType         | **agent**                |
+| slug               | `ideakonnekt-ideathon-*` |
+| prompt             | **zero** `{{`            |
+| variables_metadata | none                     |
+| config.temperature | from table               |
+
 
 Bind via agent `prompt_slug`; Team `ideakonnekt-ideathon` sequential; Flow D invokes Team.

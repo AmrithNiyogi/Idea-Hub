@@ -41,6 +41,8 @@ def test_hub_agent_env_keys_cover_surfaces() -> None:
         "idea-optimizer",
         "review-intelligence",
         "coding-agent-build",
+        "ideathon-rank",
+        "ideathon-pitch",
     }
 
 

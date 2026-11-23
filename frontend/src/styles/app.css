@@ -2570,3 +2570,12 @@ a.home-hero__title:hover { text-decoration: underline; }
 .cb-row[data-level="catalyst"] { --lvl: var(--lvl-catalyst); }
 .cb-row[data-level="pioneer"] { --lvl: var(--lvl-pioneer); }
 @media (max-width: 640px) { .cb-row { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding: 14px 14px 16px; } .cb-row__rankbig { font-size: 24px; } .cb-row__pts { font-size: 20px; } }
+
+/* ==== Ideathon agents panel (organisers) ==== */
+.agent-runs { margin-top: var(--space-5); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); display: flex; flex-direction: column; gap: 16px; }
+.agent-runs__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.agent-runs__head p { margin: 4px 0 0; }
+.agent-runs__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.agent-runs__error { margin: 0; color: var(--danger); font-size: 14px; }
+.agent-runs__result { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.agent-runs__result pre { margin: 0; padding: 14px; max-height: 420px; overflow: auto; border-radius: var(--radius-md); background: var(--surface-2); font-family: var(--font-mono); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }

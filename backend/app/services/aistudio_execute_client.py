@@ -37,6 +37,8 @@ HUB_AGENT_ENV_KEYS: dict[str, str] = {
     "idea-optimizer": "AISTUDIO_AGENT_IDEA_OPTIMIZER",
     "review-intelligence": "AISTUDIO_AGENT_REVIEW_INTELLIGENCE",
     "coding-agent-build": "AISTUDIO_AGENT_CODING_BUILD",
+    "ideathon-rank": "AISTUDIO_AGENT_IDEATHON_RANK",
+    "ideathon-pitch": "AISTUDIO_AGENT_IDEATHON_PITCH",
 }
 
 
@@ -110,7 +112,7 @@ def _base_url() -> str:
     return (settings.AISTUDIO_API_BASE_URL or "").rstrip("/")
 
 
-def build_execute_headers() -> dict[str, str]:
+def build_execute_headers(tool_auth_token: str | None = None) -> dict[str, str]:
     """Build outbound headers for ``POST /api/v2/runs/execute``.
 
     Returns:
@@ -123,7 +125,7 @@ def build_execute_headers() -> dict[str, str]:
         "X-Tenant-ID": (settings.AISTUDIO_TENANT_ID or "").strip(),
         "project-slug": (settings.AISTUDIO_PROJECT_SLUG or "").strip(),
     }
-    token = (settings.AISTUDIO_TOOL_AUTH_TOKEN or "").strip()
+    token = (tool_auth_token or settings.AISTUDIO_TOOL_AUTH_TOKEN or "").strip()
     if token:
         headers["X-Authorization"] = token
     return headers
@@ -281,6 +283,7 @@ async def execute_run(
     input_payload: Any,
     conversation_id: Optional[str] = None,
     timeout_seconds: Optional[float] = None,
+    tool_auth_token: Optional[str] = None,
 ) -> ExecuteResult:
     """POST ``/api/v2/runs/execute`` and normalize the reply.
 
@@ -288,6 +291,8 @@ async def execute_run(
         agent_id: Kompass agent id or slug (not the Idea Hub roster id).
         input_payload: Value for body ``input`` (string or JSON-serializable).
         conversation_id: Optional prior thread id; omit to let the engine create one.
+        tool_auth_token: Sent as X-Authorization for this run only. Pass the signed-in
+            user's access token; falls back to AISTUDIO_TOOL_AUTH_TOKEN when omitted.
         timeout_seconds: Override request timeout (defaults to settings).
 
     Returns:
@@ -323,7 +328,7 @@ async def execute_run(
     if timeout is None:
         timeout = float(settings.AISTUDIO_EXECUTE_TIMEOUT_SECONDS or 120)
 
-    headers = build_execute_headers()
+    headers = build_execute_headers(tool_auth_token)
     logger.info(
         "aistudio execute agent_id=%s conversation=%s project_slug_set=%s",
         agent_id.strip(),

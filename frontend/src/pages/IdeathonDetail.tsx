@@ -20,6 +20,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { JourneyStepper, type JourneyStage } from '../components/ui/JourneyStepper';
 import { Pill } from '../components/ui/Pill';
 import { TabsNav } from '../components/ui/TabsNav';
+import { AgentRunsPanel } from '../components/ideathon/AgentRunsPanel';
 import { CAN_SUBMIT } from '../constants/roles';
 import { STATUS_META } from '../constants/status';
 import {
@@ -1401,6 +1402,13 @@ export function IdeathonDetailPage() {
             </button>
             <span className="muted small">{advanceHint}</span>
           </div>
+        ) : null}
+        {org ? (
+          <AgentRunsPanel
+            ideathonId={it.id}
+            panelWeight={PANEL_WEIGHT}
+            audienceWeight={AUDIENCE_WEIGHT}
+          />
         ) : null}
         {!isOrg && !it.completed_at ? (
           <p className="muted small" style={{ marginTop: 'var(--space-3)' }}>

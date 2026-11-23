@@ -64,3 +64,12 @@ export interface TallyRow {
   aud_pct: number;
   combined: number;
 }
+
+/** Outcome of one Ideathon agent run (Rank or Pitch). Proposals only. */
+export interface AgentRunResult {
+  success: boolean;
+  result_text: string;
+  conversation_id: string | null;
+  run_id: string | null;
+  error: string | null;
+}
