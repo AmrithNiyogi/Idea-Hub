@@ -78,10 +78,10 @@ The backend accepts this shape. Missing `links` or `followups` are treated as em
 
 The backend calls the agent through the `help` key in `backend/app/services/aistudio_execute_client.py`, which reads the `AISTUDIO_AGENT_HELP` setting.
 
-1. Set the agent ID in the backend environment (local `.env` and the hosted service):
+1. Set the agent in the backend environment (local `.env` and the hosted service). The slug works in place of the ID:
 
    ```bash
-   AISTUDIO_AGENT_HELP=<the agent ID from Kompass>
+   AISTUDIO_AGENT_HELP=ideakonnekt-support-agent
    ```
 
 2. Live mode also needs `SIMULATE_AGENTS=false` and the AI Studio gateway settings (`AISTUDIO_API_BASE_URL`, `AISTUDIO_TENANT_ID`, `AISTUDIO_PROJECT_SLUG` and the tool auth token). These are already used by the other agents.

@@ -50,7 +50,6 @@ export function HelpChatFab() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [modeLabel, setModeLabel] = useState('Simulated');
   const [msgs, setMsgs] = useState<Msg[]>([{ ...WELCOME, at: new Date() }]);
   const logRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -70,7 +69,6 @@ export function HelpChatFab() {
   const clearChat = () => {
     setMsgs([{ ...WELCOME, id: `welcome-${Date.now()}`, at: new Date() }]);
     setConversationId(null);
-    setModeLabel('Simulated');
     setInput('');
   };
 
@@ -102,9 +100,6 @@ export function HelpChatFab() {
       if (turn.conversation_id) {
         setConversationId(turn.conversation_id);
       }
-      setModeLabel(
-        turn.mode === 'live' || turn.simulated === false ? 'Live' : 'Simulated',
-      );
       setMsgs((m) => [
         ...m.filter((x) => x.id !== loadingId),
         {
@@ -169,7 +164,6 @@ export function HelpChatFab() {
                 <h2 className="ik-chat__title" id={titleId}>
                   IdeaKonnekt Help
                 </h2>
-                <span className="ik-chat__mode">{modeLabel}</span>
               </div>
             </div>
             <div className="ik-chat__header-actions">
