@@ -19,8 +19,10 @@ from typing import Any, Optional
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -46,6 +48,9 @@ class Ideathon(Base):
     )
     title: Mapped[str] = mapped_column(String(80), nullable=False)
     theme: Mapped[str] = mapped_column(String(60), nullable=False)
+    kind: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="ideathon", server_default="ideathon"
+    )
     challenges: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     sponsor_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
@@ -255,3 +260,68 @@ class IdeathonHandoff(Base):
     )
 
     ideathon: Mapped["Ideathon"] = relationship(back_populates="handoffs")
+
+
+class EntryDocument(Base):
+    """A document attached to an idea so reviewers and the scoring AI can read it."""
+
+    __tablename__ = "entry_documents"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    idea_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ideas.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    uploaded_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+    )
+    filename: Mapped[str] = mapped_column(String(200), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(120), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    extracted_text: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class EntryScore(Base):
+    """Latest AI rubric score for one entry in one ideathon or hackathon."""
+
+    __tablename__ = "entry_scores"
+    __table_args__ = (
+        UniqueConstraint("ideathon_id", "idea_id", name="uq_entry_score"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    ideathon_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ideathons.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    idea_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ideas.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    overall: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    criteria: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    evidence: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    engine: Mapped[str] = mapped_column(String(80), nullable=False)
+    simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    rubric_version: Mapped[str] = mapped_column(String(20), nullable=False)
+    scored_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+    )
+    scored_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

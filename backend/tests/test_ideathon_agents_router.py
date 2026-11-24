@@ -85,11 +85,14 @@ async def test_organiser_rank_run_returns_agent_output(
         return_value=studio.ExecuteResult(success=True, result_text='{"shortlist": []}', conversation_id="c-1")
     )
     monkeypatch.setattr(ideathon_rank_service, "propose_rank", run)
+    monkeypatch.setattr(router.EntryScoringService, "rank_context", AsyncMock(return_value={"entries": []}))
     out = await router.run_rank(IDEATHON, RankRunIn(weights={"impact": 1.0}), _request(USER_TOKEN), MagicMock(), _actor("leadership"))
     assert out.success is True
     assert out.result_text == '{"shortlist": []}'
     assert out.conversation_id == "c-1"
-    run.assert_awaited_once_with(IDEATHON, {"impact": 1.0}, tool_auth_token=USER_TOKEN)
+    run.assert_awaited_once_with(
+        IDEATHON, {"impact": 1.0}, tool_auth_token=USER_TOKEN, context={"entries": []}
+    )
 
 
 @pytest.mark.asyncio

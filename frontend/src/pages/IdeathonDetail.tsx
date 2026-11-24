@@ -21,6 +21,7 @@ import { JourneyStepper, type JourneyStage } from '../components/ui/JourneyStepp
 import { Pill } from '../components/ui/Pill';
 import { TabsNav } from '../components/ui/TabsNav';
 import { AgentRunsPanel } from '../components/ideathon/AgentRunsPanel';
+import { EntryScoresPanel } from '../components/ideathon/EntryScoresPanel';
 import { CAN_SUBMIT } from '../constants/roles';
 import { STATUS_META } from '../constants/status';
 import {
@@ -38,6 +39,7 @@ import {
 } from '../constants/ideathons';
 import type { Idea } from '../types/idea';
 import type {
+  EntryScore,
   Handoff,
   IdeathonDetail,
   TallyRow,
@@ -91,7 +93,7 @@ const IDEATHON_GATES: Record<string, { gate: string; owner: string }> = {
     owner: 'Organiser',
   },
   handoff: {
-    gate: 'Mark the ideathon complete once winners are handed off.',
+    gate: 'Mark it complete once winners are handed off.',
     owner: 'Organiser',
   },
 };
@@ -248,10 +250,13 @@ function usePitchTimers(ids: string[]) {
       if (!state.current[id])
         state.current[id] = { base: PITCH_SECONDS, running: false, t0: 0 };
     });
+    // Return the same object when nothing is new; a fresh object here re-renders forever.
     setLeft((prev) => {
+      const added = ids.filter((id) => prev[id] == null);
+      if (!added.length) return prev;
       const next = { ...prev };
-      ids.forEach((id) => {
-        if (next[id] == null) next[id] = PITCH_SECONDS;
+      added.forEach((id) => {
+        next[id] = PITCH_SECONDS;
       });
       return next;
     });
@@ -323,6 +328,7 @@ export function IdeathonDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [slSel, setSlSel] = useState<string[]>([]);
+  const [aiScores, setAiScores] = useState<Map<string, EntryScore>>(new Map());
   const [winSel, setWinSel] = useState<string[]>([]);
   const [myVote, setMyVote] = useState<string | null>(null);
   const [myScores, setMyScores] = useState<Record<string, number>>({});
@@ -485,6 +491,8 @@ export function IdeathonDetailPage() {
   const organiser = people.get(it.organiser_id);
   const open = it.phase === 'open' && st === 'active';
   const phaseIdx = ithPhaseIdx(it.phase);
+  const isHackathon = it.kind === 'hackathon';
+  const eventWord = isHackathon ? 'hackathon' : 'ideathon';
 
   const advanceHint = (() => {
     const entries = it.entry_idea_ids.length;
@@ -518,7 +526,7 @@ export function IdeathonDetailPage() {
                 className="btn btn--primary"
                 to={`/submit?ideathon=${it.id}`}
               >
-                <Icon name="plus" size={16} /> Submit to this ideathon
+                <Icon name="plus" size={16} /> Submit to this {eventWord}
               </Link>
             ) : null}
             {open && eligible.length ? (
@@ -559,6 +567,12 @@ export function IdeathonDetailPage() {
               </div>
             ) : null}
           </div>
+          {open && isHackathon ? (
+            <p className="muted small" style={{ marginTop: 12, marginBottom: 0 }}>
+              Hackathon entries need a GitHub repository and at least one documentation
+              file. Add them on the idea page before linking an existing idea.
+            </p>
+          ) : null}
           {st === 'upcoming' ? (
             <div className="notice" style={{ marginTop: 12 }}>
               <Icon name="calendar" size={16} />
@@ -580,7 +594,7 @@ export function IdeathonDetailPage() {
             <EmptyState
               icon="flag"
               title="No entries yet"
-              body="Ideas submitted to or linked with this ideathon appear here."
+              body={`Ideas submitted to or linked with this ${eventWord} appear here.`}
             />
           </div>
         ) : (
@@ -596,6 +610,17 @@ export function IdeathonDetailPage() {
                       <Link to={`/ideas/${iid}`}>{shortId(iid)}…</Link>
                     </div>
                   )}
+                  {it.kind === 'hackathon' && idea ? (
+                    <div className="muted small">
+                      {idea.github_url ? (
+                        <a href={idea.github_url} target="_blank" rel="noreferrer">
+                          {idea.github_url.replace('https://github.com/', 'github.com/')}
+                        </a>
+                      ) : (
+                        'No GitHub link yet'
+                      )}
+                    </div>
+                  ) : null}
                   {open && idea?.author_id === user?.id ? (
                     <button
                       type="button"
@@ -607,7 +632,7 @@ export function IdeathonDetailPage() {
                         })
                       }
                     >
-                      Remove from ideathon
+                      Remove from {eventWord}
                     </button>
                   ) : null}
                 </div>
@@ -620,17 +645,20 @@ export function IdeathonDetailPage() {
   } else if (tab === 'shortlist') {
     if (it.phase === 'open') {
       body = (
-        <LockedNote text="Shortlisting starts when the organiser closes submissions. The Ideathon agent will then propose a ranked shortlist." />
+        <LockedNote text="Shortlisting starts when the organiser closes submissions. AI rubric scores can be run at any time and help the organiser choose." />
       );
     } else {
-      const entries = it.entry_idea_ids;
+      const entries = [...it.entry_idea_ids].sort(
+        (a, b) => (aiScores.get(a)?.rank ?? Infinity) - (aiScores.get(b)?.rank ?? Infinity),
+      );
       const orgSl = isOrg && it.phase === 'shortlist';
       body = (
         <div className="stack">
           <AgentBlock
             agent="Ideathon"
-            kind="Computed"
-            how="Score out of 100 uses upvotes, template completeness and cross-team discussion. The organiser can add or remove entries before approving."
+            kind="Organiser choice"
+            status="Manual"
+            how="The organiser ticks the entries to shortlist. Entries are listed in AI rubric rank when scores exist; the AI score and upvote count are shown for reference. The organiser decides."
           >
             <p>
               {it.shortlist.length
@@ -676,6 +704,11 @@ export function IdeathonDetailPage() {
                     </div>
                   </div>
                   <div className="pts" style={{ color: 'var(--text)' }}>
+                    {aiScores.get(iid)?.overall != null ? (
+                      <span className="sl-ai" title="AI rubric overall (0–10)">
+                        AI {aiScores.get(iid)?.overall?.toFixed(1)}
+                      </span>
+                    ) : null}
                     {idea?.vote_count ?? '—'}
                   </div>
                 </div>
@@ -763,6 +796,19 @@ export function IdeathonDetailPage() {
               ))}
             </div>
           ) : null}
+        </div>
+      );
+    }
+    if (canScore && it.entry_idea_ids.length) {
+      body = (
+        <div className="stack">
+          <EntryScoresPanel
+            ideathonId={it.id}
+            canRun={isOrg}
+            titles={Object.fromEntries([...ideas].map(([iid, idea]) => [iid, idea.title]))}
+            onScores={(s) => setAiScores(new Map((s?.items ?? []).map((row) => [row.idea_id, row])))}
+          />
+          {body}
         </div>
       );
     }
@@ -968,7 +1014,7 @@ export function IdeathonDetailPage() {
   } else if (tab === 'results') {
     if (phaseIdx < 3) {
       body = (
-        <LockedNote text="Results appear after voting is closed and the organiser moves the ideathon to Results." />
+        <LockedNote text="Results appear after voting is closed and the organiser moves to Results." />
       );
     } else {
       const orgWin = isOrg && it.phase === 'results' && !it.winners.length;
@@ -1139,7 +1185,7 @@ export function IdeathonDetailPage() {
     // handoff
     if (phaseIdx < 4) {
       body = (
-        <LockedNote text="Handoff opens after winners are confirmed and the organiser moves the ideathon to Handoff." />
+        <LockedNote text="Handoff opens after winners are confirmed and the organiser moves to Handoff." />
       );
     } else {
       const sentMap = new Map(handoffs.map((h) => [h.idea_id, h]));
@@ -1408,7 +1454,7 @@ export function IdeathonDetailPage() {
               onClick={async () => {
                 if (
                   await dialog.confirm({
-                    title: 'Mark this ideathon complete?',
+                    title: `Mark this ${eventWord} complete?`,
                     message: 'It moves to Past.',
                     confirmLabel: 'Mark complete',
                   })
@@ -1419,7 +1465,7 @@ export function IdeathonDetailPage() {
                 }
               }}
             >
-              <Icon name="check" size={16} /> Mark ideathon complete
+              <Icon name="check" size={16} /> Mark {eventWord} complete
             </button>
             <span className="muted small">{advanceHint}</span>
           </div>

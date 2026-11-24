@@ -4,14 +4,18 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+
+EventKind = Literal["ideathon", "hackathon"]
 
 
 class IdeathonCreate(BaseModel):
     title: str = Field(..., min_length=4, max_length=80)
     theme: str = Field(..., min_length=3, max_length=60)
+    kind: EventKind = "ideathon"
     challenges: list[str] = Field(..., min_length=1, max_length=3)
     sponsor_id: uuid.UUID
     start_at: datetime
@@ -34,6 +38,7 @@ class IdeathonUpdate(BaseModel):
 
     title: Optional[str] = Field(default=None, min_length=4, max_length=80)
     theme: Optional[str] = Field(default=None, min_length=3, max_length=60)
+    kind: Optional[EventKind] = None
     challenges: Optional[list[str]] = Field(default=None, min_length=1, max_length=3)
     start_at: Optional[datetime] = None
     end_at: Optional[datetime] = None
@@ -88,6 +93,7 @@ class IdeathonSummaryOut(BaseModel):
     id: uuid.UUID
     title: str
     theme: str
+    kind: str = "ideathon"
     phase: str
     start_at: datetime
     end_at: datetime
@@ -104,6 +110,7 @@ class IdeathonDetailOut(BaseModel):
     id: uuid.UUID
     title: str
     theme: str
+    kind: str = "ideathon"
     challenges: list[str]
     phase: str
     phase_log: list[dict[str, Any]]

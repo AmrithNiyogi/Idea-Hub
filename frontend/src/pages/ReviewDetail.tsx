@@ -4,6 +4,8 @@ import { agentsApi } from '../api/agents';
 import { ideasApi } from '../api/ideas';
 import { reviewApi } from '../api/review';
 import { AgentHandoffBar } from '../components/AgentHandoffBar';
+import { EntryDocumentsCard } from '../components/EntryDocumentsCard';
+import { IdeaAiReview } from '../components/IdeaAiReview';
 import { Icon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
 import { AgentBlock } from '../components/ui/AgentBlock';
@@ -519,8 +521,35 @@ export function ReviewDetailPage() {
               <dd>{EFFORT_LABELS[idea.effort] ?? idea.effort}</dd>
               <dt>Success looks like</dt>
               <dd>{idea.success_metrics || '—'}</dd>
+              {idea.github_url ? (
+                <>
+                  <dt>GitHub</dt>
+                  <dd>
+                    <a href={idea.github_url} target="_blank" rel="noreferrer">
+                      {idea.github_url.replace('https://github.com/', 'github.com/')}
+                    </a>
+                  </dd>
+                </>
+              ) : null}
+              {idea.demo_url ? (
+                <>
+                  <dt>Live project</dt>
+                  <dd>
+                    <a href={idea.demo_url} target="_blank" rel="noreferrer">
+                      {idea.demo_url.replace(/^https:\/\//, '')}
+                    </a>
+                  </dd>
+                </>
+              ) : null}
             </dl>
           </div>
+
+          <IdeaAiReview
+            review={idea.ai_review}
+            isDraft={idea.status === 'draft'}
+            audience="reviewer"
+          />
+          <EntryDocumentsCard ideaId={idea.id} canEdit={false} />
 
           <div className="card">
             <div className="card__head">

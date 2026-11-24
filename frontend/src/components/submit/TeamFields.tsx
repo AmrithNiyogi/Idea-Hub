@@ -18,6 +18,8 @@ export interface TeamFieldsProps {
   onTeamNameChange: (value: string) => void;
   onGithubUrlChange: (value: string) => void;
   onDemoUrlChange: (value: string) => void;
+  /** Hackathon entries must link a repository. */
+  githubRequired?: boolean;
 }
 
 export function TeamFields({
@@ -30,6 +32,7 @@ export function TeamFields({
   onTeamNameChange,
   onGithubUrlChange,
   onDemoUrlChange,
+  githubRequired = false,
 }: TeamFieldsProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<User[]>([]);
@@ -221,7 +224,9 @@ export function TeamFields({
       </div>
 
       <div className="field">
-        <label htmlFor="sf-github">GitHub repository (optional)</label>
+        <label htmlFor="sf-github">
+          GitHub repository {githubRequired ? '(required for hackathons)' : '(optional)'}
+        </label>
         <input
           className="input"
           id="sf-github"
@@ -231,13 +236,18 @@ export function TeamFields({
           onChange={(e) => onGithubUrlChange(e.target.value)}
           placeholder="https://github.com/owner/repo"
           aria-invalid={githubInvalid}
+          aria-required={githubRequired}
         />
         {githubInvalid ? (
           <div className="hint" role="alert">
             Use a link to one repository, like https://github.com/owner/repo.
           </div>
         ) : (
-          <div className="hint">One repository per idea.</div>
+          <div className="hint">
+            {githubRequired
+              ? 'One repository per entry. The AI reviewer reads its README and structure.'
+              : 'One repository per idea.'}
+          </div>
         )}
       </div>
     </div>

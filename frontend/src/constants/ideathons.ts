@@ -96,3 +96,9 @@ export const PERIODS: Record<string, string> = {
   year: 'This year',
   all: 'All time',
 };
+
+/** Display names for the event kinds. */
+export const EVENT_KIND_LABEL: Record<'ideathon' | 'hackathon', string> = {
+  ideathon: 'Ideathon',
+  hackathon: 'Hackathon',
+};

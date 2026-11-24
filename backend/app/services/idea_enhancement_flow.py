@@ -24,7 +24,7 @@ from app.services import aistudio_execute_client as studio
 from app.services.idea_intelligence_flow import _field
 
 ENGINE_LABEL = "kompass-flow:idea-enhancement"
-ENHANCEABLE_FIELDS = ("title", "problem", "solution", "beneficiaries", "success_metrics")
+ENHANCEABLE_FIELDS = ("title", "problem", "solution", "beneficiaries", "success_metrics", "all")
 
 
 def flow_configured() -> bool:

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import pytest
 from pydantic import ValidationError
 
+from app.routers.ideas import _idea_out
 from app.schemas.idea import IdeaWrite
 from app.services.idea_service import _clean_co_authors
 
@@ -61,3 +63,24 @@ def test_co_authors_are_deduped_and_exclude_author() -> None:
     idea = SimpleNamespace(author_id=author)
     out = _clean_co_authors(idea, [author, mate, mate])  # type: ignore[arg-type]
     assert out == [str(mate)]
+
+
+def test_idea_response_carries_team_github_and_demo_links() -> None:
+    now = datetime.now(timezone.utc)
+    idea = SimpleNamespace(
+        id=uuid.uuid4(), slug=None, title="t", category_id=None, problem="", solution="",
+        beneficiaries="", effort="M", success_metrics="", tags=[], author_id=uuid.uuid4(),
+        anonymous=False, co_author_ids=[], team_name="Team A",
+        github_url="https://github.com/acme/repo", demo_url="https://demo.example.com", ai_review=None,
+        owner_id=None, status="submitted", is_draft=False, reviewer_id=None,
+        awaiting_owner=False, hours_recommended=None, needs_info_question=None,
+        withdraw_reason="", merged_into_id=None, submitted_at=None, picked_up_at=None,
+        due_at=None, pickup_due_at=None, revisit_at=None, stage_entered_at=None,
+        created_at=now, updated_at=now, status_history=[],
+    )
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr("app.routers.ideas.sa_inspect", lambda _i: SimpleNamespace(unloaded=set()))
+        out = _idea_out(idea)
+    assert out.team_name == "Team A"
+    assert out.github_url == "https://github.com/acme/repo"
+    assert out.demo_url == "https://demo.example.com"

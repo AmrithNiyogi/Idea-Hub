@@ -62,6 +62,48 @@ export interface Idea {
   voted: boolean;
   following: boolean;
   status_history: StatusHistory[];
+  /** Saved AI review from submit time. Null until it is ready, and for drafts. */
+  ai_review?: IdeaAiReview | null;
+}
+
+export type DotKonnektFitBand = 'strong' | 'partial' | 'exploratory';
+
+/** AI review saved on the idea after submit. Every item is a proposal only. */
+export interface IdeaAiReview {
+  engine: string;
+  simulated: boolean;
+  generated_at: string;
+  summary: string;
+  dotkonnekt_fit: {
+    band: DotKonnektFitBand;
+    themes: Array<{ id: string; label: string; matched_terms: string[] }>;
+    angles: string[];
+  };
+  suggestions: Array<{
+    field: string;
+    kind: string;
+    text: string;
+    rationale: string;
+  }>;
+  suggested_metrics: Array<{
+    metric: string;
+    unit: string;
+    baseline_prompt: string;
+  }>;
+  suggested_beneficiaries: string[];
+  missing_fields: string[];
+}
+
+/** A document attached to an idea (hackathon / ideathon entry). */
+export interface EntryDocument {
+  id: string;
+  idea_id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  /** Characters of readable text extracted for the AI. 0 means unreadable. */
+  text_chars: number;
+  created_at: string;
 }
 
 export interface IdeaWrite {

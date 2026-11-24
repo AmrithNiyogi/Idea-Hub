@@ -24,13 +24,24 @@ HUB_AGENT_KEY = "ideathon-rank"
 STAGE = "rank"
 
 
-def build_rank_input(ideathon_id: uuid.UUID, weights: Mapping[str, float]) -> dict[str, Any]:
-    """Run input for the rank agent: which ideathon, which stage, and the scoring weights."""
-    return {
+def build_rank_input(
+    ideathon_id: uuid.UUID,
+    weights: Mapping[str, float],
+    context: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Run input for the rank agent: ideathon, stage, weights, and optionally the full entry context.
+
+    ``context`` carries ``ideathon``, ``rubric_version`` and ``entries`` (text, document excerpts,
+    GitHub summary, panel and audience signals). With it the agent does not need its entries tool.
+    """
+    payload: dict[str, Any] = {
         "ideathon_id": str(ideathon_id),
         "stage": STAGE,
         "weights": {str(k): float(v) for k, v in weights.items()},
     }
+    if context:
+        payload.update(dict(context))
+    return payload
 
 
 async def propose_rank(
@@ -39,6 +50,7 @@ async def propose_rank(
     *,
     conversation_id: str | None = None,
     tool_auth_token: str | None = None,
+    context: Mapping[str, Any] | None = None,
 ) -> studio.ExecuteResult:
     """Ask the Rank agent for a proposed shortlist.
 
@@ -53,7 +65,7 @@ async def propose_rank(
         )
     return await studio.execute_run(
         agent_id=agent_id,
-        input_payload=build_rank_input(ideathon_id, weights),
+        input_payload=build_rank_input(ideathon_id, weights, context),
         conversation_id=conversation_id,
         tool_auth_token=tool_auth_token,
     )

@@ -69,6 +69,8 @@ For the whole entry:
 
 `overall.weightedTotal = mean of the four weightedScore values` (round to two decimal places)
 
+Relevance gate: if the Relevance score is below 3, cap `overall.weightedTotal` at 4 and say so in the rationale. An entry that does not answer the challenge cannot rank high on its other criteria alone. IdeaKonnekt applies the same gate when it saves scores.
+
 ### Worked example
 
 Panel 8, audience 7, weights panel 0.7 and audience 0.3:

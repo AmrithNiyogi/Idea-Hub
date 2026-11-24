@@ -12,6 +12,8 @@ import { usersApi } from '../api/users';
 import { AgentBuildPanel } from '../components/AgentBuildPanel';
 import { AgentHandoffBar } from '../components/AgentHandoffBar';
 import { IdeaOptimizePanel } from '../components/IdeaOptimizePanel';
+import { IdeaAiReview } from '../components/IdeaAiReview';
+import { EntryDocumentsCard } from '../components/EntryDocumentsCard';
 import { Avatar, Icon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
 import { JourneyStepper, type JourneyStage } from '../components/ui/JourneyStepper';
@@ -331,6 +333,8 @@ export function IdeaDetailPage() {
   const si = stageIndex(idea.status);
   const isAuthor = user?.id === idea.author_id;
   const own = isAuthor || idea.co_author_ids.includes(user?.id ?? '');
+  const canSeeAiReview =
+    own || ['reviewer', 'admin', 'leadership'].includes(user?.active_role ?? '');
   const live = idea.status !== 'withdrawn';
   const canWithdraw =
     isAuthor &&
@@ -710,6 +714,13 @@ export function IdeaDetailPage() {
                   </dd>
                 </dl>
               </div>
+              {canSeeAiReview ? (
+                <IdeaAiReview
+                  review={idea.ai_review}
+                  isDraft={false}
+                  audience={own ? 'author' : 'reviewer'}
+                />
+              ) : null}
             </>
           )}
 
@@ -908,6 +919,7 @@ export function IdeaDetailPage() {
               }}
             />
           ) : null}
+          <EntryDocumentsCard ideaId={idea.id} canEdit={own} />
           <div className="card card--tight">
             <h3 style={{ marginBottom: 8 }}>Related ideas</h3>
             {related.length ? (

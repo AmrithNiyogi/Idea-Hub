@@ -34,6 +34,7 @@ class IdeaRef:
     ideathon_id: Optional[uuid.UUID] = None
     problem: str = ""
     solution: str = ""
+    github_url: Optional[str] = None
 
 
 @dataclass
@@ -63,7 +64,8 @@ class SpineBridge:
                                COALESCE(anonymous, false) AS anonymous,
                                ideathon_id,
                                COALESCE(problem, '') AS problem,
-                               COALESCE(solution, '') AS solution
+                               COALESCE(solution, '') AS solution,
+                               github_url
                         FROM ideas WHERE id = :id
                         """
                     ),
@@ -116,6 +118,7 @@ class SpineBridge:
             ideathon_id=row.get("ideathon_id"),
             problem=str(row.get("problem") or ""),
             solution=str(row.get("solution") or ""),
+            github_url=row.get("github_url"),
         )
 
     async def set_idea_status(

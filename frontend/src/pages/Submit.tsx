@@ -2,6 +2,9 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ideasApi } from '../api/ideas';
 import { ideathonsApi } from '../api/ideathons';
+import { documentsApi } from '../api/documents';
+import { EntryDocumentsPicker } from '../components/submit/EntryDocumentsPicker';
+import { hackathonEntryError, validateDocuments } from '../utils/entryDocuments';
 import { useAuth } from '../auth/AuthProvider';
 import { GITHUB_REPO_PATTERN } from '../constants/github';
 import { TeamFields } from '../components/submit/TeamFields';
@@ -95,6 +98,8 @@ export function SubmitPage() {
   const draftParam = params.get('draft');
   const ideathonId = params.get('ideathon');
   const [ideathonTitle, setIdeathonTitle] = useState<string | null>(null);
+  const [isHackathon, setIsHackathon] = useState(false);
+  const [docFiles, setDocFiles] = useState<File[]>([]);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [form, setForm] = useState<IdeaWrite>(empty);
   const [draftId, setDraftId] = useState<string | null>(draftParam);
@@ -139,12 +144,19 @@ export function SubmitPage() {
   useEffect(() => {
     if (!ideathonId) {
       setIdeathonTitle(null);
+      setIsHackathon(false);
       return;
     }
     ideathonsApi
       .get(ideathonId)
-      .then((d) => setIdeathonTitle(d.title))
-      .catch(() => setIdeathonTitle(null));
+      .then((d) => {
+        setIdeathonTitle(d.title);
+        setIsHackathon(d.kind === 'hackathon');
+      })
+      .catch(() => {
+        setIdeathonTitle(null);
+        setIsHackathon(false);
+      });
   }, [ideathonId]);
 
   const applyPatches = (
@@ -448,6 +460,13 @@ export function SubmitPage() {
       setError('Live project link must start with https://.');
       return;
     }
+    const docProblem = isHackathon
+      ? hackathonEntryError(github, docFiles)
+      : validateDocuments(docFiles);
+    if (docProblem) {
+      setError(docProblem);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -455,6 +474,19 @@ export function SubmitPage() {
         { ...form, title: form.title.trim(), github_url: github, demo_url: demo },
         draftId,
       );
+      for (const file of docFiles) {
+        try {
+          await documentsApi.upload(idea.id, file);
+        } catch (upErr) {
+          // The idea is submitted; say what failed and how to finish the entry.
+          setSubmittedId(idea.id);
+          const why = upErr instanceof Error ? upErr.message : 'Upload failed';
+          setError(
+            `Your idea was submitted, but ${file.name} could not be uploaded (${why}). Open the idea to add documents${ideathonId ? ', then link it from the event page' : ''}.`,
+          );
+          return;
+        }
+      }
       if (ideathonId) {
         try {
           await ideathonsApi.link(ideathonId, idea.id);
@@ -523,8 +555,11 @@ export function SubmitPage() {
           <Icon name="flag" size={16} />
           <span>
             {ideathonTitle
-              ? `This idea will be added to the ideathon "${ideathonTitle}" when you submit.`
+              ? `This idea will be added to the ${isHackathon ? 'hackathon' : 'ideathon'} "${ideathonTitle}" when you submit.`
               : 'This idea will be added to the ideathon when you submit.'}
+            {isHackathon
+              ? ' Hackathon entries need a GitHub repository and at least one documentation file.'
+              : ''}
           </span>
         </div>
       ) : null}
@@ -913,7 +948,17 @@ export function SubmitPage() {
             onTeamNameChange={(v) => set('team_name', v)}
             onGithubUrlChange={(v) => set('github_url', v)}
             onDemoUrlChange={(v) => set('demo_url', v)}
+            githubRequired={isHackathon}
           />
+
+          {ideathonId ? (
+            <EntryDocumentsPicker
+              files={docFiles}
+              onChange={setDocFiles}
+              required={isHackathon}
+              disabled={busy}
+            />
+          ) : null}
 
           <label className="switch">
             <input

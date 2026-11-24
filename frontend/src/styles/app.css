@@ -3523,3 +3523,28 @@ a.home-hero__title:hover { text-decoration: underline; }
   opacity: 0.5;
   cursor: default;
 }
+
+/* Entry documents (Submit picker + idea / review sidebar). */
+.entry-docs__list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; }
+.entry-docs__row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); min-width: 0; }
+.entry-docs__row:last-child { border-bottom: 0; }
+.entry-docs__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Saved AI review on an idea. */
+.ai-review__h { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+.ai-review__list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.ai-review__rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.ai-review__row { display: grid; grid-template-columns: 120px 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.ai-review__row:last-child { border-bottom: 0; }
+.ai-review__field { font-family: var(--font-mono); font-size: 12px; color: var(--text-3); }
+@media (max-width: 560px) {
+  .ai-review__row { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* AI rubric scores table on the event page. */
+.entry-scores { margin-top: 0; }
+.entry-scores__detail td { white-space: normal; background: var(--surface-2); }
+
+/* Shortlist row: AI rubric overall next to the vote count */
+.sl-row .sl-ai{display:block;font-size:11px;color:var(--text-3);font-family:var(--font-mono)}
+.entry-scores__note{margin:6px 0 0;padding:6px 10px;border-left:3px solid var(--warning);background:var(--warning-soft);color:var(--warning)}
