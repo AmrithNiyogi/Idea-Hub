@@ -56,10 +56,11 @@ def _ensure_builtins() -> None:
     global _BUILTINS_LOADED
     if _BUILTINS_LOADED:
         return
+    from app.integrations.mcp_server import McpServerProvider
     from app.integrations.notion import NotionProvider
     from app.integrations.teams_webhook import TeamsWebhookProvider
 
-    for cls in (NotionProvider, TeamsWebhookProvider):
+    for cls in (NotionProvider, TeamsWebhookProvider, McpServerProvider):
         inst = cls()
         if inst.id not in _ADAPTERS:
             _ADAPTERS[inst.id] = inst

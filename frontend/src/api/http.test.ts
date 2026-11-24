@@ -157,6 +157,7 @@ describe('apiFetch', () => {
         status: 403,
         statusText: 'Forbidden',
         json: async () => ({ detail: 'denied' }),
+        text: async () => JSON.stringify({ detail: 'denied' }),
       }),
     );
     await expect(apiFetch('/x')).rejects.toMatchObject({

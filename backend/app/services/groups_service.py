@@ -24,6 +24,8 @@ from app.models.groups import (
     GroupMember,
     GroupMessage,
     GroupMcpConnection,
+    GroupPoll,
+    GroupPollVote,
     HubGroup,
 )
 from app.models.idea import Idea
@@ -49,12 +51,16 @@ from app.schemas.groups import (
     GroupUpdateIn,
     McpToolCallIn,
     McpToolCallOut,
+    PollCreateIn,
+    PollOut,
+    PollVoteIn,
 )
 from app.services.account_service import (
     ALLOWED_AVATAR_TYPES,
     MAX_AVATAR_BYTES,
     uploads_root,
 )
+from app.services.mcp_oauth_service import McpOAuthService
 from app.services.notification_service import notify_users
 from app.trackers.crypto import decrypt_credentials, encrypt_credentials
 
@@ -72,6 +78,13 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 def _slugify(name: str) -> str:
     s = _SLUG_RE.sub("-", (name or "").strip().lower()).strip("-")
     return (s or "channel")[:64]
+
+
+def _poll_is_closed(poll: GroupPoll) -> bool:
+    """Closed manually, or past its end time."""
+    if poll.closed_at is not None:
+        return True
+    return poll.ends_at is not None and poll.ends_at <= _now()
 
 
 def _now() -> datetime:
@@ -695,6 +708,12 @@ class GroupsService:
         me = await self.repo.get_member(group.id, actor.id)
         self._assert_can_manage(group, actor, me)
 
+        if body.connection_id is not None:
+            return await self._attach_connection_mcp(group, body.connection_id, body.label, actor)
+
+        if body.transport == "http_jsonrpc" and not body.endpoint_url.strip():
+            raise HTTPException(400, "Choose an MCP connection from Integrations.")
+
         label = (body.label or "default").strip() or "default"
         for existing in await self.repo.list_mcp(group.id):
             if existing.label == label:
@@ -749,6 +768,55 @@ class GroupsService:
         await self.session.refresh(row)
         return self._mcp_out(row)
 
+    async def _attach_connection_mcp(
+        self,
+        group: HubGroup,
+        connection_id: uuid.UUID,
+        label_in: str,
+        actor: Actor,
+    ) -> GroupMcpConnectionOut:
+        conn = await self.trackers.get_usable_connection(connection_id, actor.id)
+        if conn is None or conn.provider_id != "mcp_server":
+            raise HTTPException(404, "MCP connection not found.")
+        label = (label_in or "default").strip() or "default"
+        if label == "default":
+            label = conn.label
+        for existing in await self.repo.list_mcp(group.id):
+            if existing.label == label:
+                raise HTTPException(400, f"MCP connection '{label}' already exists.")
+
+        row = GroupMcpConnection(
+            group_id=group.id,
+            idea_id=group.idea_id,
+            connection_id=conn.id,
+            label=label,
+            endpoint_url=str(decrypt_credentials(conn.credentials_encrypted).get("endpoint_url") or ""),
+            auth_header_name="Authorization",
+            credentials_encrypted="",
+            transport="http_jsonrpc",
+            tools_cache=[],
+            created_by=actor.id,
+        )
+        try:
+            endpoint, hname, hval = await McpOAuthService(self.session).auth_for(conn)
+            row.tools_cache = await mcp_client.list_tools(endpoint, header_name=hname, header_value=hval)
+            row.last_discovered_at = _now()
+        except Exception:  # noqa: BLE001 — attach anyway; tools can be discovered later
+            logger.info("MCP tool discovery failed on attach; leaving tools empty")
+        await self.repo.add_mcp(row)
+        await self.session.commit()
+        await self.session.refresh(row)
+        return self._mcp_out(row)
+
+    async def _mcp_endpoint_auth(self, row: GroupMcpConnection) -> tuple[str, str, str]:
+        """Endpoint and auth header for a group MCP row (refreshes OAuth tokens if needed)."""
+        if row.connection_id is None:
+            return row.endpoint_url, row.auth_header_name, self._mcp_auth_value(row)
+        conn = await self.trackers.get_connection(row.connection_id)
+        if conn is None:
+            raise HTTPException(409, "This MCP connection was removed. Re-attach it from Integrations.")
+        return await McpOAuthService(self.session).auth_for(conn)
+
     async def discover_mcp_tools(
         self, group_id: uuid.UUID, mcp_id: uuid.UUID, actor: Actor
     ) -> GroupMcpConnectionOut:
@@ -763,11 +831,11 @@ class GroupsService:
             row.tools_cache = list(mcp_client.STUB_TOOL_CATALOG)
             row.last_discovered_at = _now()
         else:
-            value = self._mcp_auth_value(row)
+            endpoint, hname, value = await self._mcp_endpoint_auth(row)
             try:
                 tools = await mcp_client.list_tools(
-                    row.endpoint_url,
-                    header_name=row.auth_header_name,
+                    endpoint,
+                    header_name=hname,
                     header_value=value,
                 )
             except Exception as exc:  # noqa: BLE001
@@ -822,13 +890,13 @@ class GroupsService:
                     },
                 )
 
-        value = self._mcp_auth_value(row)
+        endpoint, hname, value = await self._mcp_endpoint_auth(row)
         try:
             result = await mcp_client.call_tool(
-                row.endpoint_url,
+                endpoint,
                 body.name,
                 body.arguments or {},
-                header_name=row.auth_header_name,
+                header_name=hname,
                 header_value=value,
             )
             return McpToolCallOut(ok=True, result=result)
@@ -1081,4 +1149,141 @@ class GroupsService:
             created_by=row.created_by,
             created_at=row.created_at,
             updated_at=row.updated_at,
+        )
+
+    # ----- polls -----
+
+    async def list_polls(self, group_id: uuid.UUID, actor: Actor) -> list[PollOut]:
+        group = await self._require_group(group_id)
+        await self._assert_can_view(group, actor)
+        polls = list(await self.repo.list_polls(group.id))
+        votes = list(await self.repo.list_poll_votes([p.id for p in polls]))
+        return [
+            self._poll_out(p, [v for v in votes if v.poll_id == p.id], actor.id)
+            for p in polls
+        ]
+
+    async def create_poll(
+        self, group_id: uuid.UUID, body: PollCreateIn, actor: Actor
+    ) -> PollOut:
+        group = await self._require_group(group_id)
+        if not await self._can_post(group, actor):
+            raise HTTPException(403, "Only group members can create polls.")
+        ends_at = body.ends_at
+        if ends_at is not None and ends_at.tzinfo is None:
+            ends_at = ends_at.replace(tzinfo=timezone.utc)
+        if ends_at is not None and ends_at <= _now():
+            raise HTTPException(400, "The end time must be in the future.")
+        if body.channel_id is not None:
+            channel = await self._require_channel(body.channel_id, group.id)
+        else:
+            channels = list(await self.repo.list_channels(group.id))
+            if not channels:
+                raise HTTPException(400, "This group has no channel to post the poll in.")
+            channel = channels[0]
+        row = GroupPoll(
+            group_id=group.id,
+            question=body.question,
+            options=body.options,
+            created_by=actor.id,
+            multi_select=body.multi_select,
+            ends_at=body.ends_at,
+        )
+        await self.repo.add_poll(row)
+        # The poll appears in the channel as a chat message that points at the poll.
+        await self.repo.add_message(
+            GroupMessage(
+                channel_id=channel.id,
+                author_id=actor.id,
+                body=body.question,
+                message_type="poll",
+                meta={"poll_id": str(row.id)},
+            )
+        )
+        group.updated_at = _now()
+        await self.session.commit()
+        await self.session.refresh(row)
+        return self._poll_out(row, [], actor.id)
+
+    async def vote_poll(
+        self, group_id: uuid.UUID, poll_id: uuid.UUID, body: PollVoteIn, actor: Actor
+    ) -> PollOut:
+        group = await self._require_group(group_id)
+        if not await self._can_post(group, actor):
+            raise HTTPException(403, "Only group members can vote.")
+        poll = await self._require_poll(poll_id, group.id)
+        if _poll_is_closed(poll):
+            raise HTTPException(409, "This poll is closed.")
+        if body.option_index >= len(poll.options):
+            raise HTTPException(422, "Unknown poll option.")
+        mine = list(await self.repo.list_user_poll_votes(poll.id, actor.id))
+        same = next((v for v in mine if v.option_index == body.option_index), None)
+        if poll.multi_select:
+            # Multi-select: the option toggles on/off, other choices stay.
+            if same:
+                await self.repo.delete_poll_vote(same)
+            else:
+                await self.repo.add_poll_vote(
+                    GroupPollVote(
+                        poll_id=poll.id, user_id=actor.id, option_index=body.option_index
+                    )
+                )
+        else:
+            # Single-select: picking an option replaces the previous choice.
+            for v in mine:
+                if v is not same:
+                    await self.repo.delete_poll_vote(v)
+            if same is None:
+                await self.repo.add_poll_vote(
+                    GroupPollVote(
+                        poll_id=poll.id, user_id=actor.id, option_index=body.option_index
+                    )
+                )
+        await self.session.commit()
+        votes = list(await self.repo.list_poll_votes([poll.id]))
+        return self._poll_out(poll, votes, actor.id)
+
+    async def close_poll(
+        self, group_id: uuid.UUID, poll_id: uuid.UUID, actor: Actor
+    ) -> PollOut:
+        group = await self._require_group(group_id)
+        member = await self.repo.get_member(group.id, actor.id)
+        poll = await self._require_poll(poll_id, group.id)
+        if poll.created_by != actor.id and not self._is_manager(group, actor, member):
+            raise HTTPException(403, "Only the poll creator or group admins can close it.")
+        if poll.closed_at is None:
+            poll.closed_at = _now()
+        await self.session.commit()
+        votes = list(await self.repo.list_poll_votes([poll.id]))
+        return self._poll_out(poll, votes, actor.id)
+
+    async def _require_poll(self, poll_id: uuid.UUID, group_id: uuid.UUID) -> GroupPoll:
+        poll = await self.repo.get_poll(poll_id)
+        if not poll or poll.group_id != group_id:
+            raise HTTPException(404, "Poll not found.")
+        return poll
+
+    def _poll_out(
+        self, poll: GroupPoll, votes: list[GroupPollVote], me: uuid.UUID
+    ) -> PollOut:
+        counts = [0] * len(poll.options)
+        my_votes: list[int] = []
+        for v in votes:
+            if 0 <= v.option_index < len(counts):
+                counts[v.option_index] += 1
+            if v.user_id == me:
+                my_votes.append(v.option_index)
+        return PollOut(
+            id=poll.id,
+            group_id=poll.group_id,
+            question=poll.question,
+            options=list(poll.options),
+            created_by=poll.created_by,
+            closed_at=poll.closed_at or (poll.ends_at if _poll_is_closed(poll) else None),
+            ends_at=poll.ends_at,
+            created_at=poll.created_at,
+            multi_select=bool(poll.multi_select),
+            counts=counts,
+            total_votes=sum(counts),
+            my_votes=sorted(my_votes),
         )

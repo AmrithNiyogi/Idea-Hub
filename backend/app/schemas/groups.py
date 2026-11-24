@@ -196,7 +196,10 @@ class GroupMeetingCreateIn(BaseModel):
 
 class GroupMcpConnectionCreateIn(BaseModel):
     label: str = Field(default="default", max_length=120)
-    endpoint_url: str = Field(min_length=1, max_length=1024)
+    # Preferred: attach an MCP connection from Integrations (its endpoint and auth are copied).
+    connection_id: Optional[uuid.UUID] = None
+    # Manual endpoint entry (kept for stub/testing); required when connection_id is absent.
+    endpoint_url: str = Field(default="", max_length=1024)
     auth_header_name: str = Field(default="Authorization", max_length=120)
     auth_header_value: str = Field(default="", max_length=4000)
     transport: Literal["http_jsonrpc", "stub"] = "http_jsonrpc"
@@ -212,3 +215,47 @@ class McpToolCallOut(BaseModel):
     ok: bool
     result: Any = None
     error: str = ""
+
+
+class PollCreateIn(BaseModel):
+    question: str = Field(min_length=1, max_length=300)
+    options: list[str] = Field(min_length=2, max_length=10)
+    multi_select: bool = False
+    # Channel to post the poll message in; defaults to the group's first channel.
+    channel_id: Optional[uuid.UUID] = None
+    ends_at: Optional[datetime] = None
+
+    @field_validator("question")
+    @classmethod
+    def _strip_question(cls, v: str) -> str:
+        text = (v or "").strip()
+        if not text:
+            raise ValueError("Question is required.")
+        return text
+
+    @field_validator("options")
+    @classmethod
+    def _clean_options(cls, v: list[str]) -> list[str]:
+        cleaned = [o.strip() for o in v]
+        if any(not o or len(o) > 200 for o in cleaned):
+            raise ValueError("Each option needs 1-200 characters.")
+        return cleaned
+
+
+class PollVoteIn(BaseModel):
+    option_index: int = Field(ge=0, le=9)
+
+
+class PollOut(BaseModel):
+    id: uuid.UUID
+    group_id: uuid.UUID
+    question: str
+    options: list[str]
+    created_by: uuid.UUID
+    closed_at: Optional[datetime] = None
+    ends_at: Optional[datetime] = None
+    created_at: datetime
+    multi_select: bool = False
+    counts: list[int] = Field(default_factory=list)
+    total_votes: int = 0
+    my_votes: list[int] = Field(default_factory=list)

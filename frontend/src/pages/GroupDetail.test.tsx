@@ -11,6 +11,7 @@ vi.mock('../api/groups', () => ({
     messages: vi.fn(),
     meetings: vi.fn(),
     listMcp: vi.fn(),
+    polls: vi.fn(),
   },
 }));
 
@@ -60,6 +61,7 @@ describe('GroupDetail DM polling', () => {
     vi.mocked(groupsApi.get).mockResolvedValue(dmGroup as never);
     vi.mocked(groupsApi.meetings).mockResolvedValue([] as never);
     vi.mocked(groupsApi.listMcp).mockResolvedValue([] as never);
+    vi.mocked(groupsApi.polls).mockResolvedValue([] as never);
   });
 
   afterEach(() => {

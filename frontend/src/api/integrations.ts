@@ -34,6 +34,12 @@ export const integrationsApi = {
       body: JSON.stringify(body),
     }),
 
+  startMcpOAuth: (body: { endpoint_url: string; label?: string }) =>
+    apiFetch<{ authorize_url: string }>('/integrations/mcp/oauth/start', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
   disconnectMine: (connectionId: string) =>
     apiFetch<void>(`/integrations/connections/${connectionId}`, {
       method: 'DELETE',

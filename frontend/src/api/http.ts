@@ -144,11 +144,13 @@ export async function apiFetch<T>(
   );
 
   if (!res.ok) {
-    let body: unknown = null;
+    // Read the body once: a second read of a consumed Response throws.
+    const raw = await res.text();
+    let body: unknown = raw;
     try {
-      body = await res.json();
+      body = JSON.parse(raw);
     } catch {
-      body = await res.text();
+      /* non-JSON error body: keep the raw text */
     }
     let msg = res.statusText;
     if (typeof body === 'object' && body && 'detail' in body) {

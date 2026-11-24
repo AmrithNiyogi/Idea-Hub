@@ -121,9 +121,6 @@ export function Sidebar({
           <Icon name="sidebar" size={16} />
           <span className="btn__text">{collapsed ? 'Expand' : 'Collapse'}</span>
         </button>
-        <p className="sidebar__note">
-          Shape, review, build, recognise. Agents propose; people decide.
-        </p>
       </div>
     </aside>
   );

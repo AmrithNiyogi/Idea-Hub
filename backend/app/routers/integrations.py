@@ -9,15 +9,18 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Query
+from fastapi.responses import RedirectResponse
 
 from app.db.session_deps import DbSession
 from app.dependencies.phase23_auth import RequireActor
 from app.schemas.trackers import (
     EffectiveConnectionOut,
+    McpOAuthStartIn,
     IntegrationProviderOut,
     TrackerConnectionCreate,
     TrackerConnectionOut,
 )
+from app.services.mcp_oauth_service import McpOAuthService, frontend_return_url
 from app.services.tracker_service import TrackerService
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
@@ -135,3 +138,32 @@ async def disconnect_org(
     await TrackerService(session).disconnect(
         connection_id, actor, expect_scope="organization"
     )
+
+
+@router.post("/mcp/oauth/start", summary="Start MCP server sign-in (returns authorize URL)")
+async def mcp_oauth_start(
+    body: McpOAuthStartIn,
+    session: DbSession,
+    actor: RequireActor,
+) -> dict[str, str]:
+    url = await McpOAuthService(session).start(body.endpoint_url, body.label.strip() or "default", actor)
+    return {"authorize_url": url}
+
+
+@router.get(
+    "/mcp/oauth/callback",
+    summary="MCP sign-in callback (browser redirect)",
+    include_in_schema=True,
+)
+async def mcp_oauth_callback(
+    session: DbSession,
+    actor: RequireActor,
+    code: str = Query(default=""),
+    state: str = Query(default=""),
+    error: str = Query(default=""),
+) -> RedirectResponse:
+    if error or not code or not state:
+        target = frontend_return_url("error=sign_in_cancelled")
+    else:
+        target = await McpOAuthService(session).complete(code, state, actor)
+    return RedirectResponse(url=target, status_code=302)

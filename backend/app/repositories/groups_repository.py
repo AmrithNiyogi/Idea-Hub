@@ -16,6 +16,8 @@ from app.models.groups import (
     GroupMember,
     GroupMessage,
     GroupMcpConnection,
+    GroupPoll,
+    GroupPollVote,
     HubGroup,
 )
 
@@ -257,3 +259,48 @@ class GroupsRepository:
     async def delete_mcp(self, row: GroupMcpConnection) -> None:
         await self.session.delete(row)
         await self.session.flush()
+
+    async def list_polls(self, group_id: uuid.UUID) -> Sequence[GroupPoll]:
+        result = await self.session.execute(
+            select(GroupPoll)
+            .where(GroupPoll.group_id == group_id)
+            .order_by(GroupPoll.created_at.desc())
+        )
+        return result.scalars().all()
+
+    async def get_poll(self, poll_id: uuid.UUID) -> Optional[GroupPoll]:
+        return await self.session.get(GroupPoll, poll_id)
+
+    async def add_poll(self, row: GroupPoll) -> GroupPoll:
+        self.session.add(row)
+        await self.session.flush()
+        return row
+
+    async def list_poll_votes(
+        self, poll_ids: list[uuid.UUID]
+    ) -> Sequence[GroupPollVote]:
+        if not poll_ids:
+            return []
+        result = await self.session.execute(
+            select(GroupPollVote).where(GroupPollVote.poll_id.in_(poll_ids))
+        )
+        return result.scalars().all()
+
+    async def list_user_poll_votes(
+        self, poll_id: uuid.UUID, user_id: uuid.UUID
+    ) -> Sequence[GroupPollVote]:
+        result = await self.session.execute(
+            select(GroupPollVote).where(
+                GroupPollVote.poll_id == poll_id, GroupPollVote.user_id == user_id
+            )
+        )
+        return result.scalars().all()
+
+    async def delete_poll_vote(self, row: GroupPollVote) -> None:
+        await self.session.delete(row)
+        await self.session.flush()
+
+    async def add_poll_vote(self, row: GroupPollVote) -> GroupPollVote:
+        self.session.add(row)
+        await self.session.flush()
+        return row

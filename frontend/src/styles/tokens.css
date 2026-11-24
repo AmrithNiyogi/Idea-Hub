@@ -121,6 +121,9 @@ img,svg{max-width:100%}
 .nav-item__badge{margin-left:auto;font-family:var(--font-mono);font-size:11px;background:var(--brand-soft);color:var(--brand-ink);border-radius:var(--radius-pill);padding:1px 7px}
 .nav-item svg{flex:none}
 .sidebar__foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid var(--border)}
+/* Pin logo (top) and collapse/footer (bottom); only the nav list scrolls when it is long. */
+.sidebar > .brand,.sidebar > .sidebar__foot{flex-shrink:0}
+.sidebar > .nav{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden}
 .sidebar__note{font-size:11px;color:var(--text-3);padding:0 8px}
 .scrim{display:none}
 

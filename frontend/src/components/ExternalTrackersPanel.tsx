@@ -6,11 +6,15 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { trackersApi } from '../api/trackers';
+import {
+  listUsableConnections,
+  usableLabel,
+  type UsableConnection,
+} from '../api/usableConnections';
 import { IntegrationLogo } from './integrations/IntegrationLogo';
 import { Icon } from './Icons';
 import type { Idea } from '../types/idea';
 import type {
-  EffectiveConnection,
   IdeaTrackerLink,
   TrackerProvider,
 } from '../types/trackers';
@@ -27,7 +31,7 @@ type Props = {
 export function ExternalTrackersPanel({ idea, canManage }: Props) {
   const dialog = useDialog();
   const [providers, setProviders] = useState<TrackerProvider[]>([]);
-  const [effective, setEffective] = useState<EffectiveConnection[]>([]);
+  const [usableList, setUsableList] = useState<UsableConnection[]>([]);
   const [links, setLinks] = useState<IdeaTrackerLink[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -49,13 +53,8 @@ export function ExternalTrackersPanel({ idea, canManage }: Props) {
 
   const usable = useMemo(
     () =>
-      effective.filter(
-        (e) =>
-          e.source !== 'none' &&
-          e.connection != null &&
-          trackerIds.has(e.connection.provider_id),
-      ),
-    [effective, trackerIds],
+      usableList.map((u) => ({ source: u.source, connection: u.connection })),
+    [usableList],
   );
 
   const trackerLinks = useMemo(
@@ -66,19 +65,18 @@ export function ExternalTrackersPanel({ idea, canManage }: Props) {
   const reload = useCallback(async () => {
     setError(null);
     try {
-      const [p, e, l] = await Promise.all([
+      const [p, l] = await Promise.all([
         trackersApi.listProviders(),
-        trackersApi.listEffective().catch(() => [] as EffectiveConnection[]),
         trackersApi.listLinks(idea.id).catch(() => [] as IdeaTrackerLink[]),
       ]);
+      const usableAll = await listUsableConnections(new Set(p.map((x) => x.id)));
       setProviders(p);
-      setEffective(e);
+      setUsableList(usableAll);
       setLinks(l);
-      const first = e.find((x) => x.connection)?.connection?.id;
-      setConnectionId((prev) => {
-        if (prev && e.some((x) => x.connection?.id === prev)) return prev;
-        return first ?? '';
-      });
+      const first = usableAll[0]?.connection.id ?? '';
+      setConnectionId((prev) =>
+        prev && usableAll.some((x) => x.connection.id === prev) ? prev : first,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load trackers');
     }
@@ -269,11 +267,9 @@ export function ExternalTrackersPanel({ idea, canManage }: Props) {
                   const pname =
                     providerMap.get(c.provider_id)?.display_name ??
                     c.provider_id;
-                  const src =
-                    e.source === 'user' ? 'my connection' : 'org default';
                   return (
                     <option key={c.id} value={c.id}>
-                      {pname} — {c.display_label || c.label} ({src})
+                      {usableLabel(e, pname)}
                     </option>
                   );
                 })}
