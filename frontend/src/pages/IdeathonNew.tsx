@@ -2,6 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { EventKindChips } from '../components/ideathon/EventKindChips';
+import type { EventKind } from '../types/ideathon';
 import { ideathonsApi } from '../api/ideathons';
 import { usersApi } from '../api/users';
 import { useAuth } from '../auth/AuthProvider';
@@ -20,6 +22,7 @@ export function IdeathonNewPage() {
   const { user } = useAuth();
   const nav = useNavigate();
   const [sponsors, setSponsors] = useState<User[]>([]);
+  const [kind, setKind] = useState<EventKind>('ideathon');
   const [title, setTitle] = useState('');
   const [theme, setTheme] = useState('');
   const [challenges, setChallenges] = useState('');
@@ -101,6 +104,7 @@ export function IdeathonNewPage() {
         .filter(Boolean);
       const res = await ideathonsApi.create({
         title: title.trim(),
+        kind,
         theme: theme.trim(),
         challenges: ch,
         sponsor_id: sponsorId,
@@ -140,6 +144,7 @@ export function IdeathonNewPage() {
 
       <div className="ph5-two">
         <form className="card stack" onSubmit={onSubmit} noValidate>
+          <EventKindChips value={kind} onChange={setKind} disabled={busy} />
           <div className="field">
             <label htmlFor="ic-theme">Theme</label>
             <input
@@ -260,7 +265,7 @@ export function IdeathonNewPage() {
           </div>
           <div className="row" style={{ justifyContent: 'flex-end' }}>
             <button className="btn btn--primary" type="submit" disabled={busy}>
-              <Icon name="flag" size={16} /> Create ideathon
+              <Icon name="flag" size={16} /> Create {kind === 'hackathon' ? 'hackathon' : 'ideathon'}
             </button>
           </div>
         </form>
@@ -270,7 +275,7 @@ export function IdeathonNewPage() {
             agent="Ideathon Draft"
             kind="Agent"
             status={draftLive ? 'Live' : 'Not run'}
-            how="Suggests three or four names and challenge statements from your theme. Picking a name or the statements replaces what is in the form; nothing is created until you press Create ideathon. Edit freely."
+            how="Suggests three or four names and challenge statements from your theme. Picking a name or the statements replaces what is in the form; nothing is created until you press Create. Edit freely."
           >
             <p className="muted small">
               Type a theme, then press Suggest with agent. You get up to four

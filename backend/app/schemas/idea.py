@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 import re
@@ -137,6 +138,7 @@ class IdeaOut(BaseModel):
     team_name: str | None = None
     github_url: str | None = None
     demo_url: str | None = None
+    ai_review: dict[str, Any] | None = None
     owner_id: UUID | None = None
     status: str
     is_draft: bool = False

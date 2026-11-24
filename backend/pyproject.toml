@@ -21,6 +21,7 @@ dependencies = [
   "pyotp>=2.9.0",
   "qrcode[pil]>=8.0",
   "mutmut>=3.8.1",
+  "pypdf>=5.0.0",
 ]
 
 [project.optional-dependencies]

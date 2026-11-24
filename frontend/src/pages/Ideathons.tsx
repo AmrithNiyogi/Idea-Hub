@@ -9,6 +9,7 @@ import { Icon } from '../components/Icons';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Pill } from '../components/ui/Pill';
 import {
+  EVENT_KIND_LABEL,
   ORG_ROLES,
   fmtDate,
   ithPhaseIdx,
@@ -46,6 +47,9 @@ function IdeathonCard({
     <article className="card ith-card">
       <div className="row" style={{ gap: 6 }}>
         <StatusPill it={it} />
+        <Pill icon={it.kind === 'hackathon' ? 'layers' : 'spark'}>
+          {EVENT_KIND_LABEL[it.kind ?? 'ideathon']}
+        </Pill>
         <Pill icon="flag">{it.theme}</Pill>
       </div>
       <h3>

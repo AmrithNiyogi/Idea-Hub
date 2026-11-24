@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, BackgroundTasks, Query
 from sqlalchemy import inspect as sa_inspect
 
 from app.dependencies.auth import DbSession, OptionalUser, RequireUser
@@ -23,7 +23,7 @@ from app.schemas.idea import (
     ToggleResponse,
     WithdrawRequest,
 )
-from app.services import agent_context_service, idea_service
+from app.services import agent_context_service, idea_ai_review_service, idea_service
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
 
@@ -55,6 +55,10 @@ def _idea_out(idea: Any, counts: dict[str, Any] | None = None) -> IdeaOut:
         author_id=idea.author_id,
         anonymous=idea.anonymous,
         co_author_ids=co,
+        team_name=idea.team_name,
+        github_url=idea.github_url,
+        demo_url=idea.demo_url,
+        ai_review=idea.ai_review,
         owner_id=idea.owner_id,
         status=idea.status,
         is_draft=idea.is_draft,
@@ -178,12 +182,16 @@ async def save_draft(
 
 @router.post("/submit", response_model=IdeaOut, summary="Submit idea")
 async def submit(
-    body: IdeaSubmitRequest, session: DbSession, current: RequireUser
+    body: IdeaSubmitRequest,
+    session: DbSession,
+    current: RequireUser,
+    background: BackgroundTasks,
 ) -> IdeaOut:
-    """Validate and submit; auto-routes into under_review."""
+    """Validate and submit; auto-routes into under_review, then builds the AI review in the background."""
     idea = await idea_service.submit_idea(
         session, current, body.draft_id, body.data
     )
+    background.add_task(idea_ai_review_service.generate_and_store, idea.id)
     return _idea_out(idea)
 
 

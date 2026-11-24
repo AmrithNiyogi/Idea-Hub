@@ -7,7 +7,7 @@
  * - `extraNavItems` — sidebar entries
  */
 
-import type { ReactNode } from 'react';
+import { Fragment, createElement, type ReactNode } from 'react';
 import type { Role } from './types/auth';
 
 export interface ExtraNavItem {
@@ -31,11 +31,12 @@ const modules = import.meta.glob('./*_routes.tsx', {
 }) as Record<string, RouteModule>;
 
 export function collectExtraRoutes(): ReactNode[] {
-  return Object.values(modules).flatMap((m) => {
+  return Object.entries(modules).flatMap(([file, m]) => {
     const nodes: ReactNode[] = [];
-    if (m.phase23Routes) nodes.push(m.phase23Routes);
-    if (m.phase456Routes) nodes.push(m.phase456Routes);
-    if (m.extraRoutes) nodes.push(m.extraRoutes);
+    // Each module's fragment needs a key: App renders them as a list inside <Routes>.
+    if (m.phase23Routes) nodes.push(createElement(Fragment, { key: `${file}:phase23` }, m.phase23Routes));
+    if (m.phase456Routes) nodes.push(createElement(Fragment, { key: `${file}:phase456` }, m.phase456Routes));
+    if (m.extraRoutes) nodes.push(createElement(Fragment, { key: `${file}:extra` }, m.extraRoutes));
     return nodes;
   });
 }

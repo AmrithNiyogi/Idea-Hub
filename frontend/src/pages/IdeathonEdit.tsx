@@ -2,11 +2,12 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { EventKindChips } from '../components/ideathon/EventKindChips';
 import { ideathonsApi } from '../api/ideathons';
 import { useAuth } from '../auth/AuthProvider';
 import { Icon } from '../components/Icons';
 import { ORG_ROLES } from '../constants/ideathons';
-import type { IdeathonDetail, IdeathonUpdateBody } from '../types/ideathon';
+import type { EventKind, IdeathonDetail, IdeathonUpdateBody } from '../types/ideathon';
 
 function toDateInput(iso: string): string {
   const d = new Date(iso);
@@ -20,6 +21,7 @@ export function IdeathonEditPage() {
   const nav = useNavigate();
   const [detail, setDetail] = useState<IdeathonDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [kind, setKind] = useState<EventKind>('ideathon');
   const [title, setTitle] = useState('');
   const [theme, setTheme] = useState('');
   const [challenges, setChallenges] = useState('');
@@ -39,6 +41,7 @@ export function IdeathonEditPage() {
         if (!alive) return;
         setDetail(d);
         setTitle(d.title);
+        setKind(d.kind ?? 'ideathon');
         setTheme(d.theme);
         setChallenges(d.challenges.join('\n'));
         setStartAt(toDateInput(d.start_at));
@@ -113,6 +116,7 @@ export function IdeathonEditPage() {
     };
     // Backend only accepts theme and challenges while the ideathon is open.
     if (isOpen) {
+      body.kind = kind;
       body.theme = theme.trim();
       body.challenges = challenges
         .split('\n')
@@ -157,12 +161,13 @@ export function IdeathonEditPage() {
         <div className="notice notice--warn">
           <Icon name="lock" size={16} />
           <span>
-            Submissions are closed, so the theme and challenges are locked.
+            Submissions are closed, so the event type, theme and challenges are locked.
           </span>
         </div>
       ) : null}
 
       <form className="card stack" onSubmit={onSubmit} noValidate>
+        <EventKindChips value={kind} onChange={setKind} disabled={busy || !isOpen} />
         <div className="field">
           <label htmlFor="ie-title">Name</label>
           <input

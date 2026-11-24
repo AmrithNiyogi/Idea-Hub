@@ -6,7 +6,7 @@ Responsibilities:
 - Pass the agent's result back. A failed upstream call is 502.
 
 Side Effects:
-- Outbound call to the Kompass execute endpoint. Nothing is written to the database.
+- Outbound call to the Kompass execute endpoint. Only the scores endpoint writes (``entry_scores``).
 - Results are proposals. The organiser decides what to keep.
 """
 
@@ -19,11 +19,13 @@ from fastapi import APIRouter, HTTPException, Request
 from app.constants.ideathon_constants import ORG_ROLES
 from app.db.session_deps import DbSession
 from app.dependencies.phase23_auth import Actor, RequireActor
+from app.schemas.entry_scoring import EntryScoresOut
 from app.schemas.ideathon_agents import AgentRunOut, DraftRunIn, DraftRunOut, PitchRunIn, RankRunIn
 from app.services import aistudio_execute_client as studio
 from app.services import ideathon_cluster_service, ideathon_pitch_service, ideathon_rank_service
 from app.services import ideathon_draft_service
 from app.services.aistudio_execute_client import parse_structured_result
+from app.services.entry_scoring_service import EntryScoringService
 from app.services.ideathon_service import IdeathonService
 
 router = APIRouter(prefix="/ideathons", tags=["ideathons"])
@@ -96,8 +98,9 @@ async def run_rank(
     _require_configured(ideathon_rank_service.HUB_AGENT_KEY)
     token = _caller_access_token(request)
     await IdeathonService(session).get(ideathon_id)
+    context = await EntryScoringService(session).rank_context(ideathon_id)
     result = await ideathon_rank_service.propose_rank(
-        ideathon_id, body.weights, tool_auth_token=token
+        ideathon_id, body.weights, tool_auth_token=token, context=context
     )
     return _to_out(result)
 
@@ -152,3 +155,28 @@ async def run_draft(
     return DraftRunOut(
         success=True, names=ideathon_draft_service.usable_names(parsed), challenges=challenges
     )
+
+
+@router.post(
+    "/{ideathon_id}/scores/run",
+    response_model=EntryScoresOut,
+    summary="Score every entry against the rubric and save the scores (advice only)",
+)
+async def run_scores(
+    ideathon_id: uuid.UUID, request: Request, session: DbSession, actor: RequireActor
+) -> EntryScoresOut:
+    """Uses the Kompass Rank agent when configured, otherwise the local rubric scorer."""
+    token = (request.cookies.get("access_token") or "").strip() or None
+    return await EntryScoringService(session).run(ideathon_id, actor, token)
+
+
+@router.get(
+    "/{ideathon_id}/scores",
+    response_model=EntryScoresOut,
+    summary="Saved AI rubric scores, best first",
+)
+async def list_scores(
+    ideathon_id: uuid.UUID, session: DbSession, actor: RequireActor
+) -> EntryScoresOut:
+    """Latest saved scores for reviewers, leadership and admin."""
+    return await EntryScoringService(session).list_scores(ideathon_id, actor)

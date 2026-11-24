@@ -3,6 +3,7 @@
 import { apiFetch } from './client';
 import type {
   AgentRunResult,
+  EntryScores,
   Handoff,
   IdeathonCreateBody,
   IdeathonUpdateBody,
@@ -115,6 +116,13 @@ export const ideathonsApi = {
       method: 'POST',
       body: JSON.stringify({ idea_id: ideaId, statement, edited }),
     }),
+
+  /** Saved AI rubric scores for every entry (reviewer / leadership / admin). */
+  scores: (id: string) => apiFetch<EntryScores>(`/ideathons/${id}/scores`),
+
+  /** Score every entry now and save the result (leadership / admin). */
+  runScores: (id: string) =>
+    apiFetch<EntryScores>(`/ideathons/${id}/scores/run`, { method: 'POST' }),
 
   complete: (id: string) =>
     apiFetch<{ ok: boolean }>(`/ideathons/${id}/complete`, { method: 'POST' }),

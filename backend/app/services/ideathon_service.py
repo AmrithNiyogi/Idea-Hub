@@ -24,6 +24,7 @@ from app.constants.ideathon_constants import (
     ORG_ROLES,
     PANEL_SCORE_ROLES,
 )
+from app.constants.entry_scoring import HACKATHON_KIND
 from app.dependencies.phase23_auth import Actor
 from app.models.ideathon import (
     AudienceVote,
@@ -48,6 +49,7 @@ from app.schemas.ideathon import (
     ShortlistApprove,
     TallyRowOut,
 )
+from app.services.entry_document_service import document_count
 from app.services.recognition_service import RecognitionService
 from app.services.spine_bridge import SpineBridge
 
@@ -79,6 +81,7 @@ class IdeathonService:
                     id=it.id,
                     title=it.title,
                     theme=it.theme,
+                    kind=it.kind or "ideathon",
                     phase=it.phase,
                     start_at=it.start_at,
                     end_at=it.end_at,
@@ -99,6 +102,7 @@ class IdeathonService:
             id=it.id,
             title=it.title,
             theme=it.theme,
+            kind=it.kind or "ideathon",
             challenges=list(it.challenges or []),
             phase=it.phase,
             phase_log=list(it.phase_log or []),
@@ -124,6 +128,7 @@ class IdeathonService:
         it = Ideathon(
             title=body.title.strip(),
             theme=body.theme.strip(),
+            kind=body.kind,
             challenges=body.challenges,
             sponsor_id=body.sponsor_id,
             organiser_id=actor.id,
@@ -164,9 +169,11 @@ class IdeathonService:
         it = await self._require(ideathon_id)
         if it.completed_at is not None or it.phase == "complete":
             raise HTTPException(400, "Completed ideathons can't be edited.")
-        if it.phase != "open" and (body.theme is not None or body.challenges is not None):
+        if it.phase != "open" and (
+            body.theme is not None or body.challenges is not None or body.kind is not None
+        ):
             raise HTTPException(
-                400, "Theme and challenges can only change while the ideathon is open."
+                400, "Theme, type and challenges can only change while the ideathon is open."
             )
         start_at = body.start_at or it.start_at
         end_at = body.end_at or it.end_at
@@ -178,6 +185,8 @@ class IdeathonService:
             it.theme = body.theme.strip()
         if body.challenges is not None:
             it.challenges = body.challenges
+        if body.kind is not None:
+            it.kind = body.kind
         it.start_at = start_at
         it.end_at = end_at
         await self.session.commit()
@@ -227,6 +236,11 @@ class IdeathonService:
             raise HTTPException(400, "Only active ideas can join an ideathon.")
         if await self.repo.entry_for_idea(body.idea_id):
             raise HTTPException(409, "This idea is already part of an ideathon.")
+        if it.kind == HACKATHON_KIND:
+            if not idea.github_url:
+                raise HTTPException(400, "Hackathon entries need a GitHub repository link.")
+            if await document_count(self.session, body.idea_id) < 1:
+                raise HTTPException(400, "Hackathon entries need at least one documentation file.")
         self.session.add(
             IdeathonEntry(
                 ideathon_id=it.id,
