@@ -27,6 +27,9 @@ from app.schemas.groups import (
     GroupUpdateIn,
     McpToolCallIn,
     McpToolCallOut,
+    PollCreateIn,
+    PollOut,
+    PollVoteIn,
 )
 from app.services.groups_service import GroupsService
 
@@ -347,3 +350,41 @@ async def idea_group(
     idea_id: uuid.UUID, session: DbSession, actor: RequireActor
 ) -> Optional[GroupOut]:
     return await GroupsService(session).get_for_idea(idea_id, actor)
+
+
+@router.get("/groups/{group_id}/polls", response_model=list[PollOut])
+async def list_polls(
+    group_id: uuid.UUID, session: DbSession, actor: RequireActor
+) -> list[PollOut]:
+    return await GroupsService(session).list_polls(group_id, actor)
+
+
+@router.post("/groups/{group_id}/polls", response_model=PollOut, status_code=201)
+async def create_poll(
+    group_id: uuid.UUID,
+    body: PollCreateIn,
+    session: DbSession,
+    actor: RequireActor,
+) -> PollOut:
+    return await GroupsService(session).create_poll(group_id, body, actor)
+
+
+@router.post("/groups/{group_id}/polls/{poll_id}/vote", response_model=PollOut)
+async def vote_poll(
+    group_id: uuid.UUID,
+    poll_id: uuid.UUID,
+    body: PollVoteIn,
+    session: DbSession,
+    actor: RequireActor,
+) -> PollOut:
+    return await GroupsService(session).vote_poll(group_id, poll_id, body, actor)
+
+
+@router.post("/groups/{group_id}/polls/{poll_id}/close", response_model=PollOut)
+async def close_poll(
+    group_id: uuid.UUID,
+    poll_id: uuid.UUID,
+    session: DbSession,
+    actor: RequireActor,
+) -> PollOut:
+    return await GroupsService(session).close_poll(group_id, poll_id, actor)

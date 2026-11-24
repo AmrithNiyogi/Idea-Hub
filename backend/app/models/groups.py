@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Integer,
@@ -255,6 +256,69 @@ class GroupMeeting(Base):
     )
 
 
+class GroupPoll(Base):
+    """Poll posted in a group; options are fixed at creation, votes live in GroupPollVote."""
+
+    __tablename__ = "group_polls"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("hub_groups.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    question: Mapped[str] = mapped_column(String(300), nullable=False)
+    options: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    # False: one choice per voter (a new vote replaces the old). True: any number of options.
+    multi_select: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+    )
+    closed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
+    # Optional auto-close time; the poll reads as closed once this passes.
+    ends_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class GroupPollVote(Base):
+    """One row per (voter, option). Single-select polls keep at most one row per voter."""
+
+    __tablename__ = "group_poll_votes"
+    __table_args__ = (
+        UniqueConstraint(
+            "poll_id", "user_id", "option_index", name="uq_group_poll_vote_user_option"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    poll_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("group_polls.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    option_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class GroupMcpConnection(Base):
     """Custom MCP endpoint attached to a group (credentials encrypted)."""
 
@@ -276,6 +340,13 @@ class GroupMcpConnection(Base):
         UUID(as_uuid=True),
         ForeignKey("ideas.id", ondelete="SET NULL"),
         nullable=True,
+    )
+    # Set when attached from Integrations: credentials are read (and refreshed) from that connection.
+    connection_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("tracker_connections.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     label: Mapped[str] = mapped_column(String(120), nullable=False, default="default")
     endpoint_url: Mapped[str] = mapped_column(String(1024), nullable=False)

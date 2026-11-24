@@ -7,6 +7,7 @@ import type {
   GroupMessage,
   GroupMcpConnection,
   GroupMember,
+  GroupPoll,
   GroupSummary,
   McpToolCallResult,
 } from '../types/groups';
@@ -153,7 +154,10 @@ export const groupsApi = {
     groupId: string,
     body: {
       label?: string;
-      endpoint_url: string;
+      /** Attach an MCP connection from Integrations (preferred). */
+      connection_id?: string;
+      /** Manual endpoint (stub/testing only). */
+      endpoint_url?: string;
       auth_header_name?: string;
       auth_header_value?: string;
       transport?: 'http_jsonrpc' | 'stub';
@@ -179,6 +183,35 @@ export const groupsApi = {
     apiFetch<McpToolCallResult>(`/groups/${groupId}/mcp/${mcpId}/call`, {
       method: 'POST',
       body: JSON.stringify(body),
+    }),
+
+  polls: (groupId: string) =>
+    apiFetch<GroupPoll[]>(`/groups/${groupId}/polls`),
+
+  createPoll: (
+    groupId: string,
+    body: {
+      question: string;
+      options: string[];
+      multi_select?: boolean;
+      channel_id?: string;
+      ends_at?: string;
+    },
+  ) =>
+    apiFetch<GroupPoll>(`/groups/${groupId}/polls`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  votePoll: (groupId: string, pollId: string, optionIndex: number) =>
+    apiFetch<GroupPoll>(`/groups/${groupId}/polls/${pollId}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ option_index: optionIndex }),
+    }),
+
+  closePoll: (groupId: string, pollId: string) =>
+    apiFetch<GroupPoll>(`/groups/${groupId}/polls/${pollId}/close`, {
+      method: 'POST',
     }),
 
   deleteMcp: (groupId: string, mcpId: string) =>

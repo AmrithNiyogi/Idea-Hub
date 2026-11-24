@@ -63,6 +63,21 @@ export type GroupMeeting = {
   created_at: string;
 };
 
+export type GroupPoll = {
+  id: string;
+  group_id: string;
+  question: string;
+  options: string[];
+  created_by: string;
+  closed_at: string | null;
+  ends_at: string | null;
+  created_at: string;
+  multi_select: boolean;
+  counts: number[];
+  total_votes: number;
+  my_votes: number[];
+};
+
 export type GroupMcpConnection = {
   id: string;
   group_id: string;

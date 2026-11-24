@@ -1722,6 +1722,67 @@ button.grp-row:disabled {
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* Group chat shares the DM full-screen frame (.dm-screen): header on top, channels + chat fill the rest. */
+.grp-screen > .notice {
+  margin: 8px 20px 0;
+  flex-shrink: 0;
+}
+
+/* Right rail with group tools (Polls, Schedule, MCP). Sits after the drawer column. */
+.grp-screen .ts-shell {
+  grid-template-columns: 240px minmax(0, 1fr) 56px;
+}
+
+.grp-screen .ts-shell:has(.ts-drawer) {
+  grid-template-columns: 240px minmax(0, 1fr) 320px 56px;
+}
+
+.ts-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  border-left: 1px solid var(--border);
+  background: var(--surface-2, var(--canvas));
+}
+
+.ts-rail__btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.ts-rail__btn:hover:not(:disabled) {
+  background: var(--surface);
+}
+
+.ts-rail__btn.is-on {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+
+.ts-rail__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Collapsible group header: chevron points up when collapsed (click to expand). */
+.grp-head-toggle {
+  flex-shrink: 0;
+  padding: 4px;
+}
+
+.grp-head-toggle[aria-expanded='false'] svg {
+  transform: rotate(180deg);
+}
+
 /* DM conversation fills the screen below the top bar, like a messaging app:
    header at the top, messages scrolling in the middle, composer pinned at the bottom. */
 .view:has(.dm-screen) {
@@ -3037,4 +3098,428 @@ a.home-hero__title:hover { text-decoration: underline; }
   .login-card {
     padding: 28px 22px;
   }
+}
+
+/* Integrations: several personal accounts per provider */
+.integ-accounts {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.integ-account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.integ-account__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.integ-account__name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Group MCP drawer */
+.mcp-attach,
+.mcp-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+
+/* Group Schedule drawer: labelled fields, one column */
+.meet-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.meet-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meet-form .btn {
+  align-self: stretch;
+}
+
+/* Poll card in chat (Discord poll + WhatsApp bubble) */
+.ts-bubble--poll {
+  min-width: 260px;
+  max-width: min(360px, 88%);
+  padding: 8px 10px 6px;
+}
+
+/* The card is its own light surface so its text reads on mine/theirs bubbles. */
+.ts-bubble--poll .poll-card {
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.poll-card__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brand-ink);
+}
+
+.poll-card__question {
+  margin: 2px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.poll-card__options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.poll-card__opt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.poll-card__opt:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.poll-card__opt:not(:disabled):hover {
+  border-color: var(--brand);
+}
+
+.poll-card__bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--brand-soft);
+  transition: width 0.3s ease;
+}
+
+.poll-card__mark,
+.poll-card__label,
+.poll-card__count {
+  position: relative;
+}
+
+.poll-card__mark {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--text-3);
+  border-radius: 50%;
+}
+
+.poll-card__mark.is-check {
+  border-radius: 4px;
+}
+
+.poll-card__mark.is-on {
+  border-color: var(--brand);
+  background: var(--brand);
+  box-shadow: inset 0 0 0 3px var(--surface);
+}
+
+.poll-card__label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.poll-card__count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.poll-card__opt.is-picked {
+  border-color: var(--brand);
+}
+
+.poll-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.poll-card__close {
+  border: 0;
+  background: none;
+  color: var(--brand-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+/* Composer: poll button */
+.ts-composer {
+  position: relative;
+}
+
+.ts-poll-btn {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+}
+
+/* New poll sheet (WhatsApp-style) */
+.poll-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--overlay, rgba(0, 0, 0, 0.35));
+}
+
+.poll-sheet {
+  width: min(440px, 100%);
+  max-height: min(90vh, 720px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+
+.poll-sheet__head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.poll-sheet__head h2 {
+  margin: 0;
+  font-size: 16px;
+  text-align: center;
+}
+
+.poll-sheet__link {
+  justify-self: start;
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.poll-sheet__link--strong {
+  justify-self: end;
+  color: var(--brand-ink);
+  font-weight: 600;
+}
+
+.poll-sheet__link:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.poll-sheet__body {
+  overflow: auto;
+  padding: 12px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.poll-sheet__label {
+  margin: 10px 4px 2px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.poll-sheet__card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.poll-sheet__question,
+.poll-sheet__input,
+.poll-sheet__datetime {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  padding: 12px 14px;
+  outline: none;
+}
+
+.poll-sheet__question {
+  resize: none;
+}
+
+.poll-sheet__row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.poll-sheet__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.poll-sheet__remove {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--danger-soft, #fde2e2);
+  color: var(--danger, #b42318);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.poll-sheet__add {
+  border: 0;
+  background: none;
+  color: var(--brand-ink);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.poll-sheet__add:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.poll-sheet__setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  border-bottom: 1px solid var(--border);
+}
+
+.poll-sheet__setting:last-child {
+  border-bottom: 0;
+}
+
+.poll-sheet__setting--sub {
+  padding-top: 0;
+  border-bottom: 0;
+}
+
+.poll-sheet__datetime {
+  padding: 8px 0;
+  color: var(--brand-ink);
+}
+
+.poll-sheet__hint {
+  margin: 0;
+  padding: 0 14px 12px;
+  font-size: 12px;
+  color: var(--danger, #b42318);
+}
+
+/* Native checkbox styled as an iOS-style switch */
+.poll-switch {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--border-strong, #c8c8cc);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.poll-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.poll-switch:checked {
+  background: var(--brand);
+}
+
+.poll-switch:checked::after {
+  transform: translateX(18px);
+}
+
+.poll-switch:disabled {
+  opacity: 0.5;
+  cursor: default;
 }

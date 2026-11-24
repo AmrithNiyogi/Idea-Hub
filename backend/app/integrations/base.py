@@ -12,7 +12,7 @@ from typing import Any, Literal
 
 from app.trackers.base import ConnectField
 
-IntegrationCategory = Literal["tracker", "docs", "chat", "sheets"]
+IntegrationCategory = Literal["tracker", "docs", "chat", "sheets", "mcp"]
 IntegrationStatus = Literal["available", "coming_soon"]
 
 

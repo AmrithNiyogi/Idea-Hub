@@ -24,7 +24,11 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { groupsApi } from '../api/groups';
+import { integrationsApi } from '../api/integrations';
 import { useAuth } from '../auth/AuthProvider';
+import { renderInline } from '../components/ChatReply';
+import { PollBubble } from '../components/chat/PollBubble';
+import { PollCreateSheet, type PollDraft } from '../components/chat/PollCreateSheet';
 import { GroupGlyph } from '../components/GroupGlyph';
 import { Avatar, Icon } from '../components/Icons';
 import { UserSearchPicker } from '../components/UserSearchPicker';
@@ -36,7 +40,9 @@ import type {
   GroupMeeting,
   GroupMessage,
   GroupMcpConnection,
+  GroupPoll,
 } from '../types/groups';
+import type { TrackerConnection } from '../types/trackers';
 import { useDialog } from '../components/DialogProvider';
 
 type SidePanel = 'none' | 'meeting' | 'mcp' | 'members';
@@ -63,6 +69,50 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [side, setSide] = useState<SidePanel>('none');
+  const [headOpen, setHeadOpen] = useState(true);
+  const [polls, setPolls] = useState<GroupPoll[]>([]);
+  const [pollOpen, setPollOpen] = useState(false);
+  const pollById = useMemo(() => new Map(polls.map((p) => [p.id, p])), [polls]);
+
+
+  async function onCreatePoll(draft: PollDraft) {
+    if (!channelId) return;
+    setBusy(true);
+    try {
+      const p = await groupsApi.createPoll(id, {
+        question: draft.question,
+        options: draft.options,
+        multi_select: draft.multi,
+        channel_id: channelId,
+        ends_at: draft.endsAt ?? undefined,
+      });
+      setPolls((prev) => [p, ...prev]);
+      setPollOpen(false);
+      await reloadMessages(channelId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not create poll');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onVote(pollId: string, optionIndex: number) {
+    try {
+      const p = await groupsApi.votePoll(id, pollId, optionIndex);
+      setPolls((prev) => prev.map((x) => (x.id === p.id ? p : x)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not vote');
+    }
+  }
+
+  async function onClosePoll(pollId: string) {
+    try {
+      const p = await groupsApi.closePoll(id, pollId);
+      setPolls((prev) => prev.map((x) => (x.id === p.id ? p : x)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not close poll');
+    }
+  }
   const scroller = useRef<HTMLDivElement>(null);
 
   const [meetTitle, setMeetTitle] = useState('');
@@ -71,11 +121,22 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   const [meetNotes, setMeetNotes] = useState('');
   const [meetTeams, setMeetTeams] = useState(true);
 
-  const [mcpLabel, setMcpLabel] = useState('default');
-  const [mcpUrl, setMcpUrl] = useState('');
-  const [mcpAuthName, setMcpAuthName] = useState('Authorization');
-  const [mcpAuthValue, setMcpAuthValue] = useState('');
-  const [mcpStub, setMcpStub] = useState(true);
+  const [mcpMine, setMcpMine] = useState<TrackerConnection[]>([]);
+  const [mcpPick, setMcpPick] = useState('');
+
+  useEffect(() => {
+    if (side !== 'mcp') return;
+    let cancelled = false;
+    integrationsApi.listMine().then((rows) => {
+      const mcp = rows.filter((c) => c.provider_id === 'mcp_server');
+      if (!cancelled) setMcpMine(mcp);
+    }).catch(() => {
+      if (!cancelled) setMcpMine([]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [side]);
   const [newChannelName, setNewChannelName] = useState('');
 
   const memberMap = useMemo(() => {
@@ -109,12 +170,14 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   );
 
   const reloadExtras = useCallback(async () => {
-    const [m, mcp] = await Promise.all([
+    const [m, mcp, pl] = await Promise.all([
       groupsApi.meetings(id),
       groupsApi.listMcp(id),
+      groupsApi.polls(id),
     ]);
     setMeetings(m);
     setMcpList(mcp);
+    setPolls(pl);
   }, [id]);
 
   useEffect(() => {
@@ -170,6 +233,7 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
       reloadMessages(channelId).catch((err: unknown) => {
         console.warn('Chat refresh failed', err);
       });
+      groupsApi.polls(id).then(setPolls).catch(() => undefined);
     };
     const t = window.setInterval(refresh, 8000);
     // Browsers throttle timers in background tabs, so catch up as soon as the tab is back.
@@ -180,7 +244,7 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
       document.removeEventListener('visibilitychange', refresh);
       window.removeEventListener('focus', refresh);
     };
-  }, [channelId, reloadMessages]);
+  }, [id, channelId, reloadMessages]);
 
   useEffect(() => {
     const el = scroller.current;
@@ -253,26 +317,18 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
     }
   }
 
-  async function onConnectMcp(e: FormEvent) {
+  async function onAttachMcp(e: FormEvent) {
     e.preventDefault();
-    if (!group?.can_manage) return;
+    const conn = mcpMine.find((c) => c.id === mcpPick);
+    if (!group?.can_manage || !conn) return;
     setBusy(true);
     setError(null);
     try {
-      await groupsApi.connectMcp(id, {
-        label: mcpLabel.trim() || 'default',
-        endpoint_url: mcpStub ? 'stub://local' : mcpUrl.trim(),
-        auth_header_name: mcpAuthName.trim() || 'Authorization',
-        auth_header_value: mcpAuthValue,
-        transport: mcpStub ? 'stub' : 'http_jsonrpc',
-        seed_stub_tools: mcpStub,
-      });
-      setMcpUrl('');
-      setMcpAuthValue('');
-      setSide('none');
+      await groupsApi.connectMcp(id, { connection_id: conn.id, label: conn.label });
+      setMcpPick('');
       await reloadExtras();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect MCP');
+      setError(err instanceof Error ? err.message : 'Failed to attach MCP');
     } finally {
       setBusy(false);
     }
@@ -466,6 +522,23 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
         ) : (
           messages.map((msg) => {
             const mine = msg.author_id === me?.id;
+            if (msg.message_type === 'poll') {
+              const poll = pollById.get(String(msg.meta?.poll_id ?? ''));
+              return (
+                <PollBubble
+                  key={msg.id}
+                  poll={poll}
+                  senderName={mine ? 'You' : nameOf(msg.author_id)}
+                  mine={mine}
+                  createdAt={msg.created_at}
+                  canVote={group.can_post}
+                  canClose={!!poll && (poll.created_by === me?.id || !!group.can_manage)}
+                  busy={busy}
+                  onVote={(i) => poll && void onVote(poll.id, i)}
+                  onClose={() => poll && void onClosePoll(poll.id)}
+                />
+              );
+            }
             const system =
               msg.message_type === 'system' ||
               msg.message_type === 'meeting';
@@ -481,7 +554,9 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
                     {nameOf(msg.author_id)}
                   </div>
                 ) : null}
-                <div className="ts-bubble__text">{msg.body}</div>
+                <div className="ts-bubble__text">
+                  {system ? renderInline(msg.body) : msg.body}
+                </div>
                 <div className="ts-bubble__time">
                   {relTime(msg.created_at)}
                 </div>
@@ -491,6 +566,12 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
         )}
       </div>
 
+      <PollCreateSheet
+        open={pollOpen}
+        busy={busy}
+        onClose={() => setPollOpen(false)}
+        onSubmit={onCreatePoll}
+      />
       <form className="ts-composer" onSubmit={onSend}>
         <div className="ts-emoji">
           <button
@@ -526,6 +607,17 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
             </div>
           ) : null}
         </div>
+        <button
+          type="button"
+          className="btn ts-poll-btn"
+          aria-label="Create poll"
+          aria-expanded={pollOpen}
+          title="Create poll"
+          disabled={!group.can_post || busy || !channelId}
+          onClick={() => setPollOpen((o) => !o)}
+        >
+          <Icon name="list" size={16} />
+        </button>
         <input
           className="input"
           placeholder={
@@ -593,8 +685,8 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
   }
 
   return (
-    <div className="grp-page">
-      <div className="row grp-head" style={{ justifyContent: 'space-between', gap: 12 }}>
+    <div className="dm-screen grp-screen">
+      <div className="row dm-screen__head" style={{ justifyContent: 'space-between', gap: 12 }}>
         <div className="row" style={{ gap: 12, minWidth: 0 }}>
           <GroupGlyph name={group.name} avatarUrl={group.avatar_url} size={48} />
           <div style={{ minWidth: 0 }}>
@@ -603,12 +695,12 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
               <span aria-hidden>/</span>
               <span aria-current="page">{group.name}</span>
             </div>
-            {group.description ? (
+            {headOpen && group.description ? (
               <p className="muted small" style={{ margin: '4px 0 0' }}>
                 {group.description}
               </p>
             ) : null}
-            {group.can_manage ? (
+            {headOpen && group.can_manage ? (
               <div className="row" style={{ gap: 6, marginTop: 6 }}>
                 <input
                   ref={avatarInput}
@@ -640,6 +732,8 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
             ) : null}
           </div>
         </div>
+        <div className="row" style={{ gap: 6, marginLeft: 'auto', alignItems: 'center' }}>
+        {headOpen ? (
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
           {group.idea_id ? (
             <Link className="btn btn--sm btn--ghost" to={`/ideas/${group.idea_id}`}>
@@ -677,6 +771,17 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
               Leave
             </button>
           )}
+        </div>
+        ) : null}
+        <button
+          type="button"
+          className="btn btn--sm btn--ghost grp-head-toggle"
+          aria-expanded={headOpen}
+          aria-label={headOpen ? 'Collapse header' : 'Expand header'}
+          onClick={() => setHeadOpen((open) => !open)}
+        >
+          <Icon name="chevronD" size={16} />
+        </button>
         </div>
       </div>
 
@@ -724,23 +829,6 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
               </button>
             </form>
           ) : null}
-          <div className="ts-side-actions">
-            <button
-              type="button"
-              className="btn btn--sm"
-              onClick={() => setSide(side === 'meeting' ? 'none' : 'meeting')}
-              disabled={!group.can_post}
-            >
-              <Icon name="calendar" size={14} /> Schedule
-            </button>
-            <button
-              type="button"
-              className="btn btn--sm btn--ghost"
-              onClick={() => setSide(side === 'mcp' ? 'none' : 'mcp')}
-            >
-              <Icon name="spark" size={14} /> MCP
-            </button>
-          </div>
           {meetings.length ? (
             <div className="ts-meetings">
               <h3 className="ts-meetings__title">Upcoming</h3>
@@ -777,44 +865,57 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
               Announces in this channel. Optionally posts a MessageCard to your
               Teams webhook.
             </p>
-            <form className="stack" onSubmit={onSchedule} style={{ gap: 8 }}>
-              <input
-                className="input"
-                placeholder="Title"
-                value={meetTitle}
-                onChange={(e) => setMeetTitle(e.target.value)}
-                required
-              />
-              <input
-                className="input"
-                type="datetime-local"
-                value={meetWhen}
-                onChange={(e) => setMeetWhen(e.target.value)}
-                required
-              />
-              <input
-                className="input"
-                placeholder="Join URL (optional)"
-                value={meetJoin}
-                onChange={(e) => setMeetJoin(e.target.value)}
-              />
-              <textarea
-                className="input"
-                rows={3}
-                placeholder="Notes"
-                value={meetNotes}
-                onChange={(e) => setMeetNotes(e.target.value)}
-              />
+            <form className="meet-form" onSubmit={onSchedule}>
+              <label className="field">
+                <span className="label">Title</span>
+                <input
+                  className="input"
+                  placeholder="e.g. Sprint review"
+                  value={meetTitle}
+                  onChange={(e) => setMeetTitle(e.target.value)}
+                  required
+                />
+              </label>
+              <label className="field">
+                <span className="label">Starts</span>
+                <input
+                  className="input"
+                  type="datetime-local"
+                  value={meetWhen}
+                  onChange={(e) => setMeetWhen(e.target.value)}
+                  required
+                />
+              </label>
+              <label className="field">
+                <span className="label">Join link (optional)</span>
+                <input
+                  className="input"
+                  type="url"
+                  placeholder="https://"
+                  value={meetJoin}
+                  onChange={(e) => setMeetJoin(e.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span className="label">Notes (optional)</span>
+                <textarea
+                  className="input"
+                  rows={3}
+                  placeholder="Agenda, prep, anything the group should know"
+                  value={meetNotes}
+                  onChange={(e) => setMeetNotes(e.target.value)}
+                />
+              </label>
               <label className="ts-check">
                 <input
                   type="checkbox"
                   checked={meetTeams}
                   onChange={(e) => setMeetTeams(e.target.checked)}
                 />
-                <span>Notify Microsoft Teams</span>
+                <span>Also notify Microsoft Teams</span>
               </label>
-              <button type="submit" className="btn" disabled={busy}>
-                Schedule
+              <button type="submit" className="btn btn--primary" disabled={busy}>
+                Schedule meeting
               </button>
             </form>
           </aside>
@@ -823,7 +924,7 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
         {side === 'mcp' ? (
           <aside className="ts-drawer card" aria-label="MCP">
             <div className="ts-drawer__head">
-              <h3>MCP</h3>
+              <h3>MCP servers</h3>
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
@@ -832,70 +933,76 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
                 <Icon name="x" size={14} />
               </button>
             </div>
-            <div className="ts-mcp-list">
-              {mcpList.map((m) => (
-                <div key={m.id} className="ts-mcp-row">
-                  <div>
-                    <div className="strong">{m.label}</div>
-                    <div className="muted small">{m.transport}</div>
+            <p className="muted small" style={{ marginTop: 0 }}>
+              Attached servers give this group&apos;s channels access to their tools.
+            </p>
+
+            {mcpList.length === 0 ? (
+              <p className="muted small">No MCP servers attached yet.</p>
+            ) : (
+              <div className="ts-mcp-list">
+                {mcpList.map((m) => (
+                  <div key={m.id} className="ts-mcp-row">
+                    <div style={{ minWidth: 0 }}>
+                      <div className="strong truncate">{m.label}</div>
+                      <div className="muted small">
+                        {m.tools_cache.length} tool{m.tools_cache.length === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                    {group.can_manage ? (
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        disabled={busy}
+                        onClick={() =>
+                          void groupsApi.deleteMcp(id, m.id).then(reloadExtras)
+                        }
+                      >
+                        Remove
+                      </button>
+                    ) : null}
                   </div>
-                  {group.can_manage ? (
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      onClick={() =>
-                        void groupsApi.deleteMcp(id, m.id).then(reloadExtras)
-                      }
-                    >
-                      Remove
-                    </button>
-                  ) : null}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
+
             {group.can_manage ? (
-              <form className="stack" onSubmit={onConnectMcp} style={{ gap: 8, marginTop: 12 }}>
-                <input
-                  className="input"
-                  placeholder="Label"
-                  value={mcpLabel}
-                  onChange={(e) => setMcpLabel(e.target.value)}
-                />
-                <label className="ts-check">
-                  <input
-                    type="checkbox"
-                    checked={mcpStub}
-                    onChange={(e) => setMcpStub(e.target.checked)}
-                  />
-                  <span>Use stub transport</span>
-                </label>
-                {!mcpStub ? (
-                  <>
-                    <input
+              mcpMine.length === 0 ? (
+                <div className="mcp-empty">
+                  <p className="muted small" style={{ margin: 0 }}>
+                    You have no MCP servers yet. Add one under Integrations, then
+                    attach it here.
+                  </p>
+                  <Link className="btn btn--sm" to="/integrations/mcp_server">
+                    Open Integrations
+                  </Link>
+                </div>
+              ) : (
+                <form className="mcp-attach" onSubmit={onAttachMcp}>
+                  <label className="field">
+                    <span className="label">Server</span>
+                    <select
                       className="input"
-                      placeholder="Endpoint URL"
-                      value={mcpUrl}
-                      onChange={(e) => setMcpUrl(e.target.value)}
+                      value={mcpPick}
+                      onChange={(e) => setMcpPick(e.target.value)}
                       required
-                    />
-                    <input
-                      className="input"
-                      placeholder="Auth header name"
-                      value={mcpAuthName}
-                      onChange={(e) => setMcpAuthName(e.target.value)}
-                    />
-                    <input
-                      className="input"
-                      placeholder="Auth header value"
-                      value={mcpAuthValue}
-                      onChange={(e) => setMcpAuthValue(e.target.value)}
-                    />
-                  </>
-                ) : null}
-                <button type="submit" className="btn" disabled={busy}>
-                  Attach MCP
-                </button>
-              </form>
+                    >
+                      <option value="" disabled>
+                        Choose a connection
+                      </option>
+                      {mcpMine.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.label}
+                          {c.display_label ? ` — ${c.display_label}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button type="submit" className="btn" disabled={busy || !mcpPick}>
+                    Attach to group
+                  </button>
+                </form>
+              )
             ) : null}
           </aside>
         ) : null}
@@ -1023,6 +1130,30 @@ export function GroupDetailPage({ dmRoute = false }: { dmRoute?: boolean }) {
             ) : null}
           </aside>
         ) : null}
+
+        <aside className="ts-rail" aria-label="Group tools">
+          <button
+            type="button"
+            className={`ts-rail__btn${side === 'meeting' ? ' is-on' : ''}`}
+            aria-label="Schedule"
+            title="Schedule"
+            aria-pressed={side === 'meeting'}
+            disabled={!group.can_post}
+            onClick={() => setSide(side === 'meeting' ? 'none' : 'meeting')}
+          >
+            <Icon name="calendar" size={16} />
+          </button>
+          <button
+            type="button"
+            className={`ts-rail__btn${side === 'mcp' ? ' is-on' : ''}`}
+            aria-label="MCP"
+            title="MCP"
+            aria-pressed={side === 'mcp'}
+            onClick={() => setSide(side === 'mcp' ? 'none' : 'mcp')}
+          >
+            <Icon name="spark" size={16} />
+          </button>
+        </aside>
       </div>
     </div>
   );

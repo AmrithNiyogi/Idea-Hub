@@ -222,3 +222,8 @@ class IdeaTrackerRemoteUpdate(BaseModel):
                 "and/or append_content."
             )
         return self
+
+
+class McpOAuthStartIn(BaseModel):
+    endpoint_url: str = Field(min_length=1, max_length=1024)
+    label: str = Field(default="default", max_length=120)

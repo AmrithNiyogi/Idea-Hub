@@ -18,6 +18,14 @@ import type {
 } from '../types/trackers';
 import { useDialog } from '../components/DialogProvider';
 
+const MCP_SIGN_IN_ERRORS: Record<string, string> = {
+  sign_in_expired: 'The sign-in link expired. Start again.',
+  sign_in_wrong_user: 'That sign-in was started by a different account.',
+  sign_in_cancelled: 'Sign-in was cancelled.',
+  token_exchange_failed: 'The sign-in server did not accept the code. Try again.',
+  server_unreachable: 'Signed in, but the MCP server could not be reached.',
+};
+
 export function IntegrationDetailPage() {
   const dialog = useDialog();
   const { providerId = '' } = useParams<{ providerId: string }>();
@@ -40,7 +48,10 @@ export function IntegrationDetailPage() {
     focusOrg && isAdmin ? 'organization' : 'user',
   );
   const [credValues, setCredValues] = useState<Record<string, string>>({});
+  const [accountLabel, setAccountLabel] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [mine, setMine] = useState<TrackerConnection[]>([]);
+  const [mcpEndpoint, setMcpEndpoint] = useState('');
 
   const comingSoon =
     !!provider && (provider.status === 'coming_soon' || !provider.connectable);
@@ -50,8 +61,11 @@ export function IntegrationDetailPage() {
     return connectionStatusLabel(provider, effective ?? undefined);
   }, [provider, effective]);
 
-  const personal =
-    effective?.source === 'user' ? effective.connection : null;
+  // Several personal accounts per provider (e.g. two Notion workspaces), each named by label.
+  const personalList = useMemo(
+    () => mine.filter((c) => c.provider_id === providerId),
+    [mine, providerId],
+  );
 
   const reload = useCallback(async () => {
     if (!providerId) return;
@@ -67,6 +81,7 @@ export function IntegrationDetailPage() {
       const eff =
         effList.find((x) => x.provider_id === providerId) ?? null;
       setEffective(eff);
+      setMine(await integrationsApi.listMine());
 
       if (isAdmin) {
         const org = await integrationsApi.listOrg().catch(() => []);
@@ -87,12 +102,41 @@ export function IntegrationDetailPage() {
 
   useEffect(() => {
     setCredValues({});
+    setAccountLabel('');
     setShowForm(false);
   }, [providerId, scope]);
 
   useEffect(() => {
     if (focusOrg && isAdmin) setScope('organization');
   }, [focusOrg, isAdmin]);
+
+  // Result of the MCP sign-in redirect (?connected=1 or ?error=...).
+  useEffect(() => {
+    if (searchParams.get('connected')) {
+      setMsg('MCP server connected.');
+    }
+    const code = searchParams.get('error');
+    if (code) {
+      setError(MCP_SIGN_IN_ERRORS[code] ?? 'Sign-in failed. Try again.');
+    }
+  }, [searchParams]);
+
+  async function onMcpSignIn(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setMsg(null);
+    try {
+      const res = await integrationsApi.startMcpOAuth({
+        endpoint_url: mcpEndpoint.trim(),
+        label: accountLabel.trim() || 'default',
+      });
+      window.location.assign(res.authorize_url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start sign-in');
+      setBusy(false);
+    }
+  }
 
   async function onConnect(e: FormEvent) {
     e.preventDefault();
@@ -103,6 +147,7 @@ export function IntegrationDetailPage() {
     try {
       const body = {
         provider_id: provider.id,
+        label: accountLabel.trim() || 'default',
         credentials: credValues,
       };
       if (scope === 'organization') {
@@ -114,6 +159,7 @@ export function IntegrationDetailPage() {
       }
       setShowForm(false);
       setCredValues({});
+      setAccountLabel('');
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connect failed');
@@ -122,11 +168,11 @@ export function IntegrationDetailPage() {
     }
   }
 
-  async function onDisconnectPersonal() {
-    if (!provider || !personal) return;
+  async function onDisconnectPersonal(conn: TrackerConnection) {
+    if (!provider) return;
     if (
       !(await dialog.confirm({
-        title: `Disconnect your ${provider.display_name} connection?`,
+        title: `Disconnect ${conn.label} (${provider.display_name})?`,
         confirmLabel: 'Disconnect',
         danger: true,
       }))
@@ -137,7 +183,7 @@ export function IntegrationDetailPage() {
     setError(null);
     setMsg(null);
     try {
-      await integrationsApi.disconnectMine(personal.id);
+      await integrationsApi.disconnectMine(conn.id);
       setMsg(`${provider.display_name} disconnected.`);
       await reload();
     } catch (err) {
@@ -254,57 +300,109 @@ export function IntegrationDetailPage() {
         <>
           <section className="card" id="personal">
             <div className="card__head">
-              <h2>Your connection</h2>
+              <h2>Your accounts</h2>
               <span className="muted small">Personal</span>
             </div>
-            {personal ? (
-              <>
-                <p className="muted small" style={{ marginTop: 0 }}>
-                  {personal.display_label || 'Connected with your credentials.'}
-                </p>
-                <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    className="btn btn--sm"
-                    disabled={busy}
-                    onClick={() => {
-                      setScope('user');
-                      setShowForm(true);
-                    }}
-                  >
-                    Update
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--sm"
-                    disabled={busy}
-                    onClick={() => void onDisconnectPersonal()}
-                  >
-                    Disconnect
+            {personalList.length ? (
+              <ul className="integ-accounts">
+                {personalList.map((c) => (
+                  <li key={c.id} className="integ-account">
+                    <div className="integ-account__main">
+                      <span className="integ-account__name">{c.label}</span>
+                      <span className="muted small">
+                        {c.display_label || 'Connected'}
+                      </span>
+                    </div>
+                    <div className="row" style={{ gap: 6 }}>
+                      <button
+                        type="button"
+                        className="btn btn--sm"
+                        disabled={busy}
+                        onClick={() => {
+                          setScope('user');
+                          setAccountLabel(c.label);
+                          setShowForm(true);
+                        }}
+                      >
+                        Update
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--sm btn--ghost"
+                        disabled={busy}
+                        onClick={() => void onDisconnectPersonal(c)}
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted small" style={{ marginTop: 0 }}>
+                {effective?.source === 'organization' && effective.connection
+                  ? `Using organization default (${effective.connection.display_label}). Connect your own account to override.`
+                  : 'Not connected yet. Delivery can still use an org default if one is set.'}
+              </p>
+            )}
+            <button
+              type="button"
+              className="btn btn--sm btn--primary"
+              disabled={busy}
+              onClick={() => {
+                setScope('user');
+                setAccountLabel('');
+                setShowForm(true);
+              }}
+            >
+              {personalList.length ? 'Add another account' : 'Connect'}
+            </button>
+          </section>
+
+          {provider.id === 'mcp_server' ? (
+            <section className="card integ-connect-card" id="mcp-sign-in">
+              <div className="card__head">
+                <h2>Sign in to an MCP server</h2>
+                <span className="muted small">Recommended</span>
+              </div>
+              <p className="muted small" style={{ marginTop: 0 }}>
+                For servers that use their own sign-in (for example Granola). You
+                will be sent to that server&apos;s sign-in page and back here.
+              </p>
+              <form className="integ-connect" onSubmit={(e) => void onMcpSignIn(e)}>
+                <label className="field integ-connect__field">
+                  <span className="label">Account name</span>
+                  <input
+                    className="input"
+                    value={accountLabel}
+                    placeholder="e.g. Work"
+                    maxLength={120}
+                    autoComplete="off"
+                    onChange={(e) => setAccountLabel(e.target.value)}
+                  />
+                </label>
+                <label className="field integ-connect__field">
+                  <span className="label">Server URL</span>
+                  <input
+                    className="input"
+                    type="url"
+                    value={mcpEndpoint}
+                    placeholder="https://mcp.example.com/mcp"
+                    required
+                    autoComplete="off"
+                    spellCheck={false}
+                    onChange={(e) => setMcpEndpoint(e.target.value)}
+                  />
+                  <span className="hint">Must be HTTPS.</span>
+                </label>
+                <div className="integ-connect__actions">
+                  <button type="submit" className="btn btn--sm btn--primary" disabled={busy}>
+                    Sign in and connect
                   </button>
                 </div>
-              </>
-            ) : (
-              <>
-                <p className="muted small" style={{ marginTop: 0 }}>
-                  {effective?.source === 'organization' && effective.connection
-                    ? `Using organization default (${effective.connection.display_label}). Connect personally to override.`
-                    : 'Not connected yet. Delivery can still use an org default if one is set.'}
-                </p>
-                <button
-                  type="button"
-                  className="btn btn--sm btn--primary"
-                  disabled={busy}
-                  onClick={() => {
-                    setScope('user');
-                    setShowForm(true);
-                  }}
-                >
-                  Connect
-                </button>
-              </>
-            )}
-          </section>
+              </form>
+            </section>
+          ) : null}
 
           {isAdmin ? (
             <section className="card" id="organization">
@@ -378,6 +476,22 @@ export function IntegrationDetailPage() {
                 className="integ-connect"
                 onSubmit={(e) => void onConnect(e)}
               >
+                {scope === 'user' ? (
+                  <label className="field integ-connect__field">
+                    <span className="label">Account name</span>
+                    <input
+                      className="input"
+                      value={accountLabel}
+                      placeholder="e.g. Work, Personal"
+                      maxLength={120}
+                      autoComplete="off"
+                      onChange={(e) => setAccountLabel(e.target.value)}
+                    />
+                    <span className="hint">
+                      Name it to tell accounts apart. Leave empty for “default”.
+                    </span>
+                  </label>
+                ) : null}
                 {formFields
                   .filter((f) => !f.advanced)
                   .map((f) => (

@@ -8,15 +8,16 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { integrationsApi } from '../api/integrations';
 import { trackersApi } from '../api/trackers';
+import {
+  listUsableConnections,
+  usableLabel,
+  type UsableConnection,
+} from '../api/usableConnections';
 import { IntegrationLogo } from './integrations/IntegrationLogo';
 import { Icon } from './Icons';
 import type { Idea } from '../types/idea';
-import type {
-  EffectiveConnection,
-  IdeaTrackerLink,
-} from '../types/trackers';
+import type { IdeaTrackerLink } from '../types/trackers';
 import { useDialog } from './DialogProvider';
 
 const LINKABLE = new Set(['accepted', 'prototype', 'implemented']);
@@ -44,7 +45,8 @@ function ideaBodyMarkdown(idea: Idea): string {
 
 export function NotionDocsPanel({ idea, canManage }: Props) {
   const dialog = useDialog();
-  const [effective, setEffective] = useState<EffectiveConnection | null>(null);
+  const [options, setOptions] = useState<UsableConnection[]>([]);
+  const [connId, setConnId] = useState('');
   const [links, setLinks] = useState<IdeaTrackerLink[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -52,18 +54,20 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
   const [mode, setMode] = useState<'create' | 'link'>('create');
   const [externalRef, setExternalRef] = useState('');
 
-  const connection = effective?.connection ?? null;
-  const connected = effective?.source !== 'none' && connection != null;
+  const picked = options.find((o) => o.connection.id === connId) ?? options[0] ?? null;
+  const connection = picked?.connection ?? null;
+  const connected = connection != null;
 
   const reload = useCallback(async () => {
     setError(null);
     try {
-      const [effList, allLinks] = await Promise.all([
-        integrationsApi.listEffective('docs').catch(() => [] as EffectiveConnection[]),
+      const [usable, allLinks] = await Promise.all([
+        listUsableConnections(new Set([PROVIDER_ID])),
         trackersApi.listLinks(idea.id).catch(() => [] as IdeaTrackerLink[]),
       ]);
-      setEffective(
-        effList.find((x) => x.provider_id === PROVIDER_ID) ?? null,
+      setOptions(usable);
+      setConnId((prev) =>
+        usable.some((o) => o.connection.id === prev) ? prev : usable[0]?.connection.id ?? '',
       );
       setLinks(allLinks.filter((l) => l.provider_id === PROVIDER_ID));
     } catch (err) {
@@ -79,9 +83,9 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
   const canCreate = CREATABLE.has(idea.status);
 
   const sourceLabel = useMemo(() => {
-    if (!effective || effective.source === 'none') return '';
-    return effective.source === 'user' ? 'my connection' : 'org default';
-  }, [effective]);
+    if (!picked) return '';
+    return picked.source === 'user' ? 'my account' : 'org default';
+  }, [picked]);
 
   async function onCreateOrLink(e: FormEvent) {
     e.preventDefault();
@@ -302,8 +306,24 @@ export function NotionDocsPanel({ idea, canManage }: Props) {
             className="integ-doc-form"
             onSubmit={(e) => void onCreateOrLink(e)}
           >
+            {options.length > 1 ? (
+              <label className="field">
+                <span className="field__label">Notion account</span>
+                <select
+                  className="select"
+                  value={connection?.id ?? ''}
+                  onChange={(e) => setConnId(e.target.value)}
+                >
+                  {options.map((o) => (
+                    <option key={o.connection.id} value={o.connection.id}>
+                      {usableLabel(o, 'Notion')}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <p className="muted small" style={{ margin: 0 }}>
-              Using {connection?.display_label || 'Notion'} ({sourceLabel}).
+              Using {connection?.display_label || connection?.label || 'Notion'} ({sourceLabel}).
             </p>
             <div className="segmented" role="group" aria-label="Notion mode">
               <label>

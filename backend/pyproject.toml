@@ -20,6 +20,7 @@ dependencies = [
   "httpx>=0.28.0",
   "pyotp>=2.9.0",
   "qrcode[pil]>=8.0",
+  "mutmut>=3.8.1",
 ]
 
 [project.optional-dependencies]
@@ -75,6 +76,22 @@ addopts = [
 asyncio_default_fixture_loop_scope = "function"
 markers = [
   "smoke: lightweight smoke tests (no external services)",
+]
+
+# ---------------------------------------------------------------------------
+# mutmut — mutation testing (cwd = backend/; package lives under app/)
+# ---------------------------------------------------------------------------
+[tool.mutmut]
+source_paths = ["app"]
+do_not_mutate = [
+  "app/seed/*",
+]
+# Avoid inheriting pytest -x / coverage gate (mutants would fail the cov threshold).
+pytest_add_cli_args = [
+  "-q",
+  "--tb=no",
+  "-x",
+  "--no-cov",
 ]
 
 [tool.coverage.run]

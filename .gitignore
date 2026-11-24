@@ -8,3 +8,5 @@ backend/.dev/
 
 # Local code-review-graph SQLite / wiki
 .code-review-graph/
+
+backend/mutants/
