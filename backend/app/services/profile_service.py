@@ -17,6 +17,7 @@ from app.models.delivery import (
     DeliveryProject,
     ImpactEntry,
 )
+from app.models.review import Decision
 from app.repositories.recognition_repository import RecognitionRepository
 from app.schemas.profiles import (
     ContributionEventOut,
@@ -116,6 +117,22 @@ class ProfileService:
                     idea_id=project.idea_id,
                     idea_title=idea.title if idea else "",
                     extra=c.role,
+                )
+            )
+
+        # Reviewer activity: every decision this person recorded, as a history entry.
+        decisions = await self.session.execute(
+            select(Decision).where(Decision.decider_id == user_id)
+        )
+        for d in decisions.scalars().all():
+            idea = await self.spine.get_idea(d.idea_id)
+            history.append(
+                ContributionEventOut(
+                    at=d.created_at,
+                    role="Reviewer",
+                    idea_id=d.idea_id,
+                    idea_title=idea.title if idea else "",
+                    extra=d.outcome,
                 )
             )
 

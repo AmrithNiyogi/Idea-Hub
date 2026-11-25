@@ -27,6 +27,7 @@ async def queue(
 ) -> list[ReviewQueueItem]:
     """SLA-sorted queue of ideas awaiting review decisions."""
     ideas = await review_service.review_queue(session, current)
+    names = await review_service.reviewer_names(session, {i.reviewer_id for i in ideas if i.reviewer_id})
     now = datetime.now(UTC)
     items: list[ReviewQueueItem] = []
     for idea in ideas:
@@ -45,6 +46,7 @@ async def queue(
                 pickup_due_at=idea.pickup_due_at,
                 picked_up_at=idea.picked_up_at,
                 reviewer_id=idea.reviewer_id,
+                reviewer_name=names.get(idea.reviewer_id) if idea.reviewer_id else None,
                 days_until_due=days,
             )
         )

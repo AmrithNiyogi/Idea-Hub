@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { collabApi } from '../api/collab';
 import { ideasApi } from '../api/ideas';
 import { usersApi } from '../api/users';
@@ -108,6 +108,9 @@ export function IdeaDetailPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [collabReqs, setCollabReqs] = useState<CollabRequest[]>([]);
   const [linkedGroup, setLinkedGroup] = useState<Group | null>(null);
+  // Until the lookup answers, neither Open group nor Create group is shown (no flicker).
+  const [groupChecked, setGroupChecked] = useState(false);
+  const navigate = useNavigate();
   const [commentBody, setCommentBody] = useState('');
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +139,7 @@ export function IdeaDetailPage() {
 
   const nameOf = (uid: string) => {
     if (user?.id === uid) return 'You';
-    return userMap.get(uid)?.name ?? uid.slice(0, 8);
+    return userMap.get(uid)?.name ?? 'Unknown user';
   };
 
   useEffect(() => {
@@ -148,6 +151,7 @@ export function IdeaDetailPage() {
     setRelated([]);
     setCollabReqs([]);
     setLinkedGroup(null);
+    setGroupChecked(false);
     setComments([]);
     setOptPreview({});
     (async () => {
@@ -172,10 +176,16 @@ export function IdeaDetailPage() {
         groupsApi
           .forIdea(id)
           .then((g) => {
-            if (!cancelled) setLinkedGroup(g);
+            if (!cancelled) {
+              setLinkedGroup(g);
+              setGroupChecked(true);
+            }
           })
           .catch(() => {
-            if (!cancelled) setLinkedGroup(null);
+            if (!cancelled) {
+              setLinkedGroup(null);
+              setGroupChecked(true);
+            }
           });
         if (i.tags.length || i.category_id) {
           const rel = await ideasApi
@@ -278,6 +288,18 @@ export function IdeaDetailPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Withdraw failed');
     } finally {
+      setBusy(false);
+    }
+  };
+
+  const restoreIdea = async () => {
+    if (!idea) return;
+    setBusy(true);
+    try {
+      await ideasApi.restore(idea.id);
+      navigate(`/submit?draft=${idea.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Restore failed');
       setBusy(false);
     }
   };
@@ -440,6 +462,11 @@ export function IdeaDetailPage() {
               The author withdrew this idea
               {idea.withdraw_reason ? `: “${idea.withdraw_reason}”` : '.'}
             </span>
+            {own ? (
+              <button type="button" className="btn btn--sm" disabled={busy} onClick={restoreIdea}>
+                Restore to draft
+              </button>
+            ) : null}
           </div>
         ) : null}
 
@@ -991,7 +1018,7 @@ export function IdeaDetailPage() {
               >
                 Team and progress
               </button>
-              {linkedGroup ? (
+              {!groupChecked ? null : linkedGroup ? (
                 <Link
                   className="btn btn--sm btn--ghost"
                   to={`/groups/${linkedGroup.id}`}
@@ -1013,7 +1040,7 @@ export function IdeaDetailPage() {
                           idea_id: idea.id,
                         });
                         setLinkedGroup(g);
-                        window.location.assign(`/groups/${g.id}`);
+                        navigate(`/groups/${g.id}`);
                       } catch (e) {
                         setError(
                           e instanceof Error

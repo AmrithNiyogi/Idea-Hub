@@ -120,7 +120,7 @@ export function CollabTrackerPanel({ idea }: Props) {
     (id: string | null | undefined) => {
       if (!id) return 'Someone';
       if (me && id === me.id) return 'You';
-      return userMap.get(id)?.name ?? id.slice(0, 8);
+      return userMap.get(id)?.name ?? 'Unknown user';
     },
     [me, userMap],
   );

@@ -21,6 +21,7 @@ from app.models.admin import ReviewPanel
 from app.models.category import Category
 from app.models.engagement import Comment, Follow, Vote
 from app.models.idea import Idea, StatusHistory
+from app.models.review import Decision
 from app.schemas.idea import IdeaWrite
 from app.services.notification_service import notify_idea, notify_users
 
@@ -298,6 +299,40 @@ async def withdraw_idea(
         text=f'“{idea.title}” was withdrawn by its author.',
         exclude=user.id,
         send_email=False,
+    )
+    await session.commit()
+    return await get_idea(session, idea.id, with_history=True)  # type: ignore[return-value]
+
+
+async def _decision_recorded(session: AsyncSession, idea_id: uuid.UUID) -> bool:
+    """True when any reviewer decision exists for the idea."""
+    found = await session.execute(select(Decision.id).where(Decision.idea_id == idea_id).limit(1))
+    return found.first() is not None
+
+
+async def restore_idea(session: AsyncSession, user: CurrentUser, idea_id: uuid.UUID) -> Idea:
+    """Author moves a withdrawn idea back to draft so it can be edited and resubmitted.
+
+    Only when no decision was recorded. Clears the withdrawal and any stale review or
+    pause state. No notification: nobody is reviewing a draft.
+    """
+    idea = await get_idea(session, idea_id)
+    if idea is None:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    if idea.author_id != user.id:
+        raise HTTPException(status_code=403, detail="Only the author can restore")
+    if idea.status != "withdrawn":
+        raise HTTPException(status_code=400, detail="Only a withdrawn idea can be restored")
+    if not can_transition(idea.status, "draft"):
+        raise HTTPException(status_code=400, detail="Illegal transition")
+    if await _decision_recorded(session, idea.id):
+        raise HTTPException(status_code=400, detail="This idea has a decision and cannot be restored")
+    idea.withdraw_reason = ""
+    idea.reviewer_id = None
+    idea.picked_up_at = None
+    idea.paused_at = None
+    await _append_history(
+        session, idea, to_status="draft", actor_id=user.id, reason="Restored to draft by author"
     )
     await session.commit()
     return await get_idea(session, idea.id, with_history=True)  # type: ignore[return-value]

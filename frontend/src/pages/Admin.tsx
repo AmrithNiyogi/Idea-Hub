@@ -49,7 +49,7 @@ function colorKeyFromCss(color: string): CategoryColorKey {
 }
 
 function userLabel(u: User | undefined, id: string): string {
-  return u ? u.name : id.slice(0, 8) + '…';
+  return u ? u.name : 'Unknown user';
 }
 
 export function AdminPage() {

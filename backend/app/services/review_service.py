@@ -13,6 +13,7 @@ from app.constants.lifecycle import DECISION_OUTCOME_MAP, can_transition
 from app.dependencies.auth import CurrentUser
 from app.models.idea import Idea, StatusHistory
 from app.models.review import Decision, Review
+from app.models.user import User
 from app.schemas.review import DecideRequest, ReviewScoresIn
 from app.services.idea_service import _as_uuid_list, get_idea
 from app.services.notification_service import notify_idea, notify_users
@@ -42,6 +43,20 @@ async def review_queue(session: AsyncSession, user: CurrentUser) -> list[Idea]:
         .order_by(Idea.due_at.asc().nullslast(), Idea.submitted_at.asc().nullslast())
     )
     return list(result.scalars().all())
+
+
+async def reviewer_names(session: AsyncSession, ids: set[uuid.UUID]) -> dict[uuid.UUID, str]:
+    """Display names for reviewer ids. Falls back to the email local part when name is blank."""
+    if not ids:
+        return {}
+    rows = await session.execute(select(User.id, User.name, User.email).where(User.id.in_(ids)))
+    return {uid: (name or email.split("@", 1)[0]) for uid, name, email in rows.all()}
+
+
+async def _reviewer_ids(session: AsyncSession, exclude: uuid.UUID) -> list[uuid.UUID]:
+    """Active reviewers and admins, except the person who just picked the idea up."""
+    rows = (await session.execute(select(User.id, User.roles).where(User.status == "active"))).all()
+    return [uid for uid, roles in rows if uid != exclude and {"reviewer", "admin"} & set(roles or [])]
 
 
 async def pickup(
@@ -74,6 +89,17 @@ async def pickup(
         exclude=user.id,
         include_reviewer=False,
         send_email=False,
+    )
+    # Every other reviewer gets the inbox row and the email, not only the picker.
+    await notify_users(
+        session,
+        await _reviewer_ids(session, user.id),
+        kind="pickup",
+        text=f'{user.name} picked up “{idea.title}”. A decision is due by {due}.',
+        href=f"/ideas/{idea.id}",
+        idea_id=idea.id,
+        idea_title=idea.title,
+        send_email=True,
     )
     await session.commit()
     return await get_idea(session, idea.id)  # type: ignore[return-value]

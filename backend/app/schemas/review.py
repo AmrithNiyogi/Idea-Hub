@@ -74,4 +74,5 @@ class ReviewQueueItem(BaseModel):
     pickup_due_at: datetime | None
     picked_up_at: datetime | None
     reviewer_id: UUID | None
+    reviewer_name: str | None = None
     days_until_due: float | None = None

@@ -267,9 +267,7 @@ export function ReviewPage() {
                       </td>
                       <td data-label="Reviewer">
                         {row.reviewer_id ? (
-                          <span className="mono small">
-                            {row.reviewer_id.slice(0, 8)}…
-                          </span>
+                          <span>{row.reviewer_name ?? 'Reviewer'}</span>
                         ) : (
                           <span className="muted">Unassigned</span>
                         )}

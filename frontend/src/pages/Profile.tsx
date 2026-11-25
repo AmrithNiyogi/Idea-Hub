@@ -118,7 +118,7 @@ export function ProfilePage() {
       setDmBusy(false);
     }
   }
-  const name = profile.name || `${profile.user_id.slice(0, 8)}…`;
+  const name = profile.name || 'Unnamed member';
   const escrow = self
     ? profile.ledger.filter((r) => r.escrow)
     : [];

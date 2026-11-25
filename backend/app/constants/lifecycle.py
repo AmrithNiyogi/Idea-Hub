@@ -41,7 +41,7 @@ TRANSITIONS: dict[str, list[str]] = {
     "merged": [],
     "declined": [],
     "implemented": [],
-    "withdrawn": [],
+    "withdrawn": ["draft"],  # author restore, only when no decision was recorded
 }
 
 ROLE_ORDER: list[str] = [

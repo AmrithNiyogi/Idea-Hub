@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { agentsApi } from '../api/agents';
 import { ideasApi } from '../api/ideas';
 import { reviewApi } from '../api/review';
+import { usersApi } from '../api/users';
 import { AgentHandoffBar } from '../components/AgentHandoffBar';
 import { EntryDocumentsCard } from '../components/EntryDocumentsCard';
 import { IdeaAiReview } from '../components/IdeaAiReview';
@@ -13,6 +14,7 @@ import { EFFORT_LABELS, STATUS_META } from '../constants/status';
 import { fmtDate, relTime } from '../utils/format';
 import type { Comment, Idea, IdeaStatus } from '../types/idea';
 import type { DecisionKind } from '../types/review';
+import type { User } from '../types/auth';
 
 /** Suggested score cell from review-intelligence (heuristic stub). */
 type SuggestedScore = {
@@ -172,6 +174,7 @@ export function ReviewDetailPage() {
   const navigate = useNavigate();
   const [idea, setIdea] = useState<Idea | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [people, setPeople] = useState<Map<string, User>>(new Map());
   const [impact, setImpact] = useState<number | null>(null);
   const [effort, setEffort] = useState<number | null>(null);
   const [alignment, setAlignment] = useState<number | null>(null);
@@ -191,6 +194,13 @@ export function ReviewDetailPage() {
   const [briefError, setBriefError] = useState<string | null>(null);
   const [scoresApplied, setScoresApplied] = useState(false);
   const [decisionApplied, setDecisionApplied] = useState(false);
+
+  useEffect(() => {
+    usersApi
+      .list()
+      .then((list) => setPeople(new Map(list.map((u) => [u.id, u]))))
+      .catch(() => setPeople(new Map()));
+  }, []);
 
   useEffect(() => {
     ideasApi
@@ -565,7 +575,7 @@ export function ReviewDetailPage() {
               comments.slice(-8).map((c) => (
                 <div key={c.id} className="comment">
                   <div className="grow">
-                    <strong>{c.author_id.slice(0, 8)}</strong>
+                    <strong>{people.get(c.author_id)?.name ?? 'Unknown user'}</strong>
                     <span className="muted small"> {relTime(c.created_at)}</span>
                     <div className="comment__body">{c.body}</div>
                   </div>

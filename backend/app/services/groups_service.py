@@ -8,9 +8,10 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Iterable, Optional
 
 from fastapi import HTTPException, UploadFile, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import get_settings
@@ -157,32 +158,32 @@ class GroupsService:
                     "This idea already has a linked group. Open it from Groups.",
                 )
 
+        # One flush for the group, owner, channels and welcome message (was one round trip each).
         group = HubGroup(
+            id=uuid.uuid4(),
             name=body.name.strip(),
             description=(body.description or "").strip(),
             kind="group",
             idea_id=idea.id if idea else None,
             created_by=actor.id,
         )
-        await self.repo.add_group(group)
-        await self.repo.add_member(
-            GroupMember(group_id=group.id, user_id=actor.id, role="owner")
-        )
-        for slug, name, desc, order in DEFAULT_CHANNELS:
-            await self.repo.add_channel(
-                GroupChannel(
-                    group_id=group.id,
-                    slug=slug,
-                    name=name,
-                    description=desc,
-                    kind="text",
-                    sort_order=order,
-                    created_by=actor.id,
-                )
+        channels = [
+            GroupChannel(
+                id=uuid.uuid4(),
+                group_id=group.id,
+                slug=slug,
+                name=name,
+                description=desc,
+                kind="text",
+                sort_order=order,
+                created_by=actor.id,
             )
-        general = await self.repo.get_channel_by_slug(group.id, "general")
+            for slug, name, desc, order in DEFAULT_CHANNELS
+        ]
+        rows: list[Any] = [group, GroupMember(group_id=group.id, user_id=actor.id, role="owner"), *channels]
+        general = next((c for c in channels if c.slug == "general"), None)
         if general:
-            await self.repo.add_message(
+            rows.append(
                 GroupMessage(
                     channel_id=general.id,
                     author_id=actor.id,
@@ -194,6 +195,11 @@ class GroupsService:
                     meta={"event": "group_created"},
                 )
             )
+        # The group row must exist before its children (FK order), so two flushes, not one per row.
+        self.session.add(group)
+        await self.session.flush()
+        self.session.add_all(rows[1:])
+        await self.session.flush()
         await self.session.commit()
         return await self.get(group.id, actor)
 
@@ -981,16 +987,75 @@ class GroupsService:
         result = await post_webhook(credentials, card)
         return f"posted via {source} connection ({result.get('status_code')})"
 
-    async def _to_out(self, group: HubGroup, actor: Actor) -> GroupOut:
-        channels = await self.repo.list_channels(group.id)
-        members = await self.repo.list_members(group.id)
-        me = await self.repo.get_member(group.id, actor.id)
-        pending: list[GroupInviteOut] = []
-        if group.kind != "dm" and self._is_manager(group, actor, me):
-            for inv in await self.repo.list_pending_invites(group.id):
-                pending.append(await self._invite_out(inv))
+    async def _users_map(self, ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, User]:
+        """All users for the given ids in one query (avoids a query per member or invite)."""
+        wanted = {i for i in ids if i is not None}
+        if not wanted:
+            return {}
+        rows = await self.session.execute(select(User).where(User.id.in_(wanted)))
+        return {u.id: u for u in rows.scalars().all()}
 
-        peer_user = await self._dm_peer_user(group, actor.id)
+    @staticmethod
+    def _member_row(member: GroupMember, users: dict[uuid.UUID, User]) -> GroupMemberOut:
+        user = users.get(member.user_id)
+        return GroupMemberOut(
+            user_id=member.user_id,
+            role=member.role,
+            joined_at=member.joined_at,
+            name=(user.name if user else "") or "",
+            email=(user.email if user else "") or "",
+            avatar=user.avatar if user else 1,
+            avatar_url=getattr(user, "avatar_url", None) if user else None,
+        )
+
+    @staticmethod
+    def _invite_row(
+        invite: GroupInvite, group_name: str, users: dict[uuid.UUID, User]
+    ) -> GroupInviteOut:
+        invitee = users.get(invite.invitee_id)
+        inviter = users.get(invite.invited_by)
+        return GroupInviteOut(
+            id=invite.id,
+            group_id=invite.group_id,
+            group_name=group_name,
+            invitee_id=invite.invitee_id,
+            invited_by=invite.invited_by,
+            role=invite.role,
+            status=invite.status,
+            created_at=invite.created_at,
+            responded_at=invite.responded_at,
+            invitee_name=(invitee.name if invitee else "") or "",
+            invitee_email=(invitee.email if invitee else "") or "",
+            invitee_avatar=invitee.avatar if invitee else 1,
+            invitee_avatar_url=(
+                getattr(invitee, "avatar_url", None) if invitee else None
+            ),
+            invited_by_name=(inviter.name if inviter else "") or "",
+        )
+
+    async def _to_out(self, group: HubGroup, actor: Actor) -> GroupOut:
+        """Group payload. Fixed query count: channels, members, my membership, invites, users."""
+        channels = await self.repo.list_channels(group.id)
+        members = list(await self.repo.list_members(group.id))
+        me = await self.repo.get_member(group.id, actor.id)
+        manager = self._is_manager(group, actor, me)
+        invites = (
+            list(await self.repo.list_pending_invites(group.id))
+            if group.kind != "dm" and manager
+            else []
+        )
+        peer_id = (
+            next((m.user_id for m in members if m.user_id != actor.id), None)
+            if group.kind == "dm"
+            else None
+        )
+        user_ids: list[uuid.UUID] = [m.user_id for m in members]
+        for inv in invites:
+            user_ids += [inv.invitee_id, inv.invited_by]
+        if peer_id:
+            user_ids.append(peer_id)
+        users = await self._users_map(user_ids)
+        peer_user = users.get(peer_id) if peer_id else None
         display_name = group.name
         if peer_user:
             display_name = peer_user.name or peer_user.email or group.name
@@ -1006,10 +1071,10 @@ class GroupsService:
             created_at=group.created_at,
             updated_at=group.updated_at,
             channels=[GroupChannelOut.model_validate(c) for c in channels],
-            members=[await self._member_out(m) for m in members],
-            pending_invites=pending,
-            can_post=await self._can_post(group, actor),
-            can_manage=self._is_manager(group, actor, me),
+            members=[self._member_row(m, users) for m in members],
+            pending_invites=[self._invite_row(i, group.name, users) for i in invites],
+            can_post=me is not None,
+            can_manage=manager,
             peer_user_id=peer_user.id if peer_user else None,
             peer_avatar=peer_user.avatar if peer_user else 1,
             peer_avatar_url=(
@@ -1018,39 +1083,12 @@ class GroupsService:
         )
 
     async def _member_out(self, member: GroupMember) -> GroupMemberOut:
-        user = await self.session.get(User, member.user_id)
-        return GroupMemberOut(
-            user_id=member.user_id,
-            role=member.role,
-            joined_at=member.joined_at,
-            name=(user.name if user else "") or "",
-            email=(user.email if user else "") or "",
-            avatar=user.avatar if user else 1,
-            avatar_url=getattr(user, "avatar_url", None) if user else None,
-        )
+        return self._member_row(member, await self._users_map([member.user_id]))
 
     async def _invite_out(self, invite: GroupInvite) -> GroupInviteOut:
         group = await self.repo.get(invite.group_id)
-        invitee = await self.session.get(User, invite.invitee_id)
-        inviter = await self.session.get(User, invite.invited_by)
-        return GroupInviteOut(
-            id=invite.id,
-            group_id=invite.group_id,
-            group_name=group.name if group else "",
-            invitee_id=invite.invitee_id,
-            invited_by=invite.invited_by,
-            role=invite.role,
-            status=invite.status,
-            created_at=invite.created_at,
-            responded_at=invite.responded_at,
-            invitee_name=(invitee.name if invitee else "") or "",
-            invitee_email=(invitee.email if invitee else "") or "",
-            invitee_avatar=invitee.avatar if invitee else 1,
-            invitee_avatar_url=(
-                getattr(invitee, "avatar_url", None) if invitee else None
-            ),
-            invited_by_name=(inviter.name if inviter else "") or "",
-        )
+        users = await self._users_map([invite.invitee_id, invite.invited_by])
+        return self._invite_row(invite, group.name if group else "", users)
 
     async def _require_pending_invite(
         self, invite_id: uuid.UUID, actor: Actor

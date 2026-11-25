@@ -1381,13 +1381,13 @@ export function IdeathonDetailPage() {
               <Link to={`/people/${sponsor.id}`}>{sponsor.name}</Link>
             </span>
           ) : (
-            <span className="muted">{shortId(it.sponsor_id)}</span>
+            <span className="muted">Unknown user</span>
           )}
           <span className="muted">Organiser</span>
           {organiser ? (
             <Link to={`/people/${organiser.id}`}>{organiser.name}</Link>
           ) : (
-            <span className="muted">{shortId(it.organiser_id)}</span>
+            <span className="muted">Unknown user</span>
           )}
           <span className="muted">
             {fmtDate(it.start_at, true)} to {fmtDate(it.end_at, true)}

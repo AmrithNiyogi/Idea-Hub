@@ -135,7 +135,7 @@ export function TeamFields({
           <div className="chip-row" style={{ margin: '8px 0' }}>
             {coAuthorIds.map((id) => {
               const u = known[id];
-              const label = u ? u.name : `Teammate ${id.slice(0, 8)}`;
+              const label = u ? u.name : 'Unknown teammate';
               return (
                 <span key={id} className="tag tag--removable">
                   {label}

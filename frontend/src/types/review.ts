@@ -9,6 +9,7 @@ export interface ReviewQueueItem {
   pickup_due_at: string | null;
   picked_up_at: string | null;
   reviewer_id: string | null;
+  reviewer_name: string | null;
   days_until_due: number | null;
 }
 

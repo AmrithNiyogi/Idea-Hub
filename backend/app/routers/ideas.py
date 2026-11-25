@@ -212,6 +212,15 @@ async def withdraw(
 
 
 @router.post(
+    "/{idea_id}/restore", response_model=IdeaOut, summary="Restore a withdrawn idea to draft"
+)
+async def restore(idea_id: UUID, session: DbSession, current: RequireUser) -> IdeaOut:
+    """Author moves a withdrawn idea back to draft (only when no decision was recorded)."""
+    idea = await idea_service.restore_idea(session, current, idea_id)
+    return _idea_out(idea)
+
+
+@router.post(
     "/{idea_id}/answer-info",
     response_model=IdeaOut,
     summary="Answer needs_info",

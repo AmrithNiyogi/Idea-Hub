@@ -422,3 +422,48 @@ async def test_list_comments_and_home_aggregates(
     agg = await idea_service.home_aggregates(async_session, current_user)
     assert agg["total_live"] >= 2
     assert agg["needs_attention"]
+
+
+@pytest.mark.asyncio
+async def test_restore_idea_guards_and_success(
+    current_user: CurrentUser, async_session: AsyncMock
+) -> None:
+    with patch.object(idea_service, "get_idea", AsyncMock(return_value=None)):
+        with pytest.raises(HTTPException) as missing:
+            await idea_service.restore_idea(async_session, current_user, uuid.uuid4())
+    assert missing.value.status_code == 404
+
+    foreign = SimpleNamespace(id=uuid.uuid4(), author_id=uuid.uuid4(), status="withdrawn")
+    with patch.object(idea_service, "get_idea", AsyncMock(return_value=foreign)):
+        with pytest.raises(HTTPException) as not_author:
+            await idea_service.restore_idea(async_session, current_user, foreign.id)
+    assert not_author.value.status_code == 403
+
+    live = SimpleNamespace(id=uuid.uuid4(), author_id=current_user.id, status="under_review")
+    with patch.object(idea_service, "get_idea", AsyncMock(return_value=live)):
+        with pytest.raises(HTTPException) as not_withdrawn:
+            await idea_service.restore_idea(async_session, current_user, live.id)
+    assert not_withdrawn.value.status_code == 400
+
+    decided = SimpleNamespace(id=uuid.uuid4(), author_id=current_user.id, status="withdrawn")
+    with patch.object(idea_service, "get_idea", AsyncMock(return_value=decided)), patch.object(
+        idea_service, "_decision_recorded", AsyncMock(return_value=True)
+    ):
+        with pytest.raises(HTTPException) as has_decision:
+            await idea_service.restore_idea(async_session, current_user, decided.id)
+    assert has_decision.value.status_code == 400
+
+    ok = SimpleNamespace(
+        id=uuid.uuid4(), author_id=current_user.id, status="withdrawn", title="Ship it",
+        withdraw_reason="No longer relevant", reviewer_id=uuid.uuid4(), picked_up_at=datetime.now(UTC),
+        paused_at=datetime.now(UTC), is_draft=False, stage_entered_at=None, updated_at=None,
+    )
+    with patch.object(idea_service, "get_idea", AsyncMock(return_value=ok)), patch.object(
+        idea_service, "_decision_recorded", AsyncMock(return_value=False)
+    ):
+        out = await idea_service.restore_idea(async_session, current_user, ok.id)
+    assert out is ok
+    assert ok.status == "draft" and ok.is_draft is True
+    assert ok.withdraw_reason == "" and ok.reviewer_id is None
+    assert ok.picked_up_at is None and ok.paused_at is None
+    async_session.commit.assert_awaited()

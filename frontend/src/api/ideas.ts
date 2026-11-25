@@ -92,6 +92,10 @@ export const ideasApi = {
     );
   },
 
+  restore(id: string): Promise<Idea> {
+    return wrap(async () => (await http.post<Idea>(`/ideas/${id}/restore`)).data);
+  },
+
   answerInfo(id: string, text: string): Promise<Idea> {
     return wrap(
       async () =>

@@ -166,7 +166,7 @@ export function ContributionBoard({
     (w): w is { id: string; rule: Record<string, unknown> } => !!w.rule,
   );
 
-  const nameOf = (uid: string) => people.get(uid)?.name ?? `${uid.slice(0, 8)}…`;
+  const nameOf = (uid: string) => people.get(uid)?.name ?? 'Unknown user';
   const teamOf = (uid: string) => {
     const t = people.get(uid)?.team_id;
     return t ? teams.get(t)?.name ?? null : null;

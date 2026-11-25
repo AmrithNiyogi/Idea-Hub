@@ -82,7 +82,9 @@ async def test_pickup_success(
 ) -> None:
     idea = _idea()
     with patch.object(review_service, "get_idea", AsyncMock(return_value=idea)):
-        with patch.object(review_service, "notify_idea", AsyncMock()):
+        with patch.object(review_service, "notify_idea", AsyncMock()), patch.object(
+            review_service, "_reviewer_ids", AsyncMock(return_value=[])
+        ), patch.object(review_service, "notify_users", AsyncMock()):
             out = await review_service.pickup(async_session, reviewer_user, idea.id)
     assert out is idea
     assert idea.reviewer_id == reviewer_user.id
@@ -309,3 +311,25 @@ async def test_decide_park_and_merge_success(
     assert out2.status == "merged"
     assert decision2.outcome == "merged"
     assert source.merged_into_id == target.id
+
+
+@pytest.mark.asyncio
+async def test_pickup_email_goes_to_all_other_reviewers() -> None:
+    picker, rev, admin, plain = uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    result = MagicMock()
+    result.all.return_value = [(picker, ["reviewer"]), (rev, ["reviewer"]), (admin, ["admin"]), (plain, ["contributor"])]
+    session = MagicMock()
+    session.execute = AsyncMock(return_value=result)
+    assert await review_service._reviewer_ids(session, picker) == [rev, admin]
+
+
+@pytest.mark.asyncio
+async def test_reviewer_names_show_name_or_email_prefix_never_ids() -> None:
+    named, blank = uuid.uuid4(), uuid.uuid4()
+    result = MagicMock()
+    result.all.return_value = [(named, "Nayasa Mundhra", "nayasa@x.com"), (blank, "", "fd02ebf2@x.com")]
+    session = MagicMock()
+    session.execute = AsyncMock(return_value=result)
+    names = await review_service.reviewer_names(session, {named, blank})
+    assert names == {named: "Nayasa Mundhra", blank: "fd02ebf2"}
+    assert await review_service.reviewer_names(session, set()) == {}
